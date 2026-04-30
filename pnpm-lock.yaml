@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@tommykey-apps/ui-components':
-        specifier: ^0.0.2
-        version: 0.0.2(svelte@5.55.5(@typescript-eslint/types@8.59.1))
+        specifier: ^0.1.1
+        version: 0.1.1(svelte@5.55.5(@typescript-eslint/types@8.59.1))
     devDependencies:
       '@eslint/compat':
         specifier: ^2.0.4
@@ -408,8 +408,8 @@ packages:
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7 || ^8
 
-  '@tommykey-apps/ui-components@0.0.2':
-    resolution: {integrity: sha512-7iMwySu+pY9uKG9WUhU+VC0MtmGe2l0qKLJKFGjAjZw++lD+8gji7w7PK4xScf2UTodawPBxP0qLoXcYGV/iyQ==, tarball: https://npm.pkg.github.com/download/@tommykey-apps/ui-components/0.0.2/f6e55526438d4ba3f00aac0ec19ddaee7db59409}
+  '@tommykey-apps/ui-components@0.1.1':
+    resolution: {integrity: sha512-kLWI3cyX6rEerDJ++BW/y6lcY+GEFW+JU6u3n0CisF0RZE6pUhrssw0+2hg8am8Ja97D0tD6C0BobLujcYGPXw==, tarball: https://npm.pkg.github.com/download/@tommykey-apps/ui-components/0.1.1/88ae5e4d5cbda5933a817df91bc3e3b9bca9cf11}
     peerDependencies:
       svelte: ^5.0.0
 
@@ -933,8 +933,8 @@ packages:
     resolution: {integrity: sha512-orRsuYpJVw8LdAwqqLykBj9ecS5/cRHlI5+nvTo8LcCKmzDmqVORXtOIYEEQuL9D4BxtA1lm5isAqzQZCoQ6Eg==}
     engines: {node: '>=4'}
 
-  postcss@8.5.12:
-    resolution: {integrity: sha512-W62t/Se6rA0Az3DfCL0AqJwXuKwBeYg6nOaIgzP+xZ7N5BFCI7DYi1qs6ygUYT6rvfi6t9k65UMLJC+PHZpDAA==}
+  postcss@8.5.13:
+    resolution: {integrity: sha512-qif0+jGGZoLWdHey3UFHHWP0H7Gbmsk8T5VEqyYFbWqPr1XqvLGBbk/sl8V5exGmcYJklJOhOQq1pV9IcsiFag==}
     engines: {node: ^10 || ^12 || >=14}
 
   prelude-ls@1.2.1:
@@ -1451,7 +1451,7 @@ snapshots:
       tailwindcss: 4.2.4
       vite: 8.0.10(@types/node@22.19.17)(jiti@2.6.1)
 
-  '@tommykey-apps/ui-components@0.0.2(svelte@5.55.5(@typescript-eslint/types@8.59.1))':
+  '@tommykey-apps/ui-components@0.1.1(svelte@5.55.5(@typescript-eslint/types@8.59.1))':
     dependencies:
       date-fns: 4.1.0
       svelte: 5.55.5(@typescript-eslint/types@8.59.1)
@@ -1638,9 +1638,9 @@ snapshots:
       esutils: 2.0.3
       globals: 16.5.0
       known-css-properties: 0.37.0
-      postcss: 8.5.12
-      postcss-load-config: 3.1.4(postcss@8.5.12)
-      postcss-safe-parser: 7.0.1(postcss@8.5.12)
+      postcss: 8.5.13
+      postcss-load-config: 3.1.4(postcss@8.5.13)
+      postcss-safe-parser: 7.0.1(postcss@8.5.13)
       semver: 7.7.4
       svelte-eslint-parser: 1.6.0(svelte@5.55.5(@typescript-eslint/types@8.59.1))
     optionalDependencies:
@@ -1915,27 +1915,27 @@ snapshots:
 
   picomatch@4.0.4: {}
 
-  postcss-load-config@3.1.4(postcss@8.5.12):
+  postcss-load-config@3.1.4(postcss@8.5.13):
     dependencies:
       lilconfig: 2.1.0
       yaml: 1.10.3
     optionalDependencies:
-      postcss: 8.5.12
+      postcss: 8.5.13
 
-  postcss-safe-parser@7.0.1(postcss@8.5.12):
+  postcss-safe-parser@7.0.1(postcss@8.5.13):
     dependencies:
-      postcss: 8.5.12
+      postcss: 8.5.13
 
-  postcss-scss@4.0.9(postcss@8.5.12):
+  postcss-scss@4.0.9(postcss@8.5.13):
     dependencies:
-      postcss: 8.5.12
+      postcss: 8.5.13
 
   postcss-selector-parser@7.1.1:
     dependencies:
       cssesc: 3.0.0
       util-deprecate: 1.0.2
 
-  postcss@8.5.12:
+  postcss@8.5.13:
     dependencies:
       nanoid: 3.3.11
       picocolors: 1.1.1
@@ -2020,8 +2020,8 @@ snapshots:
       eslint-scope: 8.4.0
       eslint-visitor-keys: 4.2.1
       espree: 10.4.0
-      postcss: 8.5.12
-      postcss-scss: 4.0.9(postcss@8.5.12)
+      postcss: 8.5.13
+      postcss-scss: 4.0.9(postcss@8.5.13)
       postcss-selector-parser: 7.1.1
       semver: 7.7.4
     optionalDependencies:
@@ -2095,7 +2095,7 @@ snapshots:
     dependencies:
       lightningcss: 1.32.0
       picomatch: 4.0.4
-      postcss: 8.5.12
+      postcss: 8.5.13
       rolldown: 1.0.0-rc.17
       tinyglobby: 0.2.16
     optionalDependencies:
