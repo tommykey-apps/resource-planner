@@ -1,0 +1,251 @@
+{
+  "lockfile-version": 1,
+  "manifest": {
+    "schema-version": "1.11.0",
+    "install": {
+      "nodejs_22": {
+        "pkg-path": "nodejs_22"
+      },
+      "pnpm": {
+        "pkg-path": "pnpm"
+      }
+    },
+    "hook": {},
+    "profile": {},
+    "options": {}
+  },
+  "packages": [
+    {
+      "attr_path": "nodejs_22",
+      "broken": false,
+      "derivation": "/nix/store/7z888jncalxcpnyphznbh1nhjivfykvr-nodejs-22.22.2.drv",
+      "description": "Event-driven I/O framework for the V8 JavaScript engine",
+      "install_id": "nodejs_22",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=1c3fe55ad329cbcb28471bb30f05c9827f724c76",
+      "name": "nodejs-22.22.2",
+      "pname": "nodejs_22",
+      "rev": "1c3fe55ad329cbcb28471bb30f05c9827f724c76",
+      "rev_count": 987561,
+      "rev_date": "2026-04-27T05:36:01Z",
+      "scrape_date": "2026-04-29T19:52:52.312828Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "22.22.2",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/0zb2cr3b9xlancr6s938s73pxfcbzji2-nodejs-22.22.2"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "nodejs_22",
+      "broken": false,
+      "derivation": "/nix/store/n0apilkyywlcbigbw22nvjjz3gh92ccs-nodejs-22.22.2.drv",
+      "description": "Event-driven I/O framework for the V8 JavaScript engine",
+      "install_id": "nodejs_22",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=1c3fe55ad329cbcb28471bb30f05c9827f724c76",
+      "name": "nodejs-22.22.2",
+      "pname": "nodejs_22",
+      "rev": "1c3fe55ad329cbcb28471bb30f05c9827f724c76",
+      "rev_count": 987561,
+      "rev_date": "2026-04-27T05:36:01Z",
+      "scrape_date": "2026-04-29T20:42:54.209164Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "22.22.2",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/2axvilfkmlz8wfa9zimidv5l1cydi4kc-nodejs-22.22.2"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "nodejs_22",
+      "broken": false,
+      "derivation": "/nix/store/0y4ibzz247xhp9qy6fq9nvflganyxfxk-nodejs-22.22.2.drv",
+      "description": "Event-driven I/O framework for the V8 JavaScript engine",
+      "install_id": "nodejs_22",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=1c3fe55ad329cbcb28471bb30f05c9827f724c76",
+      "name": "nodejs-22.22.2",
+      "pname": "nodejs_22",
+      "rev": "1c3fe55ad329cbcb28471bb30f05c9827f724c76",
+      "rev_count": 987561,
+      "rev_date": "2026-04-27T05:36:01Z",
+      "scrape_date": "2026-04-29T21:54:57.328896Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "22.22.2",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/5b95ias241mw7bp4bindlc5xxn66phjy-nodejs-22.22.2"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "nodejs_22",
+      "broken": false,
+      "derivation": "/nix/store/wghknzpsi55q382zl0x1b4kxi48b791f-nodejs-22.22.2.drv",
+      "description": "Event-driven I/O framework for the V8 JavaScript engine",
+      "install_id": "nodejs_22",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=1c3fe55ad329cbcb28471bb30f05c9827f724c76",
+      "name": "nodejs-22.22.2",
+      "pname": "nodejs_22",
+      "rev": "1c3fe55ad329cbcb28471bb30f05c9827f724c76",
+      "rev_count": 987561,
+      "rev_date": "2026-04-27T05:36:01Z",
+      "scrape_date": "2026-04-29T23:10:37.614925Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "22.22.2",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/6x6v11xjf0psckgqmyhfyhw9bdma0rn6-nodejs-22.22.2"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "pnpm",
+      "broken": false,
+      "derivation": "/nix/store/xybhwrpk7cxgzv8lpy9d3zl9457n8ix6-pnpm-10.33.2.drv",
+      "description": "Fast, disk space efficient package manager for JavaScript",
+      "install_id": "pnpm",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=1c3fe55ad329cbcb28471bb30f05c9827f724c76",
+      "name": "pnpm-10.33.2",
+      "pname": "pnpm",
+      "rev": "1c3fe55ad329cbcb28471bb30f05c9827f724c76",
+      "rev_count": 987561,
+      "rev_date": "2026-04-27T05:36:01Z",
+      "scrape_date": "2026-04-29T19:53:06.702322Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "10.33.2",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/x3hcc83jr8myi9p2r5prgpmxx50wd1cr-pnpm-10.33.2"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "pnpm",
+      "broken": false,
+      "derivation": "/nix/store/m4hv1iwjvhrr5prgaq1bn29r0a098gi0-pnpm-10.33.2.drv",
+      "description": "Fast, disk space efficient package manager for JavaScript",
+      "install_id": "pnpm",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=1c3fe55ad329cbcb28471bb30f05c9827f724c76",
+      "name": "pnpm-10.33.2",
+      "pname": "pnpm",
+      "rev": "1c3fe55ad329cbcb28471bb30f05c9827f724c76",
+      "rev_count": 987561,
+      "rev_date": "2026-04-27T05:36:01Z",
+      "scrape_date": "2026-04-29T20:43:12.966256Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "10.33.2",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/6xd3l0crxpda9l171r9736s085dsn2ys-pnpm-10.33.2"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "pnpm",
+      "broken": false,
+      "derivation": "/nix/store/ygqxygd7h1giij8rhiss31dxvdvp86xn-pnpm-10.33.2.drv",
+      "description": "Fast, disk space efficient package manager for JavaScript",
+      "install_id": "pnpm",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=1c3fe55ad329cbcb28471bb30f05c9827f724c76",
+      "name": "pnpm-10.33.2",
+      "pname": "pnpm",
+      "rev": "1c3fe55ad329cbcb28471bb30f05c9827f724c76",
+      "rev_count": 987561,
+      "rev_date": "2026-04-27T05:36:01Z",
+      "scrape_date": "2026-04-29T21:55:12.221905Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "10.33.2",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/yqffj1df34s1vnpibisf278k9fv03x3j-pnpm-10.33.2"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "pnpm",
+      "broken": false,
+      "derivation": "/nix/store/hayp0yzhkvrlsz63lz8yhanqilikzc62-pnpm-10.33.2.drv",
+      "description": "Fast, disk space efficient package manager for JavaScript",
+      "install_id": "pnpm",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=1c3fe55ad329cbcb28471bb30f05c9827f724c76",
+      "name": "pnpm-10.33.2",
+      "pname": "pnpm",
+      "rev": "1c3fe55ad329cbcb28471bb30f05c9827f724c76",
+      "rev_count": 987561,
+      "rev_date": "2026-04-27T05:36:01Z",
+      "scrape_date": "2026-04-29T23:10:57.571672Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "10.33.2",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/4yfpaak9jcmls1hzybqxb1yh8wipr4id-pnpm-10.33.2"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    }
+  ]
+}
