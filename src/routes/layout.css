@@ -98,6 +98,12 @@
 	--ui-resource-bg: var(--muted);
 	--ui-row-font-size: 13px;
 	--ui-grid: var(--border);
+
+	/* scrollbar / edge fade (0.3.3+) */
+	--ui-scrollbar-thumb: var(--border);
+	--ui-scrollbar-thumb-hover: var(--muted-foreground);
+	--ui-scrollbar-size: 10px;
+	/* --ui-edge-fade-width: 32px (default, edge mask の背景は --ui-bg → --background 経由で自動追従) */
 }
 
 @layer base {
