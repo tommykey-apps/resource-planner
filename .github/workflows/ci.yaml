@@ -6,7 +6,7 @@ on:
   merge_group:
 
 jobs:
-  build:
+  build-web:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,11 +21,64 @@ jobs:
           registry-url: https://npm.pkg.github.com
           scope: '@tommykey-apps'
           cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
 
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: web
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - run: pnpm check
+      - name: Type check
+        run: pnpm check
+        working-directory: web
 
-      - run: pnpm build
+      - name: Build
+        run: pnpm build
+        working-directory: web
+
+  terraform-plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check if infra exists
+        id: check
+        run: |
+          if [ -d "infra" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        if: steps.check.outputs.exists == 'true'
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-1
+
+      - uses: hashicorp/setup-terraform@v3
+        if: steps.check.outputs.exists == 'true'
+
+      - name: Terraform Init
+        if: steps.check.outputs.exists == 'true'
+        run: terraform init
+        working-directory: infra
+
+      - name: Terraform Validate
+        if: steps.check.outputs.exists == 'true'
+        run: terraform validate
+        working-directory: infra
+
+      - name: Terraform Plan
+        if: steps.check.outputs.exists == 'true'
+        run: terraform plan -input=false
+        working-directory: infra
+        env:
+          TF_VAR_clerk_publishable_key: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
+          TF_VAR_clerk_secret_key: ${{ secrets.CLERK_SECRET_KEY }}
+
+      - name: Skip (no infra/)
+        if: steps.check.outputs.exists == 'false'
+        run: echo "infra/ directory not found, skipping terraform plan"

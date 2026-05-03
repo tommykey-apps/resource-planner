@@ -1,0 +1,42 @@
+# tbls configuration for DynamoDB schema documentation.
+#
+# IMPORTANT: tbls の DynamoDB driver は DSN クエリの endpoint パラメータを認識しない。
+# DynamoDB Local に接続するには AWS_ENDPOINT_URL=http://localhost:8000 を環境変数で
+# 併用すること。Makefile の `db-docs` ターゲット経由で実行するのが正規の手順。
+#
+# `tbls doc` を素手で打つと AWS 本番に誤接続する可能性があるため、必ず `make db-docs`
+# を使うこと。
+
+dsn: dynamo://ap-northeast-1?aws_access_key_id=local&aws_secret_access_key=local
+
+docPath: docs/db/schema
+
+format:
+  adjust: true
+  sort: false
+
+include:
+  - resource-planner
+
+# tbls の DynamoDB driver は DescribeTable の AttributeDefinitions しかカラム化しない。
+# このテーブルは pk/sk の 2 属性しか宣言されていないため、自動生成されるカラム表は 2 行だけ。
+# 実アイテムの属性 (id, name, color, resourceId, projectId, startDate, endDate) は出力されない。
+# よって意味のある補足は以下の comments と、docs/db/entities.md / access-patterns.md
+# (手書き) に書く。
+comments:
+  - table: resource-planner
+    tableComment: |
+      Single Table Design for resource planning.
+      pk: ORG#{clerk_org_id} - Multi-tenant isolation by Clerk organization.
+      sk: Entity prefix (RES#, PRJ#, ASN#) + entity-specific key.
+      Entities: Resource (people), Project (clients), Assignment (time allocations).
+      See ../entities.md and ../access-patterns.md for details.
+    columnComments:
+      pk: |
+        Partition key. Format: ORG#{clerk_org_id}.
+        All data for one organization shares the same pk for efficient queries.
+      sk: |
+        Sort key. Format varies by entity type:
+        - RES#{resource_id} for resources (people)
+        - PRJ#{project_id} for projects (clients)
+        - ASN#{start_date}#{assignment_id} for assignments
