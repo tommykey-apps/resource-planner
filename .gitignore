@@ -1,12 +1,18 @@
+# Dependencies
 node_modules
 
-# Output
-.output
-.vercel
-.netlify
-.wrangler
-/.svelte-kit
-/build
+# SvelteKit (in web/)
+web/.svelte-kit
+web/build
+
+# Terraform
+infra/.terraform
+infra/*.tfstate
+infra/*.tfstate.*
+infra/.terraform.lock.hcl
+
+# tbls binary
+bin/tbls
 
 # OS
 .DS_Store
@@ -24,6 +30,8 @@ vite.config.ts.timestamp-*
 
 # IDE
 .idea/
-.vscode/
 *.swp
 *.swo
+
+# Build artifacts
+*.log

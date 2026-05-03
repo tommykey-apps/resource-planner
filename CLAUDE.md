@@ -1,27 +1,34 @@
 # resource-planner
 
-要員計画アプリ。SvelteKit (adapter-static) + Tailwind v4 + `@tommykey-apps/ui-components` 消費。
+要員計画アプリ。SvelteKit (adapter-node) + Lambda + DynamoDB + Clerk 認証。
+`@tommykey-apps/ui-components` の ResourceTimeline コンポーネントを使用。
 
 ## プロジェクト構成
 
 ```
 resource-planner/
-├── src/
-│   ├── routes/
-│   │   ├── +layout.svelte
-│   │   ├── +page.svelte
-│   │   ├── +page.ts          # prerender = true (adapter-static 必須)
-│   │   └── layout.css        # Tailwind v4 entry (@import 'tailwindcss')
-│   ├── lib/
-│   └── app.html
-├── .flox/                    # flox 環境 (nodejs_22 + pnpm)
-└── .github/workflows/ci.yaml
+├── web/                      # SvelteKit (adapter-node)
+│   ├── src/
+│   │   ├── routes/
+│   │   └── lib/
+│   ├── Dockerfile            # Lambda container
+│   ├── package.json
+│   └── svelte.config.js
+├── infra/                    # Terraform
+├── docs/
+│   ├── architecture.drawio   # アーキテクチャ図
+│   └── db/                   # DB ドキュメント (tbls + 手書き)
+├── bin/                      # ローカルツール (tbls など)
+├── .github/workflows/        # CI/CD
+├── Makefile                  # 開発コマンド
+├── docker-compose.yml        # DynamoDB Local
+└── .tbls.yml                 # tbls 設定
 ```
 
 ## 開発環境
 
 ```bash
-flox activate    # nodejs 22 + pnpm 10
+flox activate    # nodejs 22 + pnpm 10 + terraform + awscli
 ```
 
 ## 認証 (private package 取得)
@@ -32,36 +39,60 @@ flox activate    # nodejs 22 + pnpm 10
 export GITHUB_TOKEN=$(gh auth token)
 ```
 
-`.npmrc` で `${GITHUB_TOKEN}` を展開している。CI では `secrets.GITHUB_TOKEN` で完結。
-
 ## コマンド
 
 ```bash
-pnpm install               # 依存インストール (要 GITHUB_TOKEN)
-pnpm dev                   # Vite dev server
-pnpm build                 # 静的サイトビルド (build/)
-pnpm check                 # svelte-check
-pnpm lint                  # ESLint + Prettier
+make help              # 利用可能なコマンド一覧
+make dev               # SvelteKit dev server
+make build             # 本番ビルド
+make db                # DynamoDB Local 起動 + テーブル作成
+make db-docs           # DB ドキュメント生成
+make clean             # コンテナ停止
 ```
 
-## デプロイ方針 (未確定)
+## インフラ
 
-- `adapter-static` で静的サイトとしてビルド
-- ホスティング先は未定 (Cloudflare Pages / S3 + CloudFront / GitHub Pages のどれか想定)
-
-## ライブラリ消費
-
-```svelte
-<script>
-  import { ResourceTimeline } from '@tommykey-apps/ui-components';
-</script>
+```bash
+cd infra
+terraform init
+terraform plan
+terraform apply
 ```
 
-ローカル開発で `ui-components` の変更を即時反映したい場合:
-- `pnpm link --global` (一時的)
-- `yalc` (推奨)
-- patch を publish して `pnpm add @tommykey-apps/ui-components@latest`
+## アーキテクチャ
+
+- **フロントエンド**: SvelteKit (SSR/Server Actions)
+- **ホスティング**: Lambda (container) + CloudFront
+- **認証**: Clerk (Microsoft Social Connection + アプリ側ドメイン制限)
+- **DB**: DynamoDB (Single Table Design)
+
+## DynamoDB スキーマ
+
+Single Table Design:
+- **pk**: `ORG#{clerk_org_id}` (マルチテナント)
+- **sk**: エンティティ別 (`RES#`, `PRJ#`, `ASN#`)
+
+| Entity | SK パターン | Attributes |
+|--------|------------|------------|
+| Resource | `RES#{id}` | id, name |
+| Project | `PRJ#{id}` | id, name, color |
+| Assignment | `ASN#{start_date}#{id}` | id, resourceId, projectId, startDate, endDate |
+
+詳細: `docs/db/entities.md`, `docs/db/access-patterns.md`
+
+## デプロイフロー
+
+1. PR → CI (web build, terraform plan)
+2. main merge → CD
+   - infra 変更時: terraform apply
+   - web: docker build → ECR push → Lambda update
 
 ## 関連リポジトリ
 
-- [tommykey-apps/ui-components](https://github.com/tommykey-apps/ui-components) — このアプリで使う Svelte コンポーネントライブラリ
+- [tommykey-apps/ui-components](https://github.com/tommykey-apps/ui-components) — ResourceTimeline コンポーネント
+
+## AWS リージョン / ドメイン
+
+- リージョン: ap-northeast-1 (東京)
+- ドメイン: planner.tommykeyapp.com
+- Terraform state: `s3://tommykeyapp-tfstate/resource-planner/terraform.tfstate`
