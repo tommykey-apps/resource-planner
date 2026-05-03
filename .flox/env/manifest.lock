@@ -3,11 +3,17 @@
   "manifest": {
     "schema-version": "1.11.0",
     "install": {
+      "awscli2": {
+        "pkg-path": "awscli2"
+      },
       "nodejs_22": {
         "pkg-path": "nodejs_22"
       },
       "pnpm": {
         "pkg-path": "pnpm"
+      },
+      "terraform": {
+        "pkg-path": "terraform"
       }
     },
     "hook": {},
@@ -16,19 +22,140 @@
   },
   "packages": [
     {
+      "attr_path": "awscli2",
+      "broken": false,
+      "derivation": "/nix/store/a8vh2vmz4c0qhy8kf5acy7sbfpjyx6af-awscli2-2.34.24.drv",
+      "description": "Unified tool to manage your AWS services",
+      "install_id": "awscli2",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=15f4ee454b1dce334612fa6843b3e05cf546efab",
+      "name": "awscli2-2.34.24",
+      "pname": "awscli2",
+      "rev": "15f4ee454b1dce334612fa6843b3e05cf546efab",
+      "rev_count": 990025,
+      "rev_date": "2026-04-30T19:45:37Z",
+      "scrape_date": "2026-05-03T08:10:22.073052Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "2.34.24",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "dist": "/nix/store/0nrql1b3pq91qydg6bbkm5igb0klczyk-awscli2-2.34.24-dist",
+        "out": "/nix/store/6rjb80bzlnq2aiyn7y44bxf98ms8jiv8-awscli2-2.34.24"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "awscli2",
+      "broken": false,
+      "derivation": "/nix/store/hwy9dlb6bjv1xxajvnqwcaqa5q6am739-awscli2-2.34.24.drv",
+      "description": "Unified tool to manage your AWS services",
+      "install_id": "awscli2",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=15f4ee454b1dce334612fa6843b3e05cf546efab",
+      "name": "awscli2-2.34.24",
+      "pname": "awscli2",
+      "rev": "15f4ee454b1dce334612fa6843b3e05cf546efab",
+      "rev_count": 990025,
+      "rev_date": "2026-04-30T19:45:37Z",
+      "scrape_date": "2026-05-03T08:44:33.512542Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "2.34.24",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "dist": "/nix/store/d979xiddsvgbwnlsmpy557dv1bix365z-awscli2-2.34.24-dist",
+        "out": "/nix/store/y48ygqd28j468i7abfh9v5yy1rvj6qc2-awscli2-2.34.24"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "awscli2",
+      "broken": false,
+      "derivation": "/nix/store/ykk16xyirdz0rj4p7k16mb6sbpn3bn58-awscli2-2.34.24.drv",
+      "description": "Unified tool to manage your AWS services",
+      "install_id": "awscli2",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=15f4ee454b1dce334612fa6843b3e05cf546efab",
+      "name": "awscli2-2.34.24",
+      "pname": "awscli2",
+      "rev": "15f4ee454b1dce334612fa6843b3e05cf546efab",
+      "rev_count": 990025,
+      "rev_date": "2026-04-30T19:45:37Z",
+      "scrape_date": "2026-05-03T09:15:55.060250Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "2.34.24",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "dist": "/nix/store/3qvvimmyvmcxrjncxyk1ihp3f5wi9pdn-awscli2-2.34.24-dist",
+        "out": "/nix/store/8jfgy4rp00vdvbr344w6bcp9s7hl6kkx-awscli2-2.34.24"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "awscli2",
+      "broken": false,
+      "derivation": "/nix/store/s59mbwm3gcil62mvsx9dyirlf27gpxqa-awscli2-2.34.24.drv",
+      "description": "Unified tool to manage your AWS services",
+      "install_id": "awscli2",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=15f4ee454b1dce334612fa6843b3e05cf546efab",
+      "name": "awscli2-2.34.24",
+      "pname": "awscli2",
+      "rev": "15f4ee454b1dce334612fa6843b3e05cf546efab",
+      "rev_count": 990025,
+      "rev_date": "2026-04-30T19:45:37Z",
+      "scrape_date": "2026-05-03T09:52:10.717149Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "2.34.24",
+      "outputs_to_install": [
+        "out",
+        "out"
+      ],
+      "outputs": {
+        "dist": "/nix/store/97src0rsmbl5wfp9jnb4bdrjbcic6dbp-awscli2-2.34.24-dist",
+        "out": "/nix/store/yfcx11pxh5ax692vvhpxmqc12dpq56f5-awscli2-2.34.24"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
       "attr_path": "nodejs_22",
       "broken": false,
       "derivation": "/nix/store/7z888jncalxcpnyphznbh1nhjivfykvr-nodejs-22.22.2.drv",
       "description": "Event-driven I/O framework for the V8 JavaScript engine",
       "install_id": "nodejs_22",
       "license": "MIT",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=1c3fe55ad329cbcb28471bb30f05c9827f724c76",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=15f4ee454b1dce334612fa6843b3e05cf546efab",
       "name": "nodejs-22.22.2",
       "pname": "nodejs_22",
-      "rev": "1c3fe55ad329cbcb28471bb30f05c9827f724c76",
-      "rev_count": 987561,
-      "rev_date": "2026-04-27T05:36:01Z",
-      "scrape_date": "2026-04-29T19:52:52.312828Z",
+      "rev": "15f4ee454b1dce334612fa6843b3e05cf546efab",
+      "rev_count": 990025,
+      "rev_date": "2026-04-30T19:45:37Z",
+      "scrape_date": "2026-05-03T08:10:46.947179Z",
       "stabilities": [
         "unstable"
       ],
@@ -51,13 +178,13 @@
       "description": "Event-driven I/O framework for the V8 JavaScript engine",
       "install_id": "nodejs_22",
       "license": "MIT",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=1c3fe55ad329cbcb28471bb30f05c9827f724c76",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=15f4ee454b1dce334612fa6843b3e05cf546efab",
       "name": "nodejs-22.22.2",
       "pname": "nodejs_22",
-      "rev": "1c3fe55ad329cbcb28471bb30f05c9827f724c76",
-      "rev_count": 987561,
-      "rev_date": "2026-04-27T05:36:01Z",
-      "scrape_date": "2026-04-29T20:42:54.209164Z",
+      "rev": "15f4ee454b1dce334612fa6843b3e05cf546efab",
+      "rev_count": 990025,
+      "rev_date": "2026-04-30T19:45:37Z",
+      "scrape_date": "2026-05-03T08:45:12.088639Z",
       "stabilities": [
         "unstable"
       ],
@@ -80,13 +207,13 @@
       "description": "Event-driven I/O framework for the V8 JavaScript engine",
       "install_id": "nodejs_22",
       "license": "MIT",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=1c3fe55ad329cbcb28471bb30f05c9827f724c76",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=15f4ee454b1dce334612fa6843b3e05cf546efab",
       "name": "nodejs-22.22.2",
       "pname": "nodejs_22",
-      "rev": "1c3fe55ad329cbcb28471bb30f05c9827f724c76",
-      "rev_count": 987561,
-      "rev_date": "2026-04-27T05:36:01Z",
-      "scrape_date": "2026-04-29T21:54:57.328896Z",
+      "rev": "15f4ee454b1dce334612fa6843b3e05cf546efab",
+      "rev_count": 990025,
+      "rev_date": "2026-04-30T19:45:37Z",
+      "scrape_date": "2026-05-03T09:16:20.084871Z",
       "stabilities": [
         "unstable"
       ],
@@ -109,13 +236,13 @@
       "description": "Event-driven I/O framework for the V8 JavaScript engine",
       "install_id": "nodejs_22",
       "license": "MIT",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=1c3fe55ad329cbcb28471bb30f05c9827f724c76",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=15f4ee454b1dce334612fa6843b3e05cf546efab",
       "name": "nodejs-22.22.2",
       "pname": "nodejs_22",
-      "rev": "1c3fe55ad329cbcb28471bb30f05c9827f724c76",
-      "rev_count": 987561,
-      "rev_date": "2026-04-27T05:36:01Z",
-      "scrape_date": "2026-04-29T23:10:37.614925Z",
+      "rev": "15f4ee454b1dce334612fa6843b3e05cf546efab",
+      "rev_count": 990025,
+      "rev_date": "2026-04-30T19:45:37Z",
+      "scrape_date": "2026-05-03T09:52:51.742444Z",
       "stabilities": [
         "unstable"
       ],
@@ -138,13 +265,13 @@
       "description": "Fast, disk space efficient package manager for JavaScript",
       "install_id": "pnpm",
       "license": "MIT",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=1c3fe55ad329cbcb28471bb30f05c9827f724c76",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=15f4ee454b1dce334612fa6843b3e05cf546efab",
       "name": "pnpm-10.33.2",
       "pname": "pnpm",
-      "rev": "1c3fe55ad329cbcb28471bb30f05c9827f724c76",
-      "rev_count": 987561,
-      "rev_date": "2026-04-27T05:36:01Z",
-      "scrape_date": "2026-04-29T19:53:06.702322Z",
+      "rev": "15f4ee454b1dce334612fa6843b3e05cf546efab",
+      "rev_count": 990025,
+      "rev_date": "2026-04-30T19:45:37Z",
+      "scrape_date": "2026-05-03T08:11:01.531501Z",
       "stabilities": [
         "unstable"
       ],
@@ -167,13 +294,13 @@
       "description": "Fast, disk space efficient package manager for JavaScript",
       "install_id": "pnpm",
       "license": "MIT",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=1c3fe55ad329cbcb28471bb30f05c9827f724c76",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=15f4ee454b1dce334612fa6843b3e05cf546efab",
       "name": "pnpm-10.33.2",
       "pname": "pnpm",
-      "rev": "1c3fe55ad329cbcb28471bb30f05c9827f724c76",
-      "rev_count": 987561,
-      "rev_date": "2026-04-27T05:36:01Z",
-      "scrape_date": "2026-04-29T20:43:12.966256Z",
+      "rev": "15f4ee454b1dce334612fa6843b3e05cf546efab",
+      "rev_count": 990025,
+      "rev_date": "2026-04-30T19:45:37Z",
+      "scrape_date": "2026-05-03T08:45:31.503967Z",
       "stabilities": [
         "unstable"
       ],
@@ -196,13 +323,13 @@
       "description": "Fast, disk space efficient package manager for JavaScript",
       "install_id": "pnpm",
       "license": "MIT",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=1c3fe55ad329cbcb28471bb30f05c9827f724c76",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=15f4ee454b1dce334612fa6843b3e05cf546efab",
       "name": "pnpm-10.33.2",
       "pname": "pnpm",
-      "rev": "1c3fe55ad329cbcb28471bb30f05c9827f724c76",
-      "rev_count": 987561,
-      "rev_date": "2026-04-27T05:36:01Z",
-      "scrape_date": "2026-04-29T21:55:12.221905Z",
+      "rev": "15f4ee454b1dce334612fa6843b3e05cf546efab",
+      "rev_count": 990025,
+      "rev_date": "2026-04-30T19:45:37Z",
+      "scrape_date": "2026-05-03T09:16:34.258953Z",
       "stabilities": [
         "unstable"
       ],
@@ -225,13 +352,13 @@
       "description": "Fast, disk space efficient package manager for JavaScript",
       "install_id": "pnpm",
       "license": "MIT",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=1c3fe55ad329cbcb28471bb30f05c9827f724c76",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=15f4ee454b1dce334612fa6843b3e05cf546efab",
       "name": "pnpm-10.33.2",
       "pname": "pnpm",
-      "rev": "1c3fe55ad329cbcb28471bb30f05c9827f724c76",
-      "rev_count": 987561,
-      "rev_date": "2026-04-27T05:36:01Z",
-      "scrape_date": "2026-04-29T23:10:57.571672Z",
+      "rev": "15f4ee454b1dce334612fa6843b3e05cf546efab",
+      "rev_count": 990025,
+      "rev_date": "2026-04-30T19:45:37Z",
+      "scrape_date": "2026-05-03T09:53:12.208449Z",
       "stabilities": [
         "unstable"
       ],
@@ -242,6 +369,122 @@
       ],
       "outputs": {
         "out": "/nix/store/4yfpaak9jcmls1hzybqxb1yh8wipr4id-pnpm-10.33.2"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "terraform",
+      "broken": false,
+      "derivation": "/nix/store/ib1j53hd4ry07lx6fmzfgb0hifjqgjv3-terraform-1.15.0.drv",
+      "description": "Tool for building, changing, and versioning infrastructure",
+      "install_id": "terraform",
+      "license": "BUSL-1.1",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=15f4ee454b1dce334612fa6843b3e05cf546efab",
+      "name": "terraform-1.15.0",
+      "pname": "terraform",
+      "rev": "15f4ee454b1dce334612fa6843b3e05cf546efab",
+      "rev_count": 990025,
+      "rev_date": "2026-04-30T19:45:37Z",
+      "scrape_date": "2026-05-03T08:12:21.729693Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": true,
+      "version": "1.15.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/7r9ds9iw4ryaphd20z7gz9hpxk867k1z-terraform-1.15.0"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "terraform",
+      "broken": false,
+      "derivation": "/nix/store/qwrxgi7hp4m42ix9qdw3gv5jknc4p96l-terraform-1.15.0.drv",
+      "description": "Tool for building, changing, and versioning infrastructure",
+      "install_id": "terraform",
+      "license": "BUSL-1.1",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=15f4ee454b1dce334612fa6843b3e05cf546efab",
+      "name": "terraform-1.15.0",
+      "pname": "terraform",
+      "rev": "15f4ee454b1dce334612fa6843b3e05cf546efab",
+      "rev_count": 990025,
+      "rev_date": "2026-04-30T19:45:37Z",
+      "scrape_date": "2026-05-03T08:47:03.342257Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": true,
+      "version": "1.15.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/adbi3x2sln04rch0rzrnyhbv7dwrh96i-terraform-1.15.0"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "terraform",
+      "broken": false,
+      "derivation": "/nix/store/34gfr9jzyxyl95w1msjpb64jsimkdb26-terraform-1.15.0.drv",
+      "description": "Tool for building, changing, and versioning infrastructure",
+      "install_id": "terraform",
+      "license": "BUSL-1.1",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=15f4ee454b1dce334612fa6843b3e05cf546efab",
+      "name": "terraform-1.15.0",
+      "pname": "terraform",
+      "rev": "15f4ee454b1dce334612fa6843b3e05cf546efab",
+      "rev_count": 990025,
+      "rev_date": "2026-04-30T19:45:37Z",
+      "scrape_date": "2026-05-03T09:17:47.081046Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": true,
+      "version": "1.15.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/kq1z18q1fpbmlqpqmkgf4pd1mby36zfi-terraform-1.15.0"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "terraform",
+      "broken": false,
+      "derivation": "/nix/store/pkcga0yvchnh32l7dmgvmj94lcik490s-terraform-1.15.0.drv",
+      "description": "Tool for building, changing, and versioning infrastructure",
+      "install_id": "terraform",
+      "license": "BUSL-1.1",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=15f4ee454b1dce334612fa6843b3e05cf546efab",
+      "name": "terraform-1.15.0",
+      "pname": "terraform",
+      "rev": "15f4ee454b1dce334612fa6843b3e05cf546efab",
+      "rev_count": 990025,
+      "rev_date": "2026-04-30T19:45:37Z",
+      "scrape_date": "2026-05-03T09:54:47.609874Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": true,
+      "version": "1.15.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/avr3pj8c8anilsx840kxpr7l4sjf85vd-terraform-1.15.0"
       },
       "system": "x86_64-linux",
       "group": "toplevel",
