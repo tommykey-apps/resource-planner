@@ -9,7 +9,6 @@ web/build
 infra/.terraform
 infra/*.tfstate
 infra/*.tfstate.*
-infra/.terraform.lock.hcl
 
 # tbls binary
 bin/tbls
