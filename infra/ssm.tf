@@ -15,3 +15,17 @@ resource "aws_ssm_parameter" "lambda_function_name" {
   type  = "String"
   value = aws_lambda_function.app.function_name
 }
+
+resource "aws_ssm_parameter" "clerk_secret_key" {
+  name  = "/${var.project}/clerk-secret-key"
+  type  = "SecureString"
+  value = var.clerk_secret_key
+  tier  = "Standard"
+}
+
+resource "aws_ssm_parameter" "clerk_publishable_key" {
+  name  = "/${var.project}/clerk-publishable-key"
+  type  = "String"
+  value = var.clerk_publishable_key
+  tier  = "Standard"
+}

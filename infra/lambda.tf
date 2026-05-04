@@ -52,6 +52,30 @@ resource "aws_iam_role_policy" "lambda_dynamodb" {
   })
 }
 
+resource "aws_iam_role_policy" "lambda_ssm" {
+  name = "${var.project}-ssm-policy"
+  role = aws_iam_role.lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = ["ssm:GetParameter"]
+        Resource = [
+          aws_ssm_parameter.clerk_secret_key.arn,
+          aws_ssm_parameter.clerk_publishable_key.arn,
+        ]
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["kms:Decrypt"]
+        Resource = "arn:aws:kms:${var.region}:${data.aws_caller_identity.current.account_id}:alias/aws/ssm"
+      }
+    ]
+  })
+}
+
 resource "aws_lambda_function" "app" {
   function_name = var.project
   role          = aws_iam_role.lambda.arn
@@ -62,10 +86,10 @@ resource "aws_lambda_function" "app" {
 
   environment {
     variables = {
-      ORIGIN                       = "https://${var.domain}"
-      DYNAMODB_TABLE               = aws_dynamodb_table.main.name
-      PUBLIC_CLERK_PUBLISHABLE_KEY = var.clerk_publishable_key
-      CLERK_SECRET_KEY             = var.clerk_secret_key
+      ORIGIN                      = "https://${var.domain}"
+      DYNAMODB_TABLE              = aws_dynamodb_table.main.name
+      CLERK_SECRET_KEY_PARAM      = aws_ssm_parameter.clerk_secret_key.name
+      CLERK_PUBLISHABLE_KEY_PARAM = aws_ssm_parameter.clerk_publishable_key.name
     }
   }
 
