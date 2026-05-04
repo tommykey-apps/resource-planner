@@ -1,10 +1,6 @@
 resource "aws_apigatewayv2_api" "api" {
   name          = "${var.project}-api"
   protocol_type = "HTTP"
-
-  tags = {
-    Project = var.project
-  }
 }
 
 resource "aws_apigatewayv2_integration" "lambda" {
@@ -25,8 +21,4 @@ resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.api.id
   name        = "$default"
   auto_deploy = true
-
-  tags = {
-    Project = var.project
-  }
 }

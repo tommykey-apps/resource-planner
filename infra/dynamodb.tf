@@ -1,8 +1,9 @@
 resource "aws_dynamodb_table" "main" {
-  name         = var.project
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "pk"
-  range_key    = "sk"
+  name                        = var.project
+  billing_mode                = "PAY_PER_REQUEST"
+  hash_key                    = "pk"
+  range_key                   = "sk"
+  deletion_protection_enabled = true
 
   attribute {
     name = "pk"
@@ -14,7 +15,11 @@ resource "aws_dynamodb_table" "main" {
     type = "S"
   }
 
-  tags = {
-    Project = var.project
+  point_in_time_recovery {
+    enabled = true
+  }
+
+  server_side_encryption {
+    enabled = true
   }
 }

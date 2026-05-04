@@ -15,10 +15,6 @@ resource "aws_iam_role" "lambda" {
       }
     ]
   })
-
-  tags = {
-    Project = var.project
-  }
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_basic" {
@@ -92,10 +88,6 @@ resource "aws_lambda_function" "app" {
       CLERK_SECRET_KEY_PARAM      = aws_ssm_parameter.clerk_secret_key.name
       CLERK_PUBLISHABLE_KEY_PARAM = aws_ssm_parameter.clerk_publishable_key.name
     }
-  }
-
-  tags = {
-    Project = var.project
   }
 
   depends_on = [aws_ecr_repository.app]
