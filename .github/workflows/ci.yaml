@@ -8,6 +8,7 @@ on:
 permissions:
   id-token: write
   contents: read
+  packages: read
 
 env:
   AWS_ROLE_ARN: arn:aws:iam::831963379503:role/resource-planner-github-actions
