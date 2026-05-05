@@ -12,7 +12,7 @@ export const load: LayoutServerLoad = ({ locals, url }) => {
 		if (!pk) {
 			throw new Error('PUBLIC_CLERK_PUBLISHABLE_KEY env is not set');
 		}
-		const returnTo = url.origin + url.pathname + url.search + url.hash;
+		const returnTo = url.origin + url.pathname + url.search;
 		redirect(307, buildSignInUrl(pk, returnTo));
 	}
 
