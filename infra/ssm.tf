@@ -22,10 +22,3 @@ resource "aws_ssm_parameter" "clerk_secret_key" {
   value = var.clerk_secret_key
   tier  = "Standard"
 }
-
-resource "aws_ssm_parameter" "clerk_publishable_key" {
-  name  = "/${var.project}/clerk-publishable-key"
-  type  = "String"
-  value = var.clerk_publishable_key
-  tier  = "Standard"
-}

@@ -24,3 +24,9 @@ variable "clerk_secret_key" {
   description = "Clerk secret key (CLERK_SECRET_KEY)"
   sensitive   = true
 }
+
+variable "allowed_domain" {
+  type        = string
+  description = "Email domain allowed to sign in (e.g., your-company.example.com)"
+  sensitive   = true
+}
