@@ -76,7 +76,7 @@ resource "aws_lambda_function" "app" {
   image_uri     = "${aws_ecr_repository.app.repository_url}:latest"
   architectures = ["arm64"]
   timeout       = 30
-  memory_size   = 512
+  memory_size   = 1024
 
   environment {
     variables = {
