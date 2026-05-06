@@ -2,7 +2,7 @@ import { sequence } from '@sveltejs/kit/hooks';
 import { error, type Handle } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
-import { withClerkHandler, clerkClient } from 'svelte-clerk/server';
+import { withClerkHandler, createClerkClient } from 'svelte-clerk/server';
 
 if (!env.CLERK_SECRET_KEY_PARAM) {
 	throw new Error('CLERK_SECRET_KEY_PARAM env not set');
@@ -22,6 +22,7 @@ if (!secretKey) {
 }
 
 const clerkHandler = withClerkHandler({ secretKey });
+const clerk = createClerkClient({ secretKey });
 
 const emailCache = new Map<string, string>();
 
@@ -38,7 +39,7 @@ const domainCheck: Handle = async ({ event, resolve }) => {
 		if (!email) email = emailCache.get(auth.userId);
 
 		if (!email) {
-			const user = await clerkClient.users.getUser(auth.userId);
+			const user = await clerk.users.getUser(auth.userId);
 			email = user.primaryEmailAddress?.emailAddress?.toLowerCase();
 			if (email) emailCache.set(auth.userId, email);
 		}
