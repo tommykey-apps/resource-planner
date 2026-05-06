@@ -7,6 +7,16 @@ resource "aws_cloudfront_distribution" "app" {
     domain_name = "${aws_apigatewayv2_api.api.id}.execute-api.${var.region}.amazonaws.com"
     origin_id   = "apigw"
 
+    custom_header {
+      name  = "X-Forwarded-Host"
+      value = var.domain
+    }
+
+    custom_header {
+      name  = "X-Forwarded-Proto"
+      value = "https"
+    }
+
     custom_origin_config {
       http_port              = 80
       https_port             = 443
