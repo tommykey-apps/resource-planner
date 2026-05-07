@@ -36,10 +36,13 @@ jobs:
 
       - uses: actions/configure-pages@v5
 
+      # destination を ./_site/db にすることで Pages の project site URL
+      # https://tommykey-apps.github.io/resource-planner/db/ で配信される。
+      # _config.yml の baseurl: /resource-planner/db と整合させる。
       - uses: actions/jekyll-build-pages@v1
         with:
           source: ./docs/db
-          destination: ./_site
+          destination: ./_site/db
 
       - uses: actions/upload-pages-artifact@v3
 
