@@ -1,0 +1,47 @@
+name: Deploy Docs to GitHub Pages
+
+# docs/db/ (tbls 自動生成 + 手書き entities/access-patterns) を Jekyll で HTML 化して
+# GitHub Pages に公開する。
+#
+# 公開 URL: https://tommykey-apps.github.io/resource-planner/db/
+#
+# 注: repo Settings > Pages > Source を「GitHub Actions」に設定する手動操作が
+# 1 度だけ必要 (issue #26 の手順を参照)。
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/db/**"
+      - ".github/workflows/pages.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./docs/db
+          destination: ./_site
+
+      - uses: actions/upload-pages-artifact@v3
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
