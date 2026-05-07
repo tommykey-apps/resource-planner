@@ -1,0 +1,78 @@
+name: Feature
+description: 新機能の追加・既存機能の拡張
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        新機能の起票テンプレ。設計判断の記録 (ADR) と振る舞いの仕様 (use-case)、API 契約 (TS 型) を AC に含める。
+        詳細は [`docs/adr/`](https://github.com/tommykey-apps/resource-planner/tree/main/docs/adr) と
+        [ADR 0001](https://github.com/tommykey-apps/resource-planner/blob/main/docs/adr/0001-typescript-types-as-api-spec.md) 参照。
+
+  - type: textarea
+    id: background
+    attributes:
+      label: 背景 / 動機
+      description: なぜこの機能が必要か。何を解決したいか。誰のための機能か。
+      placeholder: |
+        - ユーザーが ... できないため ...
+        - 既存の ... を改善するため ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: 含むもの (このイシューのスコープ)
+      description: 実装するファイル / 機能を箇条書き。スコープ外は「含まないもの」へ。
+      placeholder: |
+        - `web/src/routes/.../+page.server.ts` の actions.xxxx
+        - `web/src/lib/schemas/xxxx.ts` (Zod schema)
+        - `web/src/lib/db/xxxx.ts` (DynamoDB アクセス)
+    validations:
+      required: true
+
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: 含まないもの (別 issue に切り出し)
+      description: 関連はするが本イシューでは扱わない範囲。スコープクリープ防止のため明示する。
+
+  - type: textarea
+    id: design
+    attributes:
+      label: 設計メモ
+      description: |
+        実装前に方針を簡潔に書く。複雑な判断 (代替案の比較、トレードオフ、制約) があれば
+        ADR に切り出す候補。
+
+  - type: checkboxes
+    id: docs-acceptance
+    attributes:
+      label: 受け入れ基準 — ドキュメント
+      description: |
+        本リポジトリは型駆動 docs 戦略を採用している ([ADR 0001](https://github.com/tommykey-apps/resource-planner/blob/main/docs/adr/0001-typescript-types-as-api-spec.md))。
+        **すべての AC を満たした PR を merge する**。チェックを外して良いのは「該当しない」場合のみ (理由を PR 本文に書く)。
+      options:
+        - label: TypeScript 型 (interface / type / Zod・Valibot schema) で input/output 契約を定義した
+        - label: "`docs/use-cases.md` に該当するユースケースの Mermaid sequence diagram を追加した"
+        - label: 設計判断が必要な場合 `docs/adr/NNNN-*.md` を追加した (Nygard 形式、Status=Accepted)
+        - label: 関連する既存 ADR を Superseded by N にした (該当時のみ)
+        - label: "`docs/db/entities.md` / `docs/db/access-patterns.md` を必要に応じて更新した (DB アクセス追加 / 変更時のみ)"
+
+  - type: checkboxes
+    id: code-acceptance
+    attributes:
+      label: 受け入れ基準 — コード
+      options:
+        - label: "`pnpm check` (svelte-check) が緑"
+        - label: "`pnpm lint` が緑"
+        - label: "Terraform 変更時 `terraform validate` が緑"
+        - label: 既存テストが緑、新機能のテストを追加した (該当時)
+
+  - type: textarea
+    id: references
+    attributes:
+      label: 参考リンク
+      description: 関連 issue、設計時に参照した記事、公式ドキュメント等。
