@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 設計ドキュメント
+    url: https://github.com/tommykey-apps/resource-planner/tree/main/docs
+    about: アーキテクチャ図、ADR、use-cases、DB schema は docs/ 配下に集約 (Pages 公開: https://tommykey-apps.github.io/resource-planner/db/)
