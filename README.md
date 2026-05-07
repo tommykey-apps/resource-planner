@@ -52,6 +52,13 @@ pnpm lint                  # ESLint + Prettier
 pnpm format                # Prettier 自動修正
 ```
 
+## アーキテクチャ
+
+![Architecture](docs/architecture.png)
+
+> [docs/architecture.drawio](docs/architecture.drawio) を draw.io で開くと編集できる。
+> 図を更新したら `drawio-png` skill (またはローカル draw.io GUI) で `docs/architecture.png` を再 export して commit する。
+
 ## 関連リポジトリ
 
 - [tommykey-apps/ui-components](https://github.com/tommykey-apps/ui-components) — Svelte コンポーネントライブラリ
