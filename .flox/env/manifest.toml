@@ -11,6 +11,11 @@ nodejs_22.pkg-path = "nodejs_22"
 pnpm.pkg-path = "pnpm"
 awscli2.pkg-path = "awscli2"
 terraform.pkg-path = "terraform"
+# drawio export 用 (`drawio-png` skill が xvfb-run を要求)。
+# drawio 本体は OS パッケージ (/usr/bin/drawio) を利用、xvfb-run のみ flox で導入。
+xvfb.pkg-path = "xorg.xvfb"
+xvfb-run.pkg-path = "xvfb-run"
+xvfb-run.systems = ["x86_64-linux", "aarch64-linux"]
 # gum.pkg-path = "gum"
 # gum.version = "^0.14.5"
 
