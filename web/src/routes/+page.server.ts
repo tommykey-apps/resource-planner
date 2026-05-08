@@ -1,10 +1,18 @@
 import { error, fail } from '@sveltejs/kit';
 import { z } from 'zod';
-import { resourceCreateSchema, resourceUpdateSchema } from '$lib/schemas';
+import {
+	resourceCreateSchema,
+	resourceUpdateSchema,
+	projectCreateSchema,
+	projectUpdateSchema
+} from '$lib/schemas';
 import {
 	createResource,
 	updateResource,
-	deleteResource
+	deleteResource,
+	createProject,
+	updateProject,
+	deleteProject
 } from '$lib/repository';
 import type { Actions } from './$types';
 
@@ -82,5 +90,55 @@ export const actions: Actions = {
 		// 現状は Resource 単体のみ削除するため、関連 Assignment は orphan として残る。
 		await deleteResource(orgId, id);
 		return { action: 'deleteResource', success: true };
+	},
+
+	createProject: async ({ request, locals }) => {
+		const orgId = requireOrg(locals);
+		const data = await request.formData();
+		const parsed = projectCreateSchema.safeParse({
+			name: data.get('name'),
+			color: data.get('color')
+		});
+		if (!parsed.success) {
+			return fail(400, {
+				action: 'createProject',
+				errors: formatErrors(parsed)
+			});
+		}
+		await createProject(orgId, parsed.data);
+		return { action: 'createProject', success: true };
+	},
+
+	updateProject: async ({ request, locals }) => {
+		const orgId = requireOrg(locals);
+		const data = await request.formData();
+		const parsed = projectUpdateSchema.safeParse({
+			id: data.get('id'),
+			name: data.get('name'),
+			color: data.get('color')
+		});
+		if (!parsed.success) {
+			return fail(400, {
+				action: 'updateProject',
+				errors: formatErrors(parsed)
+			});
+		}
+		await updateProject(orgId, parsed.data);
+		return { action: 'updateProject', success: true };
+	},
+
+	deleteProject: async ({ request, locals }) => {
+		const orgId = requireOrg(locals);
+		const data = await request.formData();
+		const id = data.get('id');
+		if (typeof id !== 'string' || !id) {
+			return fail(400, {
+				action: 'deleteProject',
+				errors: { id: 'id が必要です' }
+			});
+		}
+		// cascade delete は PR-H で実装予定。現状は orphan を残す。
+		await deleteProject(orgId, id);
+		return { action: 'deleteProject', success: true };
 	}
 };
