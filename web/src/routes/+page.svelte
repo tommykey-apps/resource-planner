@@ -10,6 +10,7 @@
 	import ResourceManager from '$lib/components/ResourceManager.svelte';
 	import ProjectManager from '$lib/components/ProjectManager.svelte';
 	import AssignmentCreator from '$lib/components/AssignmentCreator.svelte';
+	import AssignmentManager from '$lib/components/AssignmentManager.svelte';
 	import type { Assignment as DbAssignment } from '$lib/types';
 	import type { PageData } from './$types';
 
@@ -82,6 +83,7 @@
 			<ResourceManager {resources} />
 			<ProjectManager {projects} />
 			<AssignmentCreator {resources} {projects} />
+			<AssignmentManager assignments={dbAssignments} {resources} {projects} />
 		</div>
 	</header>
 
