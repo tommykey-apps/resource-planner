@@ -30,7 +30,7 @@
 ## アプリ本体
 
 - 本番: <https://planner.tommykeyapp.com/>
-- 認証: Clerk (Microsoft Social Connection、`@your-company.example.com` ドメイン制限)
+- 認証: Clerk (Microsoft Social Connection、許可ドメイン制限あり、具体ドメインは env で管理)
 
 ## 開発フロー
 

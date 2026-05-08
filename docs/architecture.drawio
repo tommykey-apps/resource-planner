@@ -12,7 +12,7 @@
         </mxCell>
 
         <!-- User -->
-        <mxCell id="user" value="User&#xa;(@your-company.example.com)" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.users;labelBackgroundColor=none;sketch=0;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="user" value="User&#xa;(allowed domain)" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.users;labelBackgroundColor=none;sketch=0;fontStyle=1;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="60" y="320" width="60" height="60" as="geometry" />
         </mxCell>
 
@@ -62,7 +62,7 @@
         </mxCell>
 
         <!-- Clerk callout -->
-        <mxCell id="clerk_box" value="Clerk (External SaaS)&#10;Account Portal hosted UI&#10;Microsoft Social Connection&#10;App side: @your-company.example.com domain check" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=11;align=left;verticalAlign=top;spacing=10;fontStyle=1;" vertex="1" parent="1">
+        <mxCell id="clerk_box" value="Clerk (External SaaS)&#10;Account Portal hosted UI&#10;Microsoft Social Connection&#10;App side: allowed domain check" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=11;align=left;verticalAlign=top;spacing=10;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="1100" y="320" width="240" height="100" as="geometry" />
         </mxCell>
 
