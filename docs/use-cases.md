@@ -193,8 +193,8 @@ UC-01 と同形 (UpdateItem / DeleteItem)。差分は更新対象が `name` + `c
 
 ### 概要
 
-人 (Resource) を案件 (Project) に **期間 (startDate 〜 endDate inclusive)** でアサインする。
-タイムラインに帯として表示される。
+人 (Resource) を案件 (Project) に **期間 `[startDate, endDateExclusive)` の半開区間** でアサインする。
+タイムラインに帯として表示される。フォーム UX は inclusive (「終了日 5/31」と入力)、内部は exclusive ([ADR 0004](adr/0004-end-date-exclusive-with-form-transform.md))。
 
 ### アクター / 前提条件
 
@@ -208,7 +208,7 @@ UC-01 と同形 (UpdateItem / DeleteItem)。差分は更新対象が `name` + `c
 - 画面: [`web/src/routes/+page.svelte`](../web/src/routes/+page.svelte) (`<AssignmentCreator />` 配置)
 - UI コンポーネント: [`web/src/lib/components/AssignmentCreator.svelte`](../web/src/lib/components/AssignmentCreator.svelte)
 - Form action: [`web/src/routes/+page.server.ts`](../web/src/routes/+page.server.ts) の `actions.createAssignment`
-- 検証 schema: [`web/src/lib/schemas/index.ts`](../web/src/lib/schemas/index.ts) の `assignmentCreateSchema` (`refine` で `startDate <= endDate`)
+- 検証 schema: [`web/src/lib/schemas/index.ts`](../web/src/lib/schemas/index.ts) の `assignmentCreateSchema` (`refine` で `startDate <= endDate`、`.transform()` で `endDateExclusive = addDays(endDate, 1)`)
 - DB アクセス: [`web/src/lib/repository/assignment.ts`](../web/src/lib/repository/assignment.ts)
 
 ### Mermaid sequence
@@ -220,17 +220,17 @@ sequenceDiagram
     participant Server as +page.server.ts
     participant DDB as DynamoDB
 
-    User->>SK: 「+ アサインを追加」<br/>resource / project 選択 + 期間入力
+    User->>SK: 「+ アサインを追加」<br/>resource / project 選択 + 期間入力 (inclusive UX)
     SK->>Server: POST ?/createAssignment<br/>FormData(resourceId, projectId,<br/>startDate, endDate)
 
     Server->>Server: requireOrg(locals) → orgId
-    Server->>Server: assignmentCreateSchema.safeParse<br/>(refine: startDate <= endDate)
+    Server->>Server: assignmentCreateSchema.safeParse<br/>(refine: startDate <= endDate)<br/>.transform(): endDateExclusive = addDays(endDate, 1)
     alt 検証失敗
         Server-->>SK: fail(400, { errors })
         SK-->>User: 該当フィールドにエラー
     else 検証成功
         Server->>Server: id = ulid()<br/>sk = ASN#{startDate}#{id}
-        Server->>DDB: PutItem<br/>pk=ORG#{orgId}, sk=ASN#...,<br/>{ id, resourceId, projectId,<br/>startDate, endDate }<br/>ConditionExpression: attribute_not_exists(sk)
+        Server->>DDB: PutItem<br/>pk=ORG#{orgId}, sk=ASN#...,<br/>{ id, resourceId, projectId,<br/>startDate, endDateExclusive }<br/>ConditionExpression: attribute_not_exists(sk)
         DDB-->>Server: 200
         Server-->>SK: success
         SK->>SK: invalidate → load 再実行
@@ -238,17 +238,21 @@ sequenceDiagram
     end
 ```
 
-### endDate の取り扱い
+### endDate の取り扱い (ADR 0004)
 
-- フォーム / DB / UC docs はすべて **inclusive** (5/1〜5/31 で endDate=2026-05-31)。ADR 0003 参照
-- ResourceTimeline は **end-exclusive** を要求するため、`+page.svelte` で `toTimelineAssignment(a, project)` を経由して +1 day した Date を渡す
-- 帯のラベルと色は `Project.name` / `Project.color` から compose される (Resource のみ knows、Project は app 層で結合)
+業界標準 (RFC 5545 / Google Calendar / PostgreSQL daterange / Java / Rust / Python / Bryntum) と整合する **「内部 exclusive 半開区間 + フォーム inclusive UX + Zod transform で 1 箇所変換」** 構成:
+
+- **フォーム入力**: ユーザーは「終了日 (含む) 5/31」と入力 (UX inclusive)
+- **Zod `.transform()`**: `endDateExclusive = addDays(input.endDate, 1)` で `2026-06-01` に変換 (**唯一の `+1` 変換場所**)
+- **DB / API / Repository / Type**: `endDateExclusive: "2026-06-01"` で統一
+- **ResourceTimeline 渡し**: 規約一致 (両者 exclusive) のため adapter は型変換のみ、`±1 day` 不要
+- **帯のラベルと色**: `Project.name` / `Project.color` から compose (Resource のみ knows、Project は app 層で結合)
 
 ### エラーケース
 
 - **未認証 / Org 未指定**: `requireOrg(locals)` が `error(401|403)`
 - **resourceId / projectId が空 or 不正**: `errors.resourceId` / `errors.projectId` を表示
-- **startDate > endDate**: Zod `refine` が「終了日は開始日以降にしてください」を返す
+- **startDate > endDate**: Zod `refine` が「終了日は開始日以降にしてください」を返す (transform 前の inclusive 比較)
 - **resource / project が同時刻に削除されていた**: FK 制約は無いため Put は成功する。タイムライン表示時に projectId が見つからず帯のラベル / 色がフォールバックする (UI で警告は出さない、PR-H で削除フローを cascade 化したらこのケースも消える)
 - **SK 衝突**: ULID 衝突は実質ゼロ。`attribute_not_exists(sk)` ConditionExpression が万一のときに防御
 

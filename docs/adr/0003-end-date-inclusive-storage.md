@@ -1,6 +1,6 @@
 # 0003. endDate は inclusive で保存し、ResourceTimeline 境界で adapter 変換する
 
-- **Status**: Accepted
+- **Status**: Superseded by [ADR 0004](0004-end-date-exclusive-with-form-transform.md)
 - **Date**: 2026-05-08
 - **Deciders**: @tommykey0925
 
@@ -56,3 +56,15 @@ DB 保存: `YYYY-MM-DD` string (Asia/Tokyo の暦日)。`Date.toISOString().slic
 - [ResourceTimeline API (調査結果、Plan ファイル参照)](#)
 - [ADR 0001](0001-typescript-types-as-api-spec.md)
 - 関連 issue: [#35](https://github.com/tommykey-apps/resource-planner/issues/35)
+
+## Superseded note (2026-05-08)
+
+業界標準 (RFC 5545 / Google Calendar API / PostgreSQL daterange / Java / Rust / Python / Bryntum) との整合
+および adapter から `±1 day` を削除するため、本 ADR は [ADR 0004](0004-end-date-exclusive-with-form-transform.md)
+で置き換えられた。
+
+新規約の概要:
+- 内部 (DB / API / Repository / Type) は **exclusive 半開区間 `[start, end)`** で統一
+- フォーム UX は引き続き inclusive (「終了日 5/31」と入力)
+- 変換は **Zod `.transform()` の 1 箇所** のみ (フォーム境界、`addDays(input.endDate, 1)`)
+- `Assignment.endDate` → `Assignment.endDateExclusive` にリネーム (型レベル誤用検知)

@@ -1,32 +1,14 @@
-import type { Assignment as DbAssignment, DateString } from './types';
+import type { Assignment as DbAssignment } from './types';
 import type { Assignment as TimelineAssignment } from '@tommykey-apps/ui-components';
+import { parseLocalDate, formatLocalDate } from './date';
 
 /**
- * DB 保存形式 (inclusive YYYY-MM-DD) と ResourceTimeline 形式 (Date / end-exclusive) を相互変換する。
+ * DB 形式 (`Assignment`、`endDateExclusive` 文字列) と ResourceTimeline 形式
+ * (`TimelineAssignment`、`endDate: Date` exclusive) の **型変換** を担う。
  *
- * ADR 0003 参照:
- * - DB / フォーム / use-cases docs はすべて inclusive 統一
- * - ResourceTimeline は end-exclusive ライブラリ規約 → 境界でのみ ±1 day 変換
+ * 半開区間規約は両者一致 (ADR 0004) のため、`±1 day` 変換は不要。
+ * `Date <-> string` の変換と Project の `label` / `color` compose のみを行う。
  */
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
-/** YYYY-MM-DD (Asia/Tokyo) から、その日の 0:00 ローカルを表す Date を作る。 */
-export function parseLocalDate(s: DateString): Date {
-	const [y, m, d] = s.split('-').map(Number);
-	return new Date(y, m - 1, d);
-}
-
-/**
- * Date を Asia/Tokyo の YYYY-MM-DD に変換する。
- * `Date.toISOString().slice(0, 10)` は UTC ベースで JST と日付がずれることがあるため自前実装。
- */
-export function formatLocalDate(d: Date): DateString {
-	const y = d.getFullYear();
-	const m = String(d.getMonth() + 1).padStart(2, '0');
-	const day = String(d.getDate()).padStart(2, '0');
-	return `${y}-${m}-${day}`;
-}
 
 /**
  * DB Assignment + 関連 Project の color/label を ResourceTimeline 用に compose。
@@ -36,13 +18,11 @@ export function toTimelineAssignment(
 	a: DbAssignment,
 	project: { name: string; color: string } | undefined
 ): TimelineAssignment {
-	const end = parseLocalDate(a.endDate);
-	end.setDate(end.getDate() + 1); // inclusive → end-exclusive
 	return {
 		id: a.id,
 		resourceId: a.resourceId,
 		startDate: parseLocalDate(a.startDate),
-		endDate: end,
+		endDate: parseLocalDate(a.endDateExclusive),
 		label: project?.name,
 		color: project?.color
 	};
@@ -53,12 +33,13 @@ export function toTimelineAssignment(
  * timeline は projectId を持たないため、変更前の DbAssignment と merge して projectId を保持する。
  */
 export function fromTimelineAssignment(t: TimelineAssignment, prev: DbAssignment): DbAssignment {
-	const end = new Date(t.endDate);
-	end.setDate(end.getDate() - 1); // end-exclusive → inclusive
 	return {
 		...prev,
 		resourceId: t.resourceId,
 		startDate: formatLocalDate(t.startDate),
-		endDate: formatLocalDate(end)
+		endDateExclusive: formatLocalDate(t.endDate)
 	};
 }
+
+// 後方互換: AssignmentCreator など既存コードが直接 import している。`lib/date.ts` から re-export。
+export { parseLocalDate, formatLocalDate } from './date';
