@@ -1,0 +1,21 @@
+title: resource-planner Docs
+description: 設計ドキュメント (Architecture + ADR + Use Cases + DB Schema)
+theme: jekyll-theme-cayman
+markdown: kramdown
+
+# project site (`tommykey-apps.github.io/resource-planner/`) のため baseurl を repo 名に揃える。
+# 未設定だと github-metadata gem が `/resource-planner` を auto-set してくれるが、
+# 明示しておくと jekyll-relative-links のリンク解決が安定する。
+baseurl: /resource-planner
+
+# .md リンクを Jekyll ビルド時に .html に自動変換 (GitHub UI 上でも .md として動くまま、Pages でも 200)
+plugins:
+  - jekyll-relative-links
+
+relative_links:
+  enabled: true
+  collections: true
+
+# 編集元の .drawio は配信不要 (.png のみ Pages で見せる)
+exclude:
+  - "*.drawio"
