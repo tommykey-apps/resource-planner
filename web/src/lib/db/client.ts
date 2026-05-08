@@ -1,8 +1,11 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
+import { building } from '$app/environment';
 import { env } from '$env/dynamic/private';
 
-if (!env.DYNAMODB_TABLE) {
+// SvelteKit の `analyse` ステップ (postbuild) はサーバーモジュールを top-level 評価するため、
+// build 中は env チェックをスキップする (Lambda 実行時にのみ env が揃う)。
+if (!building && !env.DYNAMODB_TABLE) {
 	throw new Error('DYNAMODB_TABLE env not set');
 }
 
@@ -18,4 +21,4 @@ export const ddb = DynamoDBDocumentClient.from(client, {
 	}
 });
 
-export const TABLE = env.DYNAMODB_TABLE;
+export const TABLE = env.DYNAMODB_TABLE!;

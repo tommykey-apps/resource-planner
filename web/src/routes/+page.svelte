@@ -3,54 +3,41 @@
 		ResourceTimeline,
 		TimelineToolbar,
 		ZOOMS,
-		type Assignment,
-		type Resource
+		type Assignment as TimelineAssignment
 	} from '@tommykey-apps/ui-components';
+	import { toTimelineAssignment, fromTimelineAssignment } from '$lib/timeline-adapter';
+	import type { Assignment as DbAssignment } from '$lib/types';
+	import type { PageData } from './$types';
 
-	const resources: Resource[] = [
-		{ id: 'tanaka', name: '田中 太郎' },
-		{ id: 'suzuki', name: '鈴木 花子' },
-		{ id: 'sato', name: '佐藤 一郎' },
-		{ id: 'takahashi', name: '高橋 二郎' }
-	];
+	let { data }: { data: PageData } = $props();
 
-	let assignments = $state<Assignment[]>([
-		{
-			id: 'a1',
-			resourceId: 'tanaka',
-			startDate: new Date(2026, 4, 4),
-			endDate: new Date(2026, 4, 15),
-			label: 'A社 案件',
-			color: '#4f46e5'
-		},
-		{
-			id: 'a2',
-			resourceId: 'suzuki',
-			startDate: new Date(2026, 4, 4),
-			endDate: new Date(2026, 4, 22),
-			label: 'B社 PoC',
-			color: '#10b981'
-		},
-		{
-			id: 'a3',
-			resourceId: 'sato',
-			startDate: new Date(2026, 4, 11),
-			endDate: new Date(2026, 4, 25),
-			label: '社内ツール',
-			color: '#f59e0b'
-		},
-		{
-			id: 'a4',
-			resourceId: 'takahashi',
-			startDate: new Date(2026, 4, 4),
-			endDate: new Date(2026, 5, 8),
-			label: 'D社 長期',
-			color: '#ef4444'
-		}
-	]);
+	// DB 形式のアサインを source of truth として保持。
+	// timeline 形式 (end-exclusive Date) は $derived で都度 compose する。
+	// data.assignments は load 再実行 (invalidateAll 後など) で更新されるため $effect で再同期。
+	let dbAssignments = $state<DbAssignment[]>([]);
+	$effect(() => {
+		dbAssignments = data.assignments;
+	});
 
-	let viewportStart = $state(new Date(2026, 4, 4));
+	const resources = $derived(data.resources);
+	const projects = $derived(data.projects);
+	const projectMap = $derived(new Map(projects.map((p) => [p.id, p])));
+
+	const timelineAssignments = $derived(
+		dbAssignments.map((a) => toTimelineAssignment(a, projectMap.get(a.projectId)))
+	);
+
+	let viewportStart = $state(new Date());
 	let zoom = $state(ZOOMS.day);
+
+	function handleUpdate(updated: TimelineAssignment) {
+		// PR-F で +server.ts API への fetch + optimistic UI revert を追加予定。
+		// 現状は in-memory のみ (リロードで消える)。
+		const prev = dbAssignments.find((a) => a.id === updated.id);
+		if (!prev) return;
+		const next = fromTimelineAssignment(updated, prev);
+		dbAssignments = dbAssignments.map((a) => (a.id === next.id ? next : a));
+	}
 </script>
 
 <main>
@@ -74,15 +61,11 @@
 
 	<ResourceTimeline
 		{resources}
-		{assignments}
+		assignments={timelineAssignments}
 		bind:viewportStart
 		{zoom}
-		onMove={(updated) => {
-			assignments = assignments.map((a) => (a.id === updated.id ? updated : a));
-		}}
-		onResize={(updated) => {
-			assignments = assignments.map((a) => (a.id === updated.id ? updated : a));
-		}}
+		onMove={handleUpdate}
+		onResize={handleUpdate}
 	/>
 </main>
 
