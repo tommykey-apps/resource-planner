@@ -69,7 +69,19 @@ body:
         - label: "`pnpm check` (svelte-check) が緑"
         - label: "`pnpm lint` が緑"
         - label: "Terraform 変更時 `terraform validate` が緑"
-        - label: 既存テストが緑、新機能のテストを追加した (該当時)
+
+  - type: checkboxes
+    id: test-acceptance
+    attributes:
+      label: 受け入れ基準 — テスト
+      description: |
+        TDD で開発する ([ADR 0007](https://github.com/tommykey-apps/resource-planner/blob/main/docs/adr/0007-tdd-with-vitest-and-playwright.md))。
+        チェックを外して良いのは「該当しない」場合のみ (理由を PR 本文に書く)。
+      options:
+        - label: "Unit test (`*.test.ts`) を `pnpm test` で緑にした (純粋関数、コンポーネント)"
+        - label: "Integration test (`*.integration.test.ts`) を緑にした (DDB / 外部依存込み、該当時)"
+        - label: "E2E test (`web/e2e/**/*.spec.ts`) を緑にした (画面遷移を伴う機能、該当時)"
+        - label: "既存テストが緑、coverage threshold を下げていない"
 
   - type: textarea
     id: references

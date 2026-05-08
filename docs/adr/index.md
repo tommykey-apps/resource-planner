@@ -13,6 +13,7 @@ resource-planner の設計判断を Michael Nygard 形式で記録する。
 | [0004](0004-end-date-exclusive-with-form-transform.md) | endDate は exclusive 半開区間 + フォーム境界で Zod transform | Accepted | 2026-05-08 |
 | [0005](0005-assignment-drag-resize-transport.md) | Assignment ドラッグ / リサイズは `+server.ts` API + Optimistic UI | Accepted | 2026-05-08 |
 | [0006](0006-cascade-delete-strategy.md) | Resource / Project の削除は cascade (TransactWriteItems) | Accepted | 2026-05-08 |
+| [0007](0007-tdd-with-vitest-and-playwright.md) | TDD で開発する: Vitest + Playwright | Accepted | 2026-05-09 |
 
 ## テンプレ
 
