@@ -8,6 +8,7 @@
 	import { toTimelineAssignment, fromTimelineAssignment } from '$lib/timeline-adapter';
 	import ResourceManager from '$lib/components/ResourceManager.svelte';
 	import ProjectManager from '$lib/components/ProjectManager.svelte';
+	import AssignmentCreator from '$lib/components/AssignmentCreator.svelte';
 	import type { Assignment as DbAssignment } from '$lib/types';
 	import type { PageData } from './$types';
 
@@ -48,6 +49,7 @@
 		<div class="actions">
 			<ResourceManager {resources} />
 			<ProjectManager {projects} />
+			<AssignmentCreator {resources} {projects} />
 		</div>
 	</header>
 

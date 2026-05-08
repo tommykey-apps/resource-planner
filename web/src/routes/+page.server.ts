@@ -4,7 +4,8 @@ import {
 	resourceCreateSchema,
 	resourceUpdateSchema,
 	projectCreateSchema,
-	projectUpdateSchema
+	projectUpdateSchema,
+	assignmentCreateSchema
 } from '$lib/schemas';
 import {
 	createResource,
@@ -12,7 +13,8 @@ import {
 	deleteResource,
 	createProject,
 	updateProject,
-	deleteProject
+	deleteProject,
+	createAssignment
 } from '$lib/repository';
 import type { Actions } from './$types';
 
@@ -140,5 +142,26 @@ export const actions: Actions = {
 		// cascade delete は PR-H で実装予定。現状は orphan を残す。
 		await deleteProject(orgId, id);
 		return { action: 'deleteProject', success: true };
+	},
+
+	createAssignment: async ({ request, locals }) => {
+		const orgId = requireOrg(locals);
+		const data = await request.formData();
+		const parsed = assignmentCreateSchema.safeParse({
+			resourceId: data.get('resourceId'),
+			projectId: data.get('projectId'),
+			startDate: data.get('startDate'),
+			endDate: data.get('endDate')
+		});
+		if (!parsed.success) {
+			return fail(400, {
+				action: 'createAssignment',
+				errors: formatErrors(parsed)
+			});
+		}
+		// assignmentCreateSchema は startDate <= endDate を refine 検証済 (inclusive)。
+		// SK は ASN#{startDate}#{ulid()} で時系列順にソートされる (ADR 0003)。
+		await createAssignment(orgId, parsed.data);
+		return { action: 'createAssignment', success: true };
 	}
 };
