@@ -1,16 +1,17 @@
 <!--
   Mermaid render for GitHub Pages.
 
-  jekyll-theme-cayman の `_layouts/default.html` が `{% include head-custom.html %}` を hook するため、
-  ここに <script> を inject すれば全ページの <head> に挿入される。
+  jekyll-theme-cayman の _layouts/default.html が head-custom.html を include する hook を
+  持っているため、ここに script を inject すれば全ページの <head> に挿入される。
 
-  ` ```mermaid ` で書かれた markdown コードブロックは kramdown により
-  `<pre><code class="language-mermaid">...</code></pre>` に変換される。
-  これを `<div class="mermaid">` に置換した上で `mermaid.run()` で SVG 描画。
+  Markdown のコードブロック (3 backtick + mermaid 言語指定) は kramdown により
+  pre > code.language-mermaid に変換される。これを div.mermaid に置換した上で
+  mermaid.run() で SVG 描画。
 
-  注: script 全体を `{% raw %}` `{% endraw %}` で囲むこと。JavaScript の `{`/`}` を Liquid に
-  Liquid タグと誤認させないため (誤認すると _layouts/default.html で
-  `Liquid Exception: stack level too deep` エラーになる)。
+  重要: このコメント内には Liquid タグ風の記述 (波括弧 + パーセント) を一切書かないこと。
+  Liquid は HTML コメントを認識しないため、コメント内の Liquid タグも実行される。
+  特に include 文をコメント内に書くと自分自身を recursive include して
+  「stack level too deep」または「raw tag was never closed」エラーになる。
 -->
 {%- raw -%}
 <script type="module">
