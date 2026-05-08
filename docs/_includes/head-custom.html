@@ -1,0 +1,29 @@
+<!--
+  Mermaid render for GitHub Pages.
+
+  jekyll-theme-cayman の `_layouts/default.html` が `{% include head-custom.html %}` を hook するため、
+  ここに <script> を inject すれば全ページの <head> に挿入される。
+
+  ` ```mermaid ` で書かれた markdown コードブロックは kramdown により
+  `<pre><code class="language-mermaid">...</code></pre>` に変換される。
+  これを `<div class="mermaid">` に置換した上で `mermaid.run()` で SVG 描画。
+
+  注: script 全体を `{% raw %}` `{% endraw %}` で囲むこと。JavaScript の `{`/`}` を Liquid に
+  Liquid タグと誤認させないため (誤認すると _layouts/default.html で
+  `Liquid Exception: stack level too deep` エラーになる)。
+-->
+{%- raw -%}
+<script type="module">
+	import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+	mermaid.initialize({ startOnLoad: false, theme: 'default' });
+	document.addEventListener('DOMContentLoaded', () => {
+		document.querySelectorAll('pre > code.language-mermaid').forEach((code) => {
+			const div = document.createElement('div');
+			div.className = 'mermaid';
+			div.textContent = code.textContent;
+			code.parentElement.replaceWith(div);
+		});
+		mermaid.run();
+	});
+</script>
+{%- endraw -%}
