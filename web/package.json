@@ -39,12 +39,17 @@
 		"vite": "^8.0.7"
 	},
 	"dependencies": {
+		"@aws-sdk/client-dynamodb": "^3.1045.0",
 		"@aws-sdk/client-ssm": "^3.1042.0",
+		"@aws-sdk/lib-dynamodb": "^3.1045.0",
 		"@tommykey-apps/ui-components": "^0.4.0",
 		"bits-ui": "^2.18.0",
 		"clsx": "^2.1.1",
 		"svelte-clerk": "^1.1.5",
+		"svelte-sonner": "^1.1.1",
 		"tailwind-merge": "^3.5.0",
-		"tailwind-variants": "^3.2.2"
+		"tailwind-variants": "^3.2.2",
+		"ulid": "^3.0.2",
+		"zod": "^4.4.3"
 	}
 }
