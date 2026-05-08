@@ -2,10 +2,25 @@
 	import { enhance } from '$app/forms';
 	import { Button } from './ui/button';
 	import Dialog from './Dialog.svelte';
-	import type { Project } from '$lib/types';
+	import type { Project, Assignment } from '$lib/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
 
-	let { projects }: { projects: Project[] } = $props();
+	let {
+		projects,
+		assignments
+	}: {
+		projects: Project[];
+		assignments: Assignment[];
+	} = $props();
+
+	/** 各 Project に紐づく Assignment 数 (cascade delete 警告用、UC-06) */
+	const assignmentCountByProject = $derived.by(() => {
+		const m = new Map<string, number>();
+		for (const a of assignments) {
+			m.set(a.projectId, (m.get(a.projectId) ?? 0) + 1);
+		}
+		return m;
+	});
 
 	const DEFAULT_COLOR = '#4D72F3';
 
@@ -64,6 +79,7 @@
 		{:else}
 			<ul class="border-border divide-border divide-y border">
 				{#each projects as p (p.id)}
+					{@const count = assignmentCountByProject.get(p.id) ?? 0}
 					<li class="flex items-center justify-between gap-2 px-3 py-2">
 						<span class="flex items-center gap-2 text-sm">
 							<span
@@ -71,6 +87,9 @@
 								style="background-color: {p.color}; border-radius: calc(var(--radius) * 0.4)"
 							></span>
 							{p.name}
+							{#if count > 0}
+								<span class="text-muted-foreground text-xs">({count} 件のアサイン)</span>
+							{/if}
 						</span>
 						<div class="flex gap-1">
 							<Button size="xs" variant="outline" onclick={() => startEdit(p)}>編集</Button>
@@ -79,11 +98,11 @@
 								action="?/deleteProject"
 								use:enhance={deleteSubmit}
 								onsubmit={(e) => {
-									if (
-										!confirm(
-											`「${p.name}」を削除しますか?\n(関連アサインの自動削除は近日対応予定)`
-										)
-									) {
+									const msg =
+										count > 0
+											? `「${p.name}」と関連 ${count} 件のアサインを削除しますか?\n(取り消しできません)`
+											: `「${p.name}」を削除しますか?`;
+									if (!confirm(msg)) {
 										e.preventDefault();
 									}
 								}}

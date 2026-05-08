@@ -2,10 +2,25 @@
 	import { enhance } from '$app/forms';
 	import { Button } from './ui/button';
 	import Dialog from './Dialog.svelte';
-	import type { Resource } from '$lib/types';
+	import type { Resource, Assignment } from '$lib/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
 
-	let { resources }: { resources: Resource[] } = $props();
+	let {
+		resources,
+		assignments
+	}: {
+		resources: Resource[];
+		assignments: Assignment[];
+	} = $props();
+
+	/** 各 Resource に紐づく Assignment 数 (cascade delete 時の警告で使う、UC-06) */
+	const assignmentCountByResource = $derived.by(() => {
+		const m = new Map<string, number>();
+		for (const a of assignments) {
+			m.set(a.resourceId, (m.get(a.resourceId) ?? 0) + 1);
+		}
+		return m;
+	});
 
 	let listOpen = $state(false);
 	let formOpen = $state(false);
@@ -59,8 +74,14 @@
 		{:else}
 			<ul class="border-border divide-border divide-y border">
 				{#each resources as r (r.id)}
+					{@const count = assignmentCountByResource.get(r.id) ?? 0}
 					<li class="flex items-center justify-between gap-2 px-3 py-2">
-						<span class="text-sm">{r.name}</span>
+						<span class="text-sm">
+							{r.name}
+							{#if count > 0}
+								<span class="text-muted-foreground ml-1 text-xs">({count} 件のアサイン)</span>
+							{/if}
+						</span>
 						<div class="flex gap-1">
 							<Button size="xs" variant="outline" onclick={() => startEdit(r)}>編集</Button>
 							<form
@@ -68,7 +89,11 @@
 								action="?/deleteResource"
 								use:enhance={deleteSubmit}
 								onsubmit={(e) => {
-									if (!confirm(`「${r.name}」を削除しますか?\n(関連アサインの自動削除は近日対応予定)`)) {
+									const msg =
+										count > 0
+											? `「${r.name}」と関連 ${count} 件のアサインを削除しますか?\n(取り消しできません)`
+											: `「${r.name}」を削除しますか?`;
+									if (!confirm(msg)) {
 										e.preventDefault();
 									}
 								}}

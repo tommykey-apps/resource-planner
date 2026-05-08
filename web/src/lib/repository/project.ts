@@ -1,9 +1,16 @@
-import { PutCommand, UpdateCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import {
+	PutCommand,
+	UpdateCommand,
+	QueryCommand,
+	TransactWriteCommand
+} from '@aws-sdk/lib-dynamodb';
 import { ddb, TABLE } from '$lib/db/client';
 import { newId } from '$lib/id';
-import { pk, projectSk } from './keys';
+import { pk, projectSk, SK_PREFIX } from './keys';
 import type { Project } from '$lib/types';
 import type { ProjectCreateInput, ProjectUpdateInput } from '$lib/schemas';
+
+const TRANSACT_MAX_ITEMS = 100;
 
 export async function createProject(orgId: string, input: ProjectCreateInput): Promise<Project> {
 	const id = newId();
@@ -31,12 +38,58 @@ export async function updateProject(orgId: string, input: ProjectUpdateInput): P
 	);
 }
 
+/**
+ * Project と関連 Assignment を **原子的に** cascade delete する (UC-06 / ADR 0006)。
+ * 詳細は [`./resource.ts` の `deleteResource`](./resource.ts) と同じ設計。
+ */
 export async function deleteProject(orgId: string, id: string): Promise<void> {
-	// 関連 Assignment の cascade は PR-H で実装。
+	const orgPk = pk(orgId);
+	const related = await queryRelatedAssignmentSkByProject(orgId, id);
+
+	const totalItems = related.length + 1;
+	if (totalItems > TRANSACT_MAX_ITEMS) {
+		throw new Error(
+			`cascade delete exceeds ${TRANSACT_MAX_ITEMS} items (related assignments: ${related.length})`
+		);
+	}
+
 	await ddb.send(
-		new DeleteCommand({
-			TableName: TABLE,
-			Key: { pk: pk(orgId), sk: projectSk(id) }
+		new TransactWriteCommand({
+			TransactItems: [
+				{ Delete: { TableName: TABLE, Key: { pk: orgPk, sk: projectSk(id) } } },
+				...related.map((sk) => ({
+					Delete: { TableName: TABLE, Key: { pk: orgPk, sk } }
+				}))
+			]
 		})
 	);
+}
+
+async function queryRelatedAssignmentSkByProject(
+	orgId: string,
+	projectId: string
+): Promise<string[]> {
+	const skList: string[] = [];
+	let lastKey: Record<string, unknown> | undefined;
+	do {
+		const out = await ddb.send(
+			new QueryCommand({
+				TableName: TABLE,
+				KeyConditionExpression: 'pk = :pk AND begins_with(sk, :asn)',
+				FilterExpression: 'projectId = :pid',
+				ExpressionAttributeValues: {
+					':pk': pk(orgId),
+					':asn': SK_PREFIX.assignment,
+					':pid': projectId
+				},
+				ProjectionExpression: 'sk',
+				ExclusiveStartKey: lastKey
+			})
+		);
+		for (const item of out.Items ?? []) {
+			if (typeof item.sk === 'string') skList.push(item.sk);
+		}
+		lastKey = out.LastEvaluatedKey;
+	} while (lastKey);
+	return skList;
 }
