@@ -14,7 +14,8 @@ import {
 	createProject,
 	updateProject,
 	deleteProject,
-	createAssignment
+	createAssignment,
+	deleteAssignment
 } from '$lib/repository';
 import type { Actions } from './$types';
 
@@ -160,8 +161,28 @@ export const actions: Actions = {
 			});
 		}
 		// assignmentCreateSchema は startDate <= endDate を refine 検証済 (inclusive)。
-		// SK は ASN#{startDate}#{ulid()} で時系列順にソートされる (ADR 0003)。
+		// .transform() で endDateExclusive へ変換 (ADR 0004)。
+		// SK は ASN#{startDate}#{ulid()} で時系列順にソートされる。
 		await createAssignment(orgId, parsed.data);
 		return { action: 'createAssignment', success: true };
+	},
+
+	deleteAssignment: async ({ request, locals }) => {
+		const orgId = requireOrg(locals);
+		const data = await request.formData();
+		const id = data.get('id');
+		const startDate = data.get('startDate');
+		if (typeof id !== 'string' || !id) {
+			return fail(400, { action: 'deleteAssignment', errors: { id: 'id が必要です' } });
+		}
+		if (typeof startDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+			return fail(400, {
+				action: 'deleteAssignment',
+				errors: { startDate: 'startDate が必要です (YYYY-MM-DD)' }
+			});
+		}
+		// SK = ASN#{startDate}#{id} で構成されるため startDate も必要 (UC-05 / ADR 0005 参照)。
+		await deleteAssignment(orgId, startDate, id);
+		return { action: 'deleteAssignment', success: true };
 	}
 };
