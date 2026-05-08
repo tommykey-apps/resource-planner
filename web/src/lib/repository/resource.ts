@@ -1,9 +1,16 @@
-import { PutCommand, UpdateCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import {
+	PutCommand,
+	UpdateCommand,
+	QueryCommand,
+	TransactWriteCommand
+} from '@aws-sdk/lib-dynamodb';
 import { ddb, TABLE } from '$lib/db/client';
 import { newId } from '$lib/id';
-import { pk, resourceSk } from './keys';
+import { pk, resourceSk, SK_PREFIX } from './keys';
 import type { Resource } from '$lib/types';
 import type { ResourceCreateInput, ResourceUpdateInput } from '$lib/schemas';
+
+const TRANSACT_MAX_ITEMS = 100;
 
 export async function createResource(orgId: string, input: ResourceCreateInput): Promise<Resource> {
 	const id = newId();
@@ -31,12 +38,70 @@ export async function updateResource(orgId: string, input: ResourceUpdateInput):
 	);
 }
 
+/**
+ * Resource と関連 Assignment を **原子的に** cascade delete する (UC-06 / ADR 0006)。
+ *
+ * 関連 Assignment の検索: `pk = ORG#X AND begins_with(sk, "ASN#")` を Query して、
+ * `resourceId == id` で post-filter (FilterExpression)。
+ * Resource 自身 + 関連 Assignment を 1 つの `TransactWriteItems` で削除。
+ *
+ * **TransactWriteItems の上限 100 items**。これを超える Assignment が紐づいていた場合は
+ * `Error('cascade delete exceeds 100 items')` を throw。100 件超のフォールバック
+ * (BatchWriteItem) は YAGNI として未実装 (1 リソースが 100 件以上アサインされる運用は
+ * 想定外、社内 100 ユーザー / 月単位アサイン)。
+ */
 export async function deleteResource(orgId: string, id: string): Promise<void> {
-	// 関連 Assignment の cascade は PR-H で実装。ここでは Resource 単体だけ削除。
+	const orgPk = pk(orgId);
+	const related = await queryRelatedAssignmentSkByResource(orgId, id);
+
+	const totalItems = related.length + 1;
+	if (totalItems > TRANSACT_MAX_ITEMS) {
+		throw new Error(
+			`cascade delete exceeds ${TRANSACT_MAX_ITEMS} items (related assignments: ${related.length})`
+		);
+	}
+
 	await ddb.send(
-		new DeleteCommand({
-			TableName: TABLE,
-			Key: { pk: pk(orgId), sk: resourceSk(id) }
+		new TransactWriteCommand({
+			TransactItems: [
+				{ Delete: { TableName: TABLE, Key: { pk: orgPk, sk: resourceSk(id) } } },
+				...related.map((sk) => ({
+					Delete: { TableName: TABLE, Key: { pk: orgPk, sk } }
+				}))
+			]
 		})
 	);
+}
+
+/**
+ * `pk = ORG#X AND begins_with(sk, "ASN#")` を Query して、`resourceId === id` の SK 一覧を返す。
+ * pagination (`LastEvaluatedKey`) 対応。
+ */
+async function queryRelatedAssignmentSkByResource(
+	orgId: string,
+	resourceId: string
+): Promise<string[]> {
+	const skList: string[] = [];
+	let lastKey: Record<string, unknown> | undefined;
+	do {
+		const out = await ddb.send(
+			new QueryCommand({
+				TableName: TABLE,
+				KeyConditionExpression: 'pk = :pk AND begins_with(sk, :asn)',
+				FilterExpression: 'resourceId = :rid',
+				ExpressionAttributeValues: {
+					':pk': pk(orgId),
+					':asn': SK_PREFIX.assignment,
+					':rid': resourceId
+				},
+				ProjectionExpression: 'sk',
+				ExclusiveStartKey: lastKey
+			})
+		);
+		for (const item of out.Items ?? []) {
+			if (typeof item.sk === 'string') skList.push(item.sk);
+		}
+		lastKey = out.LastEvaluatedKey;
+	} while (lastKey);
+	return skList;
 }

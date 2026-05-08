@@ -80,8 +80,8 @@
 	<header>
 		<h1>resource-planner</h1>
 		<div class="actions">
-			<ResourceManager {resources} />
-			<ProjectManager {projects} />
+			<ResourceManager {resources} assignments={dbAssignments} />
+			<ProjectManager {projects} assignments={dbAssignments} />
 			<AssignmentCreator {resources} {projects} />
 			<AssignmentManager assignments={dbAssignments} {resources} {projects} />
 		</div>
