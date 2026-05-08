@@ -88,3 +88,27 @@ export type AssignmentUpdateInput = z.input<typeof assignmentUpdateSchema>;
 /** Post-transform shape (storage)。repository が受け取る型。 */
 export type AssignmentCreatePayload = z.output<typeof assignmentCreateSchema>;
 export type AssignmentUpdatePayload = z.output<typeof assignmentUpdateSchema>;
+
+/**
+ * `PATCH /api/assignments/[id]` API endpoint で受け取る body の検証 schema。
+ *
+ * フォーム境界ではなく **app 内部 RPC** (frontend onMove/onResize → backend) で使うため、
+ * `endDateExclusive` を直接受け取る (transform 不要、ADR 0004)。
+ *
+ * `id` は URL param (`[id]`) から取得するため body には含めない。
+ * `prevStartDate` は SK 再構築用 (startDate 変更時に旧 SK を Delete するため)。
+ */
+export const assignmentApiUpdateSchema = z
+	.object({
+		prevStartDate: dateString,
+		resourceId: z.string().min(1),
+		projectId: z.string().min(1),
+		startDate: dateString,
+		endDateExclusive: dateString
+	})
+	.refine((v) => v.startDate < v.endDateExclusive, {
+		message: 'endDateExclusive must be strictly after startDate',
+		path: ['endDateExclusive']
+	});
+
+export type AssignmentApiUpdateInput = z.infer<typeof assignmentApiUpdateSchema>;
