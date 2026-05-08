@@ -5,6 +5,7 @@
 		ZOOMS,
 		type Assignment as TimelineAssignment
 	} from '@tommykey-apps/ui-components';
+	import { toast } from 'svelte-sonner';
 	import { toTimelineAssignment, fromTimelineAssignment } from '$lib/timeline-adapter';
 	import ResourceManager from '$lib/components/ResourceManager.svelte';
 	import ProjectManager from '$lib/components/ProjectManager.svelte';
@@ -33,13 +34,44 @@
 	let viewportStart = $state(new Date());
 	let zoom = $state(ZOOMS.day);
 
-	function handleUpdate(updated: TimelineAssignment) {
-		// PR-F で +server.ts API への fetch + optimistic UI revert を追加予定。
-		// 現状は in-memory のみ (リロードで消える)。
+	/**
+	 * UC-04 ドラッグ移動 / リサイズ。
+	 *
+	 * Optimistic UI パターン (ADR 0005):
+	 * 1. 旧 state を snapshot
+	 * 2. local state を即時更新 (帯が新位置に移動)
+	 * 3. PATCH /api/assignments/[id] に永続化リクエスト
+	 * 4. 失敗したら snapshot に revert + toast 表示
+	 */
+	async function handleUpdate(updated: TimelineAssignment) {
 		const prev = dbAssignments.find((a) => a.id === updated.id);
 		if (!prev) return;
 		const next = fromTimelineAssignment(updated, prev);
+
+		const snapshot = dbAssignments;
 		dbAssignments = dbAssignments.map((a) => (a.id === next.id ? next : a));
+
+		try {
+			const res = await fetch(`/api/assignments/${next.id}`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					prevStartDate: prev.startDate,
+					resourceId: next.resourceId,
+					projectId: next.projectId,
+					startDate: next.startDate,
+					endDateExclusive: next.endDateExclusive
+				})
+			});
+			if (!res.ok) {
+				throw new Error(await res.text().catch(() => `HTTP ${res.status}`));
+			}
+		} catch (e) {
+			dbAssignments = snapshot;
+			toast.error('アサインの更新に失敗しました', {
+				description: e instanceof Error ? e.message : '通信エラー'
+			});
+		}
 	}
 </script>
 
