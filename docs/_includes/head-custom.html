@@ -13,7 +13,7 @@
   特に include 文をコメント内に書くと自分自身を recursive include して
   「stack level too deep」または「raw tag was never closed」エラーになる。
 -->
-{%- raw -%}
+{% raw %}
 <script type="module">
 	import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
 	mermaid.initialize({ startOnLoad: false, theme: 'default' });
@@ -27,4 +27,4 @@
 		mermaid.run();
 	});
 </script>
-{%- endraw -%}
+{% endraw %}
