@@ -5,6 +5,9 @@ node_modules
 web/.svelte-kit
 web/build
 
+# Vitest
+web/coverage
+
 # Terraform
 infra/.terraform
 infra/*.tfstate
