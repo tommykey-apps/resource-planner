@@ -6,6 +6,7 @@
 		type Assignment as TimelineAssignment
 	} from '@tommykey-apps/ui-components';
 	import { toTimelineAssignment, fromTimelineAssignment } from '$lib/timeline-adapter';
+	import ResourceManager from '$lib/components/ResourceManager.svelte';
 	import type { Assignment as DbAssignment } from '$lib/types';
 	import type { PageData } from './$types';
 
@@ -41,32 +42,43 @@
 </script>
 
 <main>
-	<h1>resource-planner</h1>
-	<p>要員計画 / Powered by <code>@tommykey-apps/ui-components</code></p>
+	<header>
+		<h1>resource-planner</h1>
+		<div class="actions">
+			<ResourceManager {resources} />
+		</div>
+	</header>
 
-	<TimelineToolbar
-		bind:viewportStart
-		bind:zoom
-		labels={{
-			today: '今日',
-			prev: '前へ',
-			next: '次へ',
-			zoomDay: '日',
-			zoomWeek: '週',
-			zoomMonth: '月',
-			zoomYear: '年'
-		}}
-		ariaLabels={{ prev: '前の期間へ', next: '次の期間へ' }}
-	/>
+	{#if resources.length === 0}
+		<div class="empty-state">
+			<p>まだ人が登録されていません。</p>
+			<p class="hint">右上の「人を管理」ボタンから最初のリソースを追加してください。</p>
+		</div>
+	{:else}
+		<TimelineToolbar
+			bind:viewportStart
+			bind:zoom
+			labels={{
+				today: '今日',
+				prev: '前へ',
+				next: '次へ',
+				zoomDay: '日',
+				zoomWeek: '週',
+				zoomMonth: '月',
+				zoomYear: '年'
+			}}
+			ariaLabels={{ prev: '前の期間へ', next: '次の期間へ' }}
+		/>
 
-	<ResourceTimeline
-		{resources}
-		assignments={timelineAssignments}
-		bind:viewportStart
-		{zoom}
-		onMove={handleUpdate}
-		onResize={handleUpdate}
-	/>
+		<ResourceTimeline
+			{resources}
+			assignments={timelineAssignments}
+			bind:viewportStart
+			{zoom}
+			onMove={handleUpdate}
+			onResize={handleUpdate}
+		/>
+	{/if}
 </main>
 
 <style>
@@ -77,23 +89,31 @@
 		font-family: system-ui, sans-serif;
 	}
 
+	header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 1.5rem;
+	}
+
 	h1 {
-		margin: 0 0 0.25rem;
+		margin: 0;
 		font-size: 1.5rem;
 	}
 
-	p {
-		margin: 0 0 1.5rem;
-		color: #666;
-		font-size: 0.875rem;
+	.empty-state {
+		padding: 4rem 1rem;
+		text-align: center;
+		color: var(--muted-foreground);
 	}
 
-	code {
-		background: #eef;
-		padding: 0.125rem 0.375rem;
-		border-radius: 3px;
-		font-family: ui-monospace, monospace;
-		font-size: 0.875em;
+	.empty-state p {
+		margin: 0;
+	}
+
+	.empty-state .hint {
+		margin-top: 0.25rem;
+		font-size: 0.875rem;
 	}
 
 	main :global(.toolbar) {
