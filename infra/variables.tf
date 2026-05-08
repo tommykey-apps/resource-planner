@@ -27,6 +27,6 @@ variable "clerk_secret_key" {
 
 variable "allowed_domain" {
   type        = string
-  description = "Email domain allowed to sign in (e.g., genech.co.jp)"
+  description = "Email domain allowed to sign in (set via TF_VAR_allowed_domain or GitHub Secret, never commit literal value)"
   sensitive   = true
 }
