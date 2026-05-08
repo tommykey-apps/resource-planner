@@ -7,6 +7,7 @@
 	} from '@tommykey-apps/ui-components';
 	import { toast } from 'svelte-sonner';
 	import { toTimelineAssignment, fromTimelineAssignment } from '$lib/timeline-adapter';
+	import { UserButton } from 'svelte-clerk';
 	import ResourceManager from '$lib/components/ResourceManager.svelte';
 	import ProjectManager from '$lib/components/ProjectManager.svelte';
 	import AssignmentCreator from '$lib/components/AssignmentCreator.svelte';
@@ -84,6 +85,7 @@
 			<ProjectManager {projects} assignments={dbAssignments} />
 			<AssignmentCreator {resources} {projects} />
 			<AssignmentManager assignments={dbAssignments} {resources} {projects} />
+			<UserButton />
 		</div>
 	</header>
 

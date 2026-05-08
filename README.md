@@ -13,7 +13,10 @@
 | Bundler | Vite | 8 |
 | Styling | Tailwind CSS | 4 |
 | Component Library | `@tommykey-apps/ui-components` | (private) |
-| Adapter | `@sveltejs/adapter-static` | 3 |
+| Adapter | `@sveltejs/adapter-node` | 5 |
+| Auth | Clerk (Microsoft Social Connection) | 1.1+ |
+| DB | DynamoDB (Single Table Design) | — |
+| Hosting | Lambda (ARM64 container) + API Gateway HTTP API + CloudFront | — |
 | Type Checking | TypeScript / svelte-check | 6 / 4 |
 | Linter | ESLint + Prettier | 10 / 3 |
 | Dev Env | flox | 1.11 |
@@ -42,13 +45,26 @@ CI では `secrets.GITHUB_TOKEN` をそのまま使う(`.github/workflows/ci.yam
 
 ## コマンド
 
+ルート (`Makefile`):
+
 ```bash
-pnpm install               # 依存インストール
+make help          # 利用可能なコマンド一覧
+make dev           # SvelteKit dev server (cd web && pnpm dev)
+make build         # 本番ビルド (Lambda container 用)
+make db            # DynamoDB Local 起動 + table 作成 (port 8000)
+make db-docs       # tbls で docs/db/schema/ 再生成
+make db-docs-diff  # スキーマ drift 確認
+make clean         # docker compose down
+```
+
+`web/` 直接:
+
+```bash
+cd web
+pnpm install               # 依存インストール (要 GITHUB_TOKEN)
 pnpm dev                   # Vite dev server
-pnpm build                 # ビルド (build/ に静的サイト出力)
-pnpm preview               # 本番ビルドのプレビュー
+pnpm build                 # ビルド (build/ に出力、Lambda 用)
 pnpm check                 # svelte-check
-pnpm lint                  # ESLint + Prettier
 pnpm format                # Prettier 自動修正
 ```
 
@@ -63,15 +79,39 @@ pnpm format                # Prettier 自動修正
 
 本リポジトリは **型駆動 docs 戦略** を採用している ([ADR 0001](docs/adr/0001-typescript-types-as-api-spec.md))。
 OpenAPI は使わず、TypeScript 型 + Zod schema を API 仕様の正本とし、自然言語ドキュメントは
-役割を分けて 4 箇所に集約する:
+役割を分けて 4 箇所に集約する。
 
-| 何が知りたい | どこを見る |
-|---|---|
-| **構造** (どのコンポーネントがどう繋がっているか) | [`docs/architecture.drawio`](docs/architecture.drawio) ([PNG](docs/architecture.png)) — C4 Container 図 |
-| **なぜ** その判断をしたか | [`docs/adr/`](docs/adr/) — Architecture Decision Records (Michael Nygard 形式) |
-| **どう動く** か (画面 → action → DB の流れ) | [`docs/use-cases.md`](docs/use-cases.md) — Mermaid sequence diagrams |
-| **データモデル** (PK / SK / 属性 / クエリパターン) | [`docs/db/`](docs/db/) — tbls 自動生成 + 手書き entities/access-patterns ([Pages 公開](https://tommykey-apps.github.io/resource-planner/db/)) |
-| **API 仕様** (関数の入出力) | TypeScript 型 (`web/src/lib/types.ts`, Zod schema) — コードを直接読む |
+**📖 公開 docs**: <https://tommykey-apps.github.io/resource-planner/>
+
+| 何が知りたい | どこを見る | Pages |
+|---|---|---|
+| **構造** (どのコンポーネントがどう繋がっているか) | [`docs/architecture.drawio`](docs/architecture.drawio) ([PNG](docs/architecture.png)) — C4 Container 図 | [/architecture.png](https://tommykey-apps.github.io/resource-planner/architecture.png) |
+| **なぜ** その判断をしたか | [`docs/adr/`](docs/adr/) — Architecture Decision Records (Michael Nygard 形式) | [/adr/](https://tommykey-apps.github.io/resource-planner/adr/) |
+| **どう動く** か (画面 → action → DB の流れ) | [`docs/use-cases.md`](docs/use-cases.md) — Mermaid sequence diagrams | [/use-cases.html](https://tommykey-apps.github.io/resource-planner/use-cases.html) |
+| **データモデル** (PK / SK / 属性 / クエリパターン) | [`docs/db/`](docs/db/) — tbls 自動生成 + 手書き entities/access-patterns | [/db/](https://tommykey-apps.github.io/resource-planner/db/) |
+| **API 仕様** (関数の入出力) | TypeScript 型 (`web/src/lib/types.ts`, Zod schema) | (コード直読) |
+
+### Architecture Decision Records
+
+| # | タイトル | Status |
+|---|---|---|
+| [0001](docs/adr/0001-typescript-types-as-api-spec.md) | TypeScript 型を API 仕様の正本とする | Accepted |
+| [0002](docs/adr/0002-id-generation-with-ulid.md) | ID 生成戦略を ULID に統一する | Accepted |
+| [0003](docs/adr/0003-end-date-inclusive-storage.md) | endDate は inclusive で保存する | Superseded by 0004 |
+| [0004](docs/adr/0004-end-date-exclusive-with-form-transform.md) | endDate は exclusive 半開区間 + Zod transform | Accepted |
+| [0005](docs/adr/0005-assignment-drag-resize-transport.md) | Assignment ドラッグ / リサイズは `+server.ts` API + Optimistic UI | Accepted |
+| [0006](docs/adr/0006-cascade-delete-strategy.md) | Resource / Project の削除は cascade (TransactWriteItems) | Accepted |
+
+### Use Cases
+
+| UC | タイトル | 実装 |
+|---|---|---|
+| [UC-01](docs/use-cases.md#uc-01-リソース-人-を追加編集削除する) | リソース (人) を追加・編集・削除する | PR-C |
+| [UC-02](docs/use-cases.md#uc-02-案件-project-を追加編集削除する) | 案件 (Project) を追加・編集・削除する | PR-D |
+| [UC-03](docs/use-cases.md#uc-03-アサインを作成する) | アサインを作成する | PR-E |
+| [UC-04](docs/use-cases.md#uc-04-アサインの期間を変更する-ドラッグ--リサイズ) | アサインの期間を変更する (ドラッグ / リサイズ) | PR-F |
+| [UC-05](docs/use-cases.md#uc-05-アサインを削除する) | アサインを削除する | PR-G |
+| [UC-06](docs/use-cases.md#uc-06-人--案件を削除する-cascade) | 人 / 案件を削除する (cascade) | PR-H |
 
 新機能を追加するときは [`.github/ISSUE_TEMPLATE/feature.yml`](.github/ISSUE_TEMPLATE/feature.yml) を使う。
 ADR / use-case / 型定義の追加が AC に含まれる。
