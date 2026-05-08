@@ -46,5 +46,5 @@ CI が捕捉できる範囲:
 tbls の DynamoDB driver は `DescribeTable` API しか呼ばないため、
 `AttributeDefinitions` で宣言された属性 (このテーブルでは `pk` / `sk` のみ) しか
 カラム化されない。実アイテムの属性 (`id`, `name`, `color`, `resourceId`, `projectId`,
-`startDate`, `endDate` など) は `schema/` に出力されない。
+`startDate`, `endDateExclusive` など) は `schema/` に出力されない。
 これらは [`entities.md`](entities.md) を参照。

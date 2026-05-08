@@ -43,7 +43,7 @@ export async function queryAllByOrg(orgId: string): Promise<OrgData> {
 					resourceId: item.resourceId,
 					projectId: item.projectId,
 					startDate: item.startDate,
-					endDate: item.endDate
+					endDateExclusive: item.endDateExclusive
 				} as Assignment);
 			}
 		}
