@@ -1,0 +1,86 @@
+import { error, fail } from '@sveltejs/kit';
+import { z } from 'zod';
+import { resourceCreateSchema, resourceUpdateSchema } from '$lib/schemas';
+import {
+	createResource,
+	updateResource,
+	deleteResource
+} from '$lib/repository';
+import type { Actions } from './$types';
+
+/**
+ * 認証 + Org 取得を共通化。
+ *
+ * `+layout.server.ts` で 403 を返している前提だが、念のため form action 側でも
+ * orgId を再取得する (action は layout の load を再評価しないことがある)。
+ */
+function requireOrg(locals: App.Locals): string {
+	const auth = locals.auth();
+	if (!auth.userId) error(401, '認証が必要です');
+	if (!auth.orgId) error(403, '組織が選択されていません');
+	return auth.orgId;
+}
+
+/**
+ * Zod の formatted error を form action の戻り値に整形する。
+ * `+page.svelte` 側で `form.errors.name` のようにアクセスできる。
+ */
+function formatErrors<T>(result: z.ZodSafeParseError<T>): Record<string, string> {
+	const errors: Record<string, string> = {};
+	for (const issue of result.error.issues) {
+		const key = issue.path.join('.');
+		if (key && !errors[key]) errors[key] = issue.message;
+	}
+	return errors;
+}
+
+export const actions: Actions = {
+	createResource: async ({ request, locals }) => {
+		const orgId = requireOrg(locals);
+		const data = await request.formData();
+		const parsed = resourceCreateSchema.safeParse({
+			name: data.get('name')
+		});
+		if (!parsed.success) {
+			return fail(400, {
+				action: 'createResource',
+				errors: formatErrors(parsed)
+			});
+		}
+		await createResource(orgId, parsed.data);
+		return { action: 'createResource', success: true };
+	},
+
+	updateResource: async ({ request, locals }) => {
+		const orgId = requireOrg(locals);
+		const data = await request.formData();
+		const parsed = resourceUpdateSchema.safeParse({
+			id: data.get('id'),
+			name: data.get('name')
+		});
+		if (!parsed.success) {
+			return fail(400, {
+				action: 'updateResource',
+				errors: formatErrors(parsed)
+			});
+		}
+		await updateResource(orgId, parsed.data);
+		return { action: 'updateResource', success: true };
+	},
+
+	deleteResource: async ({ request, locals }) => {
+		const orgId = requireOrg(locals);
+		const data = await request.formData();
+		const id = data.get('id');
+		if (typeof id !== 'string' || !id) {
+			return fail(400, {
+				action: 'deleteResource',
+				errors: { id: 'id が必要です' }
+			});
+		}
+		// cascade delete (関連 Assignment も削除) は PR-H で実装予定。
+		// 現状は Resource 単体のみ削除するため、関連 Assignment は orphan として残る。
+		await deleteResource(orgId, id);
+		return { action: 'deleteResource', success: true };
+	}
+};
