@@ -1,18 +1,25 @@
 name: Deploy Docs to GitHub Pages
 
-# docs/db/ (tbls 自動生成 + 手書き entities/access-patterns) を Jekyll で HTML 化して
+# docs/ 全体 (architecture + ADR + use-cases + DB schema) を Jekyll で HTML 化して
 # GitHub Pages に公開する。
 #
-# 公開 URL: https://tommykey-apps.github.io/resource-planner/db/
+# 公開 URL: https://tommykey-apps.github.io/resource-planner/
 #
-# 注: repo Settings > Pages > Source を「GitHub Actions」に設定する手動操作が
-# 1 度だけ必要 (issue #26 の手順を参照)。
+# 主な構成 (docs/_config.yml の baseurl: /resource-planner):
+#   - /                — docs/index.md (root landing)
+#   - /adr/            — docs/adr/index.md (ADR 一覧)
+#   - /adr/0001-*.html — 各 ADR
+#   - /use-cases.html  — docs/use-cases.md
+#   - /db/             — docs/db/index.md (DB schema)
+#   - /architecture.png — drawio export 画像
+#
+# Mermaid sequence diagram は docs/_includes/head-custom.html の script で描画。
 
 on:
   push:
     branches: [main]
     paths:
-      - "docs/db/**"
+      - "docs/**"
       - ".github/workflows/pages.yaml"
   workflow_dispatch:
 
@@ -36,13 +43,10 @@ jobs:
 
       - uses: actions/configure-pages@v5
 
-      # destination を ./_site/db にすることで Pages の project site URL
-      # https://tommykey-apps.github.io/resource-planner/db/ で配信される。
-      # _config.yml の baseurl: /resource-planner/db と整合させる。
       - uses: actions/jekyll-build-pages@v1
         with:
-          source: ./docs/db
-          destination: ./_site/db
+          source: ./docs
+          destination: ./_site
 
       - uses: actions/upload-pages-artifact@v3
 
