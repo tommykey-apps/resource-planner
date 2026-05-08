@@ -85,13 +85,15 @@ DynamoDB シングルテーブル `resource-planner` には 3 種類のエンテ
 
 | Field | Type | 説明 |
 |---|---|---|
-| `id` | str (UUID 想定) | assignment の主キー |
+| `id` | str (ULID) | assignment の主キー |
 | `resourceId` | str | 紐づく [Resource](#resource) の `id` (FK 制約は DDB に無い) |
 | `projectId` | str | 紐づく [Project](#project) の `id` (FK 制約は DDB に無い) |
-| `startDate` | str (`YYYY-MM-DD`) | アサイン開始日。SK にも埋め込む |
-| `endDate` | str (`YYYY-MM-DD`) | アサイン終了日 |
+| `startDate` | str (`YYYY-MM-DD`) | アサイン開始日 (**inclusive、この日を含む**)。SK にも埋め込む |
+| `endDateExclusive` | str (`YYYY-MM-DD`) | アサイン終了日の翌日 (**exclusive、この日は含まない**)。半開区間 `[startDate, endDateExclusive)` (ADR 0004) |
 
-サンプルアイテム:
+> **endDateExclusive の解釈**: 「5/1〜5/31 のアサイン」 = `startDate=2026-05-01`, `endDateExclusive=2026-06-01`。最終作業日 (5/31) ではなく、その翌日 (6/1) を保存する。RFC 5545 / Google Calendar API / PostgreSQL daterange と同じ規約。
+
+サンプルアイテム (2026-05-01 〜 2026-05-31 のアサイン):
 ```json
 {
   "pk": "ORG#org_3DEYkgBkwFejVmc70EcFH3CgebQ",
@@ -100,7 +102,7 @@ DynamoDB シングルテーブル `resource-planner` には 3 種類のエンテ
   "resourceId": "01HXYZ...",
   "projectId": "01HABC...",
   "startDate": "2026-05-01",
-  "endDate": "2026-05-31"
+  "endDateExclusive": "2026-06-01"
 }
 ```
 
@@ -110,5 +112,6 @@ DynamoDB シングルテーブル `resource-planner` には 3 種類のエンテ
 
 - **Single Table Design**: 1 query で組織内全データ取得を効率的にしたい (リソース計画 UI は組織全体を一度に表示するユースケース)。Resource / Project / Assignment を別テーブルに分けると 3 回の query / Scan が必要になる
 - **`pk = ORG#...` で固定**: マルチテナント isolation を物理的に強制 (PK が違えば物理的に到達不能)
-- **`ASN` の SK 先頭に `start_date`**: 期間検索 `begins_with(sk, "ASN#2026-05")` や `BETWEEN` クエリで対応できる。`endDate` は条件式 (FilterExpression) で post-filter
+- **`ASN` の SK 先頭に `start_date`**: 期間検索 `begins_with(sk, "ASN#2026-05")` や `BETWEEN` クエリで対応できる。`endDateExclusive` は条件式 (FilterExpression) で post-filter
+- **半開区間 `[start, end)` 規約**: 業界標準 (RFC 5545 / Google Calendar / PostgreSQL daterange / Java / Rust / Python) に整合。隣接区間 (5/1〜5/3 と 5/3〜5/5) が境界で接して重ならない。詳細 [ADR 0004](../adr/0004-end-date-exclusive-with-form-transform.md)
 - **FK 整合性は app 層で担保**: DynamoDB は外部キー制約を持たないため、Resource / Project の delete 時に Assignment を残骸として残さないようカスケード削除を app 層で実装する (将来要件)

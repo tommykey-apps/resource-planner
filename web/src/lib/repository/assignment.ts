@@ -3,11 +3,14 @@ import { ddb, TABLE } from '$lib/db/client';
 import { newId } from '$lib/id';
 import { pk, assignmentSk } from './keys';
 import type { Assignment } from '$lib/types';
-import type { AssignmentCreateInput, AssignmentUpdateInput } from '$lib/schemas';
+import type {
+	AssignmentCreatePayload,
+	AssignmentUpdatePayload
+} from '$lib/schemas';
 
 export async function createAssignment(
 	orgId: string,
-	input: AssignmentCreateInput
+	input: AssignmentCreatePayload
 ): Promise<Assignment> {
 	const id = newId();
 	const item: Assignment = { id, ...input };
@@ -30,25 +33,25 @@ export async function createAssignment(
 export async function updateAssignment(
 	orgId: string,
 	prevStartDate: string,
-	input: AssignmentUpdateInput
+	input: AssignmentUpdatePayload
 ): Promise<void> {
 	const oldSk = assignmentSk(prevStartDate, input.id);
 	const newSk = assignmentSk(input.startDate, input.id);
+
+	const item = {
+		id: input.id,
+		resourceId: input.resourceId,
+		projectId: input.projectId,
+		startDate: input.startDate,
+		endDateExclusive: input.endDateExclusive
+	};
 
 	if (oldSk === newSk) {
 		// SK 変更なし → 通常 Put で上書き
 		await ddb.send(
 			new PutCommand({
 				TableName: TABLE,
-				Item: {
-					pk: pk(orgId),
-					sk: newSk,
-					id: input.id,
-					resourceId: input.resourceId,
-					projectId: input.projectId,
-					startDate: input.startDate,
-					endDate: input.endDate
-				},
+				Item: { pk: pk(orgId), sk: newSk, ...item },
 				ConditionExpression: 'attribute_exists(sk)'
 			})
 		);
@@ -69,15 +72,7 @@ export async function updateAssignment(
 				{
 					Put: {
 						TableName: TABLE,
-						Item: {
-							pk: pk(orgId),
-							sk: newSk,
-							id: input.id,
-							resourceId: input.resourceId,
-							projectId: input.projectId,
-							startDate: input.startDate,
-							endDate: input.endDate
-						},
+						Item: { pk: pk(orgId), sk: newSk, ...item },
 						ConditionExpression: 'attribute_not_exists(sk)'
 					}
 				}
