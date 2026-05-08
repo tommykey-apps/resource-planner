@@ -7,6 +7,7 @@
 	} from '@tommykey-apps/ui-components';
 	import { toTimelineAssignment, fromTimelineAssignment } from '$lib/timeline-adapter';
 	import ResourceManager from '$lib/components/ResourceManager.svelte';
+	import ProjectManager from '$lib/components/ProjectManager.svelte';
 	import type { Assignment as DbAssignment } from '$lib/types';
 	import type { PageData } from './$types';
 
@@ -46,6 +47,7 @@
 		<h1>resource-planner</h1>
 		<div class="actions">
 			<ResourceManager {resources} />
+			<ProjectManager {projects} />
 		</div>
 	</header>
 
@@ -94,6 +96,11 @@
 		align-items: center;
 		justify-content: space-between;
 		margin-bottom: 1.5rem;
+	}
+
+	header .actions {
+		display: flex;
+		gap: 0.5rem;
 	}
 
 	h1 {
