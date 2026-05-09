@@ -66,7 +66,27 @@ pnpm dev                   # Vite dev server
 pnpm build                 # ビルド (build/ に出力、Lambda 用)
 pnpm check                 # svelte-check
 pnpm format                # Prettier 自動修正
+pnpm test                  # Vitest (unit; DDB Local 起動時は integration も含む)
+pnpm test:watch            # Vitest watch mode
+pnpm test:coverage         # Vitest + v8 coverage
 ```
+
+### 統合テストの実行
+
+`web/src/lib/repository/integration.test.ts` は `AWS_ENDPOINT_URL` が設定されている時のみ実行
+([`describe.runIf`](https://vitest.dev/api/#describe-runif))。ローカルで integration まで含めて実行するには:
+
+```bash
+make db                    # DynamoDB Local 起動 + table 作成
+cd web
+AWS_ENDPOINT_URL=http://localhost:8000 \
+AWS_ACCESS_KEY_ID=local AWS_SECRET_ACCESS_KEY=local AWS_DEFAULT_REGION=ap-northeast-1 \
+DYNAMODB_TABLE=resource-planner \
+pnpm test
+```
+
+CI では `.github/workflows/ci.yaml` の `test` job が `services.dynamodb` で起動して unit + integration を一括実行する。
+詳細方針は [ADR 0007](docs/adr/0007-tdd-with-vitest-and-playwright.md) 参照。
 
 ## アーキテクチャ
 
