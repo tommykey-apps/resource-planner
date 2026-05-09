@@ -7,6 +7,7 @@ import { defineConfig } from 'vite';
 // vitest 起動時には既に固定されている。test 専用のダミー値を SvelteKit plugin より先に注入する。
 if (process.env.VITEST) {
 	process.env.DYNAMODB_TABLE = process.env.DYNAMODB_TABLE ?? 'resource-planner-test';
+	process.env.AUTH_SECRET = process.env.AUTH_SECRET ?? 'test-secret-not-for-production';
 }
 
 export default defineConfig({
