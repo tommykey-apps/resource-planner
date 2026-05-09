@@ -12,7 +12,7 @@ import { createProject, deleteProject, updateProject } from './project';
 
 const ddbMock = mockClient(DynamoDBDocumentClient);
 const ORG = 'org-test';
-const TABLE = 'resource-planner-test';
+const TABLE = process.env.DYNAMODB_TABLE ?? 'resource-planner-test';
 
 beforeEach(() => {
 	ddbMock.reset();
