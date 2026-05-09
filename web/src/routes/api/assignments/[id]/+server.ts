@@ -1,6 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import { assignmentApiUpdateSchema } from '$lib/schemas';
 import { updateAssignment } from '$lib/repository';
+import { requireSession } from '$lib/auth';
 import type { RequestHandler } from './$types';
 
 /**
@@ -11,20 +12,17 @@ import type { RequestHandler } from './$types';
  * - ResourceTimeline の onMove / onResize callback から直接呼ぶ
  * - optimistic UI + 失敗時 revert を client side で完結させる
  *
- * 認証: SvelteKit の origin チェック + Clerk session でテナント isolation。
+ * 認証: SvelteKit の origin チェック + session (lib/auth.ts) でテナント isolation。
  * 楽観ロックは未実装 (last-write-wins)。同時編集が問題になったら version 列導入を別 ADR で検討。
  */
-export const PATCH: RequestHandler = async ({ request, params, locals }) => {
-	const auth = locals.auth();
-	if (!auth.userId) error(401, '認証が必要です');
-	if (!auth.orgId) error(403, '組織が選択されていません');
-
-	const id = params.id;
+export const PATCH: RequestHandler = async (event) => {
+	const session = requireSession(event);
+	const id = event.params.id;
 	if (!id) error(400, 'id is required');
 
 	let body: unknown;
 	try {
-		body = await request.json();
+		body = await event.request.json();
 	} catch {
 		error(400, 'invalid JSON');
 	}
@@ -34,7 +32,7 @@ export const PATCH: RequestHandler = async ({ request, params, locals }) => {
 		error(400, parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '));
 	}
 
-	await updateAssignment(auth.orgId, parsed.data.prevStartDate, {
+	await updateAssignment(session.teamId, parsed.data.prevStartDate, {
 		id,
 		resourceId: parsed.data.resourceId,
 		projectId: parsed.data.projectId,

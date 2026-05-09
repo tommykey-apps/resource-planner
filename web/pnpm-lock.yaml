@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@auth/dynamodb-adapter':
+        specifier: ^2.11.2
+        version: 2.11.2(@aws-sdk/client-dynamodb@3.1045.0)(@aws-sdk/lib-dynamodb@3.1045.0(@aws-sdk/client-dynamodb@3.1045.0))
       '@auth/sveltekit':
         specifier: ^1.11.2
         version: 1.11.2(@sveltejs/kit@2.59.0(@sveltejs/vite-plugin-svelte@7.0.0(svelte@5.55.5(@typescript-eslint/types@8.59.1))(vite@8.0.10(@types/node@22.19.17)(jiti@2.6.1)))(svelte@5.55.5(@typescript-eslint/types@8.59.1))(typescript@6.0.3)(vite@8.0.10(@types/node@22.19.17)(jiti@2.6.1)))(svelte@5.55.5(@typescript-eslint/types@8.59.1))
@@ -148,6 +151,12 @@ packages:
         optional: true
       nodemailer:
         optional: true
+
+  '@auth/dynamodb-adapter@2.11.2':
+    resolution: {integrity: sha512-8bg5Nwoa1+aQBdfpo7mxbhxqSApljRPVPqhTbgWaeLUzmti5tcFhV7UHYtidWydwS5XcIw/rQEAOPotse0GbJw==}
+    peerDependencies:
+      '@aws-sdk/client-dynamodb': ^3.36.1
+      '@aws-sdk/lib-dynamodb': ^3.36.1
 
   '@auth/sveltekit@1.11.2':
     resolution: {integrity: sha512-3Ifc1McYor3OHNChhOTcnJ2bQWWiVlSXxHe15vaVqhoUM//9MhbP6sSO2ChKuoocXVNQWATBCfkkxMAw1Z7QPw==}
@@ -2263,6 +2272,16 @@ snapshots:
       oauth4webapi: 3.8.6
       preact: 10.24.3
       preact-render-to-string: 6.5.11(preact@10.24.3)
+
+  '@auth/dynamodb-adapter@2.11.2(@aws-sdk/client-dynamodb@3.1045.0)(@aws-sdk/lib-dynamodb@3.1045.0(@aws-sdk/client-dynamodb@3.1045.0))':
+    dependencies:
+      '@auth/core': 0.41.2
+      '@aws-sdk/client-dynamodb': 3.1045.0
+      '@aws-sdk/lib-dynamodb': 3.1045.0(@aws-sdk/client-dynamodb@3.1045.0)
+    transitivePeerDependencies:
+      - '@simplewebauthn/browser'
+      - '@simplewebauthn/server'
+      - nodemailer
 
   '@auth/sveltekit@1.11.2(@sveltejs/kit@2.59.0(@sveltejs/vite-plugin-svelte@7.0.0(svelte@5.55.5(@typescript-eslint/types@8.59.1))(vite@8.0.10(@types/node@22.19.17)(jiti@2.6.1)))(svelte@5.55.5(@typescript-eslint/types@8.59.1))(typescript@6.0.3)(vite@8.0.10(@types/node@22.19.17)(jiti@2.6.1)))(svelte@5.55.5(@typescript-eslint/types@8.59.1))':
     dependencies:

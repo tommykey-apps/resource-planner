@@ -9,7 +9,7 @@ import type {
 } from '$lib/schemas';
 
 export async function createAssignment(
-	orgId: string,
+	teamId: string,
 	input: AssignmentCreatePayload
 ): Promise<Assignment> {
 	const id = newId();
@@ -17,7 +17,7 @@ export async function createAssignment(
 	await ddb.send(
 		new PutCommand({
 			TableName: TABLE,
-			Item: { pk: pk(orgId), sk: assignmentSk(input.startDate, id), ...item },
+			Item: { pk: pk(teamId), sk: assignmentSk(input.startDate, id), ...item },
 			ConditionExpression: 'attribute_not_exists(sk)'
 		})
 	);
@@ -31,7 +31,7 @@ export async function createAssignment(
  * @param prevStartDate - 変更前の startDate (旧 SK 計算用)
  */
 export async function updateAssignment(
-	orgId: string,
+	teamId: string,
 	prevStartDate: string,
 	input: AssignmentUpdatePayload
 ): Promise<void> {
@@ -51,7 +51,7 @@ export async function updateAssignment(
 		await ddb.send(
 			new PutCommand({
 				TableName: TABLE,
-				Item: { pk: pk(orgId), sk: newSk, ...item },
+				Item: { pk: pk(teamId), sk: newSk, ...item },
 				ConditionExpression: 'attribute_exists(sk)'
 			})
 		);
@@ -65,14 +65,14 @@ export async function updateAssignment(
 				{
 					Delete: {
 						TableName: TABLE,
-						Key: { pk: pk(orgId), sk: oldSk },
+						Key: { pk: pk(teamId), sk: oldSk },
 						ConditionExpression: 'attribute_exists(sk)'
 					}
 				},
 				{
 					Put: {
 						TableName: TABLE,
-						Item: { pk: pk(orgId), sk: newSk, ...item },
+						Item: { pk: pk(teamId), sk: newSk, ...item },
 						ConditionExpression: 'attribute_not_exists(sk)'
 					}
 				}
@@ -82,14 +82,14 @@ export async function updateAssignment(
 }
 
 export async function deleteAssignment(
-	orgId: string,
+	teamId: string,
 	startDate: string,
 	id: string
 ): Promise<void> {
 	await ddb.send(
 		new DeleteCommand({
 			TableName: TABLE,
-			Key: { pk: pk(orgId), sk: assignmentSk(startDate, id) }
+			Key: { pk: pk(teamId), sk: assignmentSk(startDate, id) }
 		})
 	);
 }
