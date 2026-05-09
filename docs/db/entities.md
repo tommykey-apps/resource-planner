@@ -1,7 +1,7 @@
 # Entities
 
 DynamoDB シングルテーブル `resource-planner` には 3 種類のエンティティが格納される。
-全アイテムは `pk = ORG#{clerk_org_id}` で組織ごとにパーティション分割され、
+全アイテムは `pk = TEAM#{teamId}` で組織ごとにパーティション分割され、
 `sk` のプレフィックスで entity 種別を表現する。
 
 > **Note**: 現時点で app 側の DB アクセスコード (CRUD 実装) は未着手。本ファイルは
@@ -10,9 +10,9 @@ DynamoDB シングルテーブル `resource-planner` には 3 種類のエンテ
 
 ## マルチテナント分離
 
-- **PK = `ORG#{clerk_org_id}`**: Clerk Organization ID をそのまま埋め込む。
+- **PK = `TEAM#{teamId}`**: Clerk Organization ID をそのまま埋め込む。
   全 entity 共通のため、1 query で組織内全データ取得 (Scan 不要) が可能。
-- **クロステナント混入防止**: app 層で常に Clerk session の `orgId` から PK を組み立て、
+- **クロステナント混入防止**: app 層で常に session の `teamId` から PK を組み立て、
   client 入力をそのまま PK に使わない。
 
 ## Entity 一覧
@@ -29,7 +29,7 @@ DynamoDB シングルテーブル `resource-planner` には 3 種類のエンテ
 
 人 (メンバー) を表す。各組織内でユニーク。
 
-- **PK**: `ORG#{clerk_org_id}`
+- **PK**: `TEAM#{teamId}`
 - **SK**: `RES#{resource_id}`
 
 | Field | Type | 説明 |
@@ -40,7 +40,7 @@ DynamoDB シングルテーブル `resource-planner` には 3 種類のエンテ
 サンプルアイテム:
 ```json
 {
-  "pk": "ORG#org_3DEYkgBkwFejVmc70EcFH3CgebQ",
+  "pk": "TEAM#team_default",
   "sk": "RES#01HXYZ...",
   "id": "01HXYZ...",
   "name": "山田 太郎"
@@ -53,7 +53,7 @@ DynamoDB シングルテーブル `resource-planner` には 3 種類のエンテ
 
 案件 (クライアント) を表す。
 
-- **PK**: `ORG#{clerk_org_id}`
+- **PK**: `TEAM#{teamId}`
 - **SK**: `PRJ#{project_id}`
 
 | Field | Type | 説明 |
@@ -65,7 +65,7 @@ DynamoDB シングルテーブル `resource-planner` には 3 種類のエンテ
 サンプルアイテム:
 ```json
 {
-  "pk": "ORG#org_3DEYkgBkwFejVmc70EcFH3CgebQ",
+  "pk": "TEAM#team_default",
   "sk": "PRJ#01HABC...",
   "id": "01HABC...",
   "name": "Acme 移行案件",
@@ -79,7 +79,7 @@ DynamoDB シングルテーブル `resource-planner` には 3 種類のエンテ
 
 「いつ・誰を・どの案件に」割り当てたかを表す関連 entity。
 
-- **PK**: `ORG#{clerk_org_id}`
+- **PK**: `TEAM#{teamId}`
 - **SK**: `ASN#{start_date}#{assignment_id}`
   (`start_date` を SK 先頭に置くことで時系列 begins_with / between クエリを可能にする)
 
@@ -96,7 +96,7 @@ DynamoDB シングルテーブル `resource-planner` には 3 種類のエンテ
 サンプルアイテム (2026-05-01 〜 2026-05-31 のアサイン):
 ```json
 {
-  "pk": "ORG#org_3DEYkgBkwFejVmc70EcFH3CgebQ",
+  "pk": "TEAM#team_default",
   "sk": "ASN#2026-05-01#01HDEF...",
   "id": "01HDEF...",
   "resourceId": "01HXYZ...",
@@ -111,7 +111,7 @@ DynamoDB シングルテーブル `resource-planner` には 3 種類のエンテ
 ## 設計意図
 
 - **Single Table Design**: 1 query で組織内全データ取得を効率的にしたい (リソース計画 UI は組織全体を一度に表示するユースケース)。Resource / Project / Assignment を別テーブルに分けると 3 回の query / Scan が必要になる
-- **`pk = ORG#...` で固定**: マルチテナント isolation を物理的に強制 (PK が違えば物理的に到達不能)
+- **`pk = TEAM#...` で固定**: マルチテナント isolation を物理的に強制 (PK が違えば物理的に到達不能)
 - **`ASN` の SK 先頭に `start_date`**: 期間検索 `begins_with(sk, "ASN#2026-05")` や `BETWEEN` クエリで対応できる。`endDateExclusive` は条件式 (FilterExpression) で post-filter
 - **半開区間 `[start, end)` 規約**: 業界標準 (RFC 5545 / Google Calendar / PostgreSQL daterange / Java / Rust / Python) に整合。隣接区間 (5/1〜5/3 と 5/3〜5/5) が境界で接して重ならない。詳細 [ADR 0004](../adr/0004-end-date-exclusive-with-form-transform.md)
 - **FK 整合性は app 層で担保**: DynamoDB は外部キー制約を持たないため、Resource / Project の delete 時に Assignment を残骸として残さないようカスケード削除を app 層で実装する (将来要件)

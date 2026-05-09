@@ -10,7 +10,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { createAssignment, deleteAssignment, updateAssignment } from './assignment';
 
 const ddbMock = mockClient(DynamoDBDocumentClient);
-const ORG = 'org-test';
+const TEAM = 'team-test';
 const TABLE = process.env.DYNAMODB_TABLE ?? 'resource-planner-test';
 
 beforeEach(() => {
@@ -21,7 +21,7 @@ describe('createAssignment', () => {
 	it('uses SK = ASN#{startDate}#{id} and stores half-open interval', async () => {
 		ddbMock.on(PutCommand).resolves({});
 
-		const result = await createAssignment(ORG, {
+		const result = await createAssignment(TEAM, {
 			resourceId: 'r1',
 			projectId: 'p1',
 			startDate: '2026-05-01',
@@ -36,7 +36,7 @@ describe('createAssignment', () => {
 		});
 		const input = ddbMock.commandCalls(PutCommand)[0].args[0].input;
 		expect(input.Item).toMatchObject({
-			pk: `ORG#${ORG}`,
+			pk: `TEAM#${TEAM}`,
 			sk: `ASN#2026-05-01#${result.id}`,
 			id: result.id,
 			resourceId: 'r1',
@@ -60,7 +60,7 @@ describe('updateAssignment (SK aware)', () => {
 	it('SK unchanged → uses PutCommand with attribute_exists guard', async () => {
 		ddbMock.on(PutCommand).resolves({});
 
-		await updateAssignment(ORG, '2026-05-01', baseInput);
+		await updateAssignment(TEAM, '2026-05-01', baseInput);
 
 		const calls = ddbMock.commandCalls(PutCommand);
 		expect(calls).toHaveLength(1);
@@ -68,7 +68,7 @@ describe('updateAssignment (SK aware)', () => {
 
 		const input = calls[0].args[0].input;
 		expect(input.Item).toMatchObject({
-			pk: `ORG#${ORG}`,
+			pk: `TEAM#${TEAM}`,
 			sk: 'ASN#2026-05-01#a1',
 			id: 'a1',
 			resourceId: 'r1',
@@ -83,7 +83,7 @@ describe('updateAssignment (SK aware)', () => {
 		ddbMock.on(TransactWriteCommand).resolves({});
 
 		const moved = { ...baseInput, startDate: '2026-05-15' };
-		await updateAssignment(ORG, '2026-05-01', moved);
+		await updateAssignment(TEAM, '2026-05-01', moved);
 
 		expect(ddbMock.commandCalls(PutCommand)).toHaveLength(0);
 		const txCalls = ddbMock.commandCalls(TransactWriteCommand);
@@ -95,7 +95,7 @@ describe('updateAssignment (SK aware)', () => {
 		// Old SK delete (with attribute_exists guard)
 		expect(items?.[0].Delete).toMatchObject({
 			TableName: TABLE,
-			Key: { pk: `ORG#${ORG}`, sk: 'ASN#2026-05-01#a1' },
+			Key: { pk: `TEAM#${TEAM}`, sk: 'ASN#2026-05-01#a1' },
 			ConditionExpression: 'attribute_exists(sk)'
 		});
 
@@ -105,7 +105,7 @@ describe('updateAssignment (SK aware)', () => {
 			ConditionExpression: 'attribute_not_exists(sk)'
 		});
 		expect(items?.[1].Put?.Item).toMatchObject({
-			pk: `ORG#${ORG}`,
+			pk: `TEAM#${TEAM}`,
 			sk: 'ASN#2026-05-15#a1',
 			startDate: '2026-05-15',
 			endDateExclusive: '2026-06-01'
@@ -117,9 +117,9 @@ describe('deleteAssignment', () => {
 	it('sends DeleteCommand with composite SK', async () => {
 		ddbMock.on(DeleteCommand).resolves({});
 
-		await deleteAssignment(ORG, '2026-05-01', 'a1');
+		await deleteAssignment(TEAM, '2026-05-01', 'a1');
 
 		const input = ddbMock.commandCalls(DeleteCommand)[0].args[0].input;
-		expect(input.Key).toEqual({ pk: `ORG#${ORG}`, sk: 'ASN#2026-05-01#a1' });
+		expect(input.Key).toEqual({ pk: `TEAM#${TEAM}`, sk: 'ASN#2026-05-01#a1' });
 	});
 });

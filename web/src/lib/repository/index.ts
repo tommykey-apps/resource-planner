@@ -1,20 +1,23 @@
 import { QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { ddb, TABLE } from '$lib/db/client';
 import { pk, SK_PREFIX } from './keys';
-import type { OrgData, Resource, Project, Assignment } from '$lib/types';
+import type { TeamData, Resource, Project, Assignment } from '$lib/types';
 
 export * from './resource';
 export * from './project';
 export * from './assignment';
+export * from './team';
 
 /**
- * 組織内の全データ (Resource / Project / Assignment) を 1 query で取得する。
+ * Team 内の全アプリデータ (Resource / Project / Assignment) を 1 query で取得する。
  *
- * Single Table Design のため `Query(pk = ORG#X)` だけで 3 entity が混在で返る。
+ * Single Table Design のため `Query(pk = TEAM#X)` だけで 3 entity が混在で返る。
  * SK プレフィックスで振り分けて返す (access-patterns.md UC #1)。
+ *
+ * Team META / MEMBER#... は本関数の戻り値には含めない (App data only)。
  */
-export async function queryAllByOrg(orgId: string): Promise<OrgData> {
-	const data: OrgData = { resources: [], projects: [], assignments: [] };
+export async function queryAllByTeam(teamId: string): Promise<TeamData> {
+	const data: TeamData = { resources: [], projects: [], assignments: [] };
 	let lastKey: Record<string, unknown> | undefined;
 
 	do {
@@ -22,7 +25,7 @@ export async function queryAllByOrg(orgId: string): Promise<OrgData> {
 			new QueryCommand({
 				TableName: TABLE,
 				KeyConditionExpression: 'pk = :pk',
-				ExpressionAttributeValues: { ':pk': pk(orgId) },
+				ExpressionAttributeValues: { ':pk': pk(teamId) },
 				ExclusiveStartKey: lastKey
 			})
 		);
@@ -46,6 +49,7 @@ export async function queryAllByOrg(orgId: string): Promise<OrgData> {
 					endDateExclusive: item.endDateExclusive
 				} as Assignment);
 			}
+			// META / MEMBER# は無視 (App data only)
 		}
 
 		lastKey = out.LastEvaluatedKey;

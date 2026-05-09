@@ -1,29 +1,35 @@
-import { error } from '@sveltejs/kit';
 import { buildClerkProps } from 'svelte-clerk/server';
-import { queryAllByOrg } from '$lib/repository';
+import { queryAllByTeam } from '$lib/repository';
+import { requireSession } from '$lib/auth';
 import type { LayoutServerLoad } from './$types';
 
-export const load: LayoutServerLoad = async ({ locals }) => {
-	const auth = locals.auth();
+export const load: LayoutServerLoad = async (event) => {
+	// 未認証は +layout.svelte の <RedirectToSignIn /> で誘導される (Clerk 撤去まで)。
+	// 認証済の場合は session 経由で teamId を取得 (#65 で Clerk Org 概念を撤廃)。
+	const authFn = event.locals.auth as unknown;
+	const clerkAuth = typeof authFn === 'function' ? (authFn as () => unknown)() : undefined;
+	const isAuthenticated =
+		clerkAuth !== undefined &&
+		clerkAuth !== null &&
+		!(clerkAuth instanceof Promise) &&
+		typeof clerkAuth === 'object' &&
+		'userId' in clerkAuth &&
+		(clerkAuth as { userId: string | null }).userId !== null;
 
-	// 未認証は +layout.svelte の <RedirectToSignIn /> で誘導されるため、ここでは
-	// orgId が無いケースのみハンドリング (ADR 0001 + plan ファイル UC 確定事項:
-	// Clerk Org 必須 ON 前提)。
-	if (auth.userId && !auth.orgId) {
-		// Org 未所属 / 未選択の場合。Clerk Account Portal で Org を作成 / 選択して再ログインさせる。
-		// メッセージは +error.svelte (Orphan PR) で UI 化予定。
-		error(
-			403,
-			'組織が選択されていません。Clerk の Account Portal から組織を作成または選択してください。'
-		);
+	if (!isAuthenticated) {
+		return {
+			...buildClerkProps(clerkAuth as Parameters<typeof buildClerkProps>[0]),
+			resources: [],
+			projects: [],
+			assignments: []
+		};
 	}
 
-	const data = auth.orgId
-		? await queryAllByOrg(auth.orgId)
-		: { resources: [], projects: [], assignments: [] };
+	const session = requireSession(event);
+	const data = await queryAllByTeam(session.teamId);
 
 	return {
-		...buildClerkProps(auth),
+		...buildClerkProps(clerkAuth as Parameters<typeof buildClerkProps>[0]),
 		...data
 	};
 };

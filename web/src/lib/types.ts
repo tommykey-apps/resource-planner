@@ -1,7 +1,7 @@
 /**
  * resource-planner の domain 型。
  *
- * - DB 保存形式: pk = ORG#{orgId}, sk = (RES|PRJ|ASN)#... + entity attribute。
+ * - DB 保存形式: pk = TEAM#{teamId}, sk = (RES|PRJ|ASN)#... + entity attribute (#81 で ORG → TEAM 改名)。
  * - **`startDate` は inclusive、`endDateExclusive` は exclusive 半開区間 `[start, endExclusive)`** (ADR 0004)。
  *   業界標準 (RFC 5545 / Google Calendar API / PostgreSQL daterange / Java / Rust / Python) と同じ規約。
  *   フォーム UX は inclusive (「終了日 5/31」) → Zod `.transform()` で `endDateExclusive` に変換。
@@ -14,6 +14,28 @@
 
 /** YYYY-MM-DD。Asia/Tokyo の暦日 (TZ なし floating)。 */
 export type DateString = string;
+
+/** 認証ユーザー (Auth.js / Clerk のいずれか経由で識別される) */
+export interface User {
+	id: string;
+	email: string;
+	name?: string;
+}
+
+/** チーム (旧 Clerk Org の置き換え。社内 1 チーム想定、将来 multi-team)。 */
+export interface Team {
+	id: string;
+	name: string;
+	createdAt: string; // ISO 8601
+}
+
+/** Team メンバーシップ。同じ User が複数 Team に所属できる構造。 */
+export interface TeamMembership {
+	teamId: string;
+	userId: string;
+	role: 'admin' | 'member';
+	joinedAt: string;
+}
 
 export interface Resource {
 	id: string;
@@ -37,7 +59,7 @@ export interface Assignment {
 }
 
 /** `+layout.server.ts` の load が返す形 (entity 別に振り分け済み)。 */
-export interface OrgData {
+export interface TeamData {
 	resources: Resource[];
 	projects: Project[];
 	assignments: Assignment[];

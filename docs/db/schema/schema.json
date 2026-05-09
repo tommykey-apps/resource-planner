@@ -17,6 +17,24 @@
           "type": "S",
           "nullable": false,
           "comment": "Sort key. Format varies by entity type:\n- RES#{resource_id} for resources (people)\n- PRJ#{project_id} for projects (clients)\n- ASN#{start_date}#{assignment_id} for assignments\n"
+        },
+        {
+          "name": "GSI1PK",
+          "type": "S",
+          "nullable": false
+        },
+        {
+          "name": "GSI1SK",
+          "type": "S",
+          "nullable": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "GSI1",
+          "def": "GlobalSecondaryIndex { [{ AttributeName: \"GSI1PK\", KeyType: \"HASH\" } { AttributeName: \"GSI1SK\", KeyType: \"RANGE\" }], { ProjectionType: \"ALL\" } }",
+          "table": null,
+          "columns": null
         }
       ],
       "constraints": [

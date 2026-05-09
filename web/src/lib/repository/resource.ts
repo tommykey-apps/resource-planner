@@ -12,24 +12,24 @@ import type { ResourceCreateInput, ResourceUpdateInput } from '$lib/schemas';
 
 const TRANSACT_MAX_ITEMS = 100;
 
-export async function createResource(orgId: string, input: ResourceCreateInput): Promise<Resource> {
+export async function createResource(teamId: string, input: ResourceCreateInput): Promise<Resource> {
 	const id = newId();
 	const item: Resource = { id, name: input.name };
 	await ddb.send(
 		new PutCommand({
 			TableName: TABLE,
-			Item: { pk: pk(orgId), sk: resourceSk(id), ...item },
+			Item: { pk: pk(teamId), sk: resourceSk(id), ...item },
 			ConditionExpression: 'attribute_not_exists(sk)'
 		})
 	);
 	return item;
 }
 
-export async function updateResource(orgId: string, input: ResourceUpdateInput): Promise<void> {
+export async function updateResource(teamId: string, input: ResourceUpdateInput): Promise<void> {
 	await ddb.send(
 		new UpdateCommand({
 			TableName: TABLE,
-			Key: { pk: pk(orgId), sk: resourceSk(input.id) },
+			Key: { pk: pk(teamId), sk: resourceSk(input.id) },
 			UpdateExpression: 'SET #name = :name',
 			ExpressionAttributeNames: { '#name': 'name' },
 			ExpressionAttributeValues: { ':name': input.name },
@@ -41,7 +41,7 @@ export async function updateResource(orgId: string, input: ResourceUpdateInput):
 /**
  * Resource と関連 Assignment を **原子的に** cascade delete する (UC-06 / ADR 0006)。
  *
- * 関連 Assignment の検索: `pk = ORG#X AND begins_with(sk, "ASN#")` を Query して、
+ * 関連 Assignment の検索: `pk = TEAM#X AND begins_with(sk, "ASN#")` を Query して、
  * `resourceId == id` で post-filter (FilterExpression)。
  * Resource 自身 + 関連 Assignment を 1 つの `TransactWriteItems` で削除。
  *
@@ -50,9 +50,9 @@ export async function updateResource(orgId: string, input: ResourceUpdateInput):
  * (BatchWriteItem) は YAGNI として未実装 (1 リソースが 100 件以上アサインされる運用は
  * 想定外、社内 100 ユーザー / 月単位アサイン)。
  */
-export async function deleteResource(orgId: string, id: string): Promise<void> {
-	const orgPk = pk(orgId);
-	const related = await queryRelatedAssignmentSkByResource(orgId, id);
+export async function deleteResource(teamId: string, id: string): Promise<void> {
+	const teamPk = pk(teamId);
+	const related = await queryRelatedAssignmentSkByResource(teamId, id);
 
 	const totalItems = related.length + 1;
 	if (totalItems > TRANSACT_MAX_ITEMS) {
@@ -64,9 +64,9 @@ export async function deleteResource(orgId: string, id: string): Promise<void> {
 	await ddb.send(
 		new TransactWriteCommand({
 			TransactItems: [
-				{ Delete: { TableName: TABLE, Key: { pk: orgPk, sk: resourceSk(id) } } },
+				{ Delete: { TableName: TABLE, Key: { pk: teamPk, sk: resourceSk(id) } } },
 				...related.map((sk) => ({
-					Delete: { TableName: TABLE, Key: { pk: orgPk, sk } }
+					Delete: { TableName: TABLE, Key: { pk: teamPk, sk } }
 				}))
 			]
 		})
@@ -74,11 +74,11 @@ export async function deleteResource(orgId: string, id: string): Promise<void> {
 }
 
 /**
- * `pk = ORG#X AND begins_with(sk, "ASN#")` を Query して、`resourceId === id` の SK 一覧を返す。
+ * `pk = TEAM#X AND begins_with(sk, "ASN#")` を Query して、`resourceId === id` の SK 一覧を返す。
  * pagination (`LastEvaluatedKey`) 対応。
  */
 async function queryRelatedAssignmentSkByResource(
-	orgId: string,
+	teamId: string,
 	resourceId: string
 ): Promise<string[]> {
 	const skList: string[] = [];
@@ -90,7 +90,7 @@ async function queryRelatedAssignmentSkByResource(
 				KeyConditionExpression: 'pk = :pk AND begins_with(sk, :asn)',
 				FilterExpression: 'resourceId = :rid',
 				ExpressionAttributeValues: {
-					':pk': pk(orgId),
+					':pk': pk(teamId),
 					':asn': SK_PREFIX.assignment,
 					':rid': resourceId
 				},

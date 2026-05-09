@@ -12,7 +12,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createResource, deleteResource, updateResource } from './resource';
 
 const ddbMock = mockClient(DynamoDBDocumentClient);
-const ORG = 'org-test';
+const TEAM = 'team-test';
 const TABLE = process.env.DYNAMODB_TABLE ?? 'resource-planner-test';
 
 beforeEach(() => {
@@ -27,7 +27,7 @@ describe('createResource', () => {
 	it('sends PutCommand with pk/sk/id/name and attribute_not_exists guard', async () => {
 		ddbMock.on(PutCommand).resolves({});
 
-		const result = await createResource(ORG, { name: 'Alice' });
+		const result = await createResource(TEAM, { name: 'Alice' });
 
 		expect(result.name).toBe('Alice');
 		expect(typeof result.id).toBe('string');
@@ -39,7 +39,7 @@ describe('createResource', () => {
 		expect(input.TableName).toBe(TABLE);
 		expect(input.ConditionExpression).toBe('attribute_not_exists(sk)');
 		expect(input.Item).toMatchObject({
-			pk: `ORG#${ORG}`,
+			pk: `TEAM#${TEAM}`,
 			sk: `RES#${result.id}`,
 			id: result.id,
 			name: 'Alice'
@@ -51,13 +51,13 @@ describe('updateResource', () => {
 	it('sends UpdateCommand with #name placeholder + attribute_exists guard', async () => {
 		ddbMock.on(UpdateCommand).resolves({});
 
-		await updateResource(ORG, { id: 'res-1', name: 'Bob' });
+		await updateResource(TEAM, { id: 'res-1', name: 'Bob' });
 
 		const calls = ddbMock.commandCalls(UpdateCommand);
 		expect(calls).toHaveLength(1);
 		const input = calls[0].args[0].input;
 		expect(input.TableName).toBe(TABLE);
-		expect(input.Key).toEqual({ pk: `ORG#${ORG}`, sk: 'RES#res-1' });
+		expect(input.Key).toEqual({ pk: `TEAM#${TEAM}`, sk: 'RES#res-1' });
 		expect(input.UpdateExpression).toBe('SET #name = :name');
 		expect(input.ExpressionAttributeNames).toEqual({ '#name': 'name' });
 		expect(input.ExpressionAttributeValues).toEqual({ ':name': 'Bob' });
@@ -72,7 +72,7 @@ describe('deleteResource (cascade)', () => {
 		});
 		ddbMock.on(TransactWriteCommand).resolves({});
 
-		await deleteResource(ORG, 'res-1');
+		await deleteResource(TEAM, 'res-1');
 
 		const queryCalls = ddbMock.commandCalls(QueryCommand);
 		expect(queryCalls).toHaveLength(1);
@@ -80,7 +80,7 @@ describe('deleteResource (cascade)', () => {
 		expect(qInput.KeyConditionExpression).toBe('pk = :pk AND begins_with(sk, :asn)');
 		expect(qInput.FilterExpression).toBe('resourceId = :rid');
 		expect(qInput.ExpressionAttributeValues).toMatchObject({
-			':pk': `ORG#${ORG}`,
+			':pk': `TEAM#${TEAM}`,
 			':asn': 'ASN#',
 			':rid': 'res-1'
 		});
@@ -89,9 +89,9 @@ describe('deleteResource (cascade)', () => {
 		expect(txCalls).toHaveLength(1);
 		const txInput = txCalls[0].args[0].input;
 		expect(txInput.TransactItems).toEqual([
-			{ Delete: { TableName: TABLE, Key: { pk: `ORG#${ORG}`, sk: 'RES#res-1' } } },
-			{ Delete: { TableName: TABLE, Key: { pk: `ORG#${ORG}`, sk: 'ASN#2026-05-01#a1' } } },
-			{ Delete: { TableName: TABLE, Key: { pk: `ORG#${ORG}`, sk: 'ASN#2026-05-10#a2' } } }
+			{ Delete: { TableName: TABLE, Key: { pk: `TEAM#${TEAM}`, sk: 'RES#res-1' } } },
+			{ Delete: { TableName: TABLE, Key: { pk: `TEAM#${TEAM}`, sk: 'ASN#2026-05-01#a1' } } },
+			{ Delete: { TableName: TABLE, Key: { pk: `TEAM#${TEAM}`, sk: 'ASN#2026-05-10#a2' } } }
 		]);
 	});
 
@@ -100,14 +100,14 @@ describe('deleteResource (cascade)', () => {
 			.on(QueryCommand)
 			.resolvesOnce({
 				Items: [{ sk: 'ASN#2026-05-01#a1' }],
-				LastEvaluatedKey: { pk: `ORG#${ORG}`, sk: 'ASN#2026-05-01#a1' }
+				LastEvaluatedKey: { pk: `TEAM#${TEAM}`, sk: 'ASN#2026-05-01#a1' }
 			})
 			.resolvesOnce({
 				Items: [{ sk: 'ASN#2026-05-10#a2' }]
 			});
 		ddbMock.on(TransactWriteCommand).resolves({});
 
-		await deleteResource(ORG, 'res-1');
+		await deleteResource(TEAM, 'res-1');
 
 		expect(ddbMock.commandCalls(QueryCommand)).toHaveLength(2);
 		const txInput = ddbMock.commandCalls(TransactWriteCommand)[0].args[0].input;
@@ -120,7 +120,7 @@ describe('deleteResource (cascade)', () => {
 		}));
 		ddbMock.on(QueryCommand).resolves({ Items: items });
 
-		await expect(deleteResource(ORG, 'res-1')).rejects.toThrow(/exceeds 100 items/);
+		await expect(deleteResource(TEAM, 'res-1')).rejects.toThrow(/exceeds 100 items/);
 		expect(ddbMock.commandCalls(TransactWriteCommand)).toHaveLength(0);
 	});
 
@@ -128,11 +128,11 @@ describe('deleteResource (cascade)', () => {
 		ddbMock.on(QueryCommand).resolves({ Items: [] });
 		ddbMock.on(TransactWriteCommand).resolves({});
 
-		await deleteResource(ORG, 'res-1');
+		await deleteResource(TEAM, 'res-1');
 
 		const txInput = ddbMock.commandCalls(TransactWriteCommand)[0].args[0].input;
 		expect(txInput.TransactItems).toEqual([
-			{ Delete: { TableName: TABLE, Key: { pk: `ORG#${ORG}`, sk: 'RES#res-1' } } }
+			{ Delete: { TableName: TABLE, Key: { pk: `TEAM#${TEAM}`, sk: 'RES#res-1' } } }
 		]);
 	});
 });
@@ -141,6 +141,6 @@ describe('deleteResource (cascade)', () => {
 it('does not send raw DeleteCommand (delete is via TransactWrite)', async () => {
 	ddbMock.on(QueryCommand).resolves({ Items: [] });
 	ddbMock.on(TransactWriteCommand).resolves({});
-	await deleteResource(ORG, 'res-1');
+	await deleteResource(TEAM, 'res-1');
 	expect(ddbMock.commandCalls(DeleteCommand)).toHaveLength(0);
 });

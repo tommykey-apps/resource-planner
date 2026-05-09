@@ -1,4 +1,4 @@
-import { error, fail } from '@sveltejs/kit';
+import { fail } from '@sveltejs/kit';
 import { z } from 'zod';
 import {
 	resourceCreateSchema,
@@ -17,20 +17,8 @@ import {
 	createAssignment,
 	deleteAssignment
 } from '$lib/repository';
+import { requireSession } from '$lib/auth';
 import type { Actions } from './$types';
-
-/**
- * 認証 + Org 取得を共通化。
- *
- * `+layout.server.ts` で 403 を返している前提だが、念のため form action 側でも
- * orgId を再取得する (action は layout の load を再評価しないことがある)。
- */
-function requireOrg(locals: App.Locals): string {
-	const auth = locals.auth();
-	if (!auth.userId) error(401, '認証が必要です');
-	if (!auth.orgId) error(403, '組織が選択されていません');
-	return auth.orgId;
-}
 
 /**
  * Zod の formatted error を form action の戻り値に整形する。
@@ -46,9 +34,9 @@ function formatErrors<T>(result: z.ZodSafeParseError<T>): Record<string, string>
 }
 
 export const actions: Actions = {
-	createResource: async ({ request, locals }) => {
-		const orgId = requireOrg(locals);
-		const data = await request.formData();
+	createResource: async (event) => {
+		const session = requireSession(event);
+		const data = await event.request.formData();
 		const parsed = resourceCreateSchema.safeParse({
 			name: data.get('name')
 		});
@@ -58,13 +46,13 @@ export const actions: Actions = {
 				errors: formatErrors(parsed)
 			});
 		}
-		await createResource(orgId, parsed.data);
+		await createResource(session.teamId, parsed.data);
 		return { action: 'createResource', success: true };
 	},
 
-	updateResource: async ({ request, locals }) => {
-		const orgId = requireOrg(locals);
-		const data = await request.formData();
+	updateResource: async (event) => {
+		const session = requireSession(event);
+		const data = await event.request.formData();
 		const parsed = resourceUpdateSchema.safeParse({
 			id: data.get('id'),
 			name: data.get('name')
@@ -75,13 +63,13 @@ export const actions: Actions = {
 				errors: formatErrors(parsed)
 			});
 		}
-		await updateResource(orgId, parsed.data);
+		await updateResource(session.teamId, parsed.data);
 		return { action: 'updateResource', success: true };
 	},
 
-	deleteResource: async ({ request, locals }) => {
-		const orgId = requireOrg(locals);
-		const data = await request.formData();
+	deleteResource: async (event) => {
+		const session = requireSession(event);
+		const data = await event.request.formData();
 		const id = data.get('id');
 		if (typeof id !== 'string' || !id) {
 			return fail(400, {
@@ -89,15 +77,13 @@ export const actions: Actions = {
 				errors: { id: 'id が必要です' }
 			});
 		}
-		// cascade delete (関連 Assignment も削除) は PR-H で実装予定。
-		// 現状は Resource 単体のみ削除するため、関連 Assignment は orphan として残る。
-		await deleteResource(orgId, id);
+		await deleteResource(session.teamId, id);
 		return { action: 'deleteResource', success: true };
 	},
 
-	createProject: async ({ request, locals }) => {
-		const orgId = requireOrg(locals);
-		const data = await request.formData();
+	createProject: async (event) => {
+		const session = requireSession(event);
+		const data = await event.request.formData();
 		const parsed = projectCreateSchema.safeParse({
 			name: data.get('name'),
 			color: data.get('color')
@@ -108,13 +94,13 @@ export const actions: Actions = {
 				errors: formatErrors(parsed)
 			});
 		}
-		await createProject(orgId, parsed.data);
+		await createProject(session.teamId, parsed.data);
 		return { action: 'createProject', success: true };
 	},
 
-	updateProject: async ({ request, locals }) => {
-		const orgId = requireOrg(locals);
-		const data = await request.formData();
+	updateProject: async (event) => {
+		const session = requireSession(event);
+		const data = await event.request.formData();
 		const parsed = projectUpdateSchema.safeParse({
 			id: data.get('id'),
 			name: data.get('name'),
@@ -126,13 +112,13 @@ export const actions: Actions = {
 				errors: formatErrors(parsed)
 			});
 		}
-		await updateProject(orgId, parsed.data);
+		await updateProject(session.teamId, parsed.data);
 		return { action: 'updateProject', success: true };
 	},
 
-	deleteProject: async ({ request, locals }) => {
-		const orgId = requireOrg(locals);
-		const data = await request.formData();
+	deleteProject: async (event) => {
+		const session = requireSession(event);
+		const data = await event.request.formData();
 		const id = data.get('id');
 		if (typeof id !== 'string' || !id) {
 			return fail(400, {
@@ -140,14 +126,13 @@ export const actions: Actions = {
 				errors: { id: 'id が必要です' }
 			});
 		}
-		// cascade delete は PR-H で実装予定。現状は orphan を残す。
-		await deleteProject(orgId, id);
+		await deleteProject(session.teamId, id);
 		return { action: 'deleteProject', success: true };
 	},
 
-	createAssignment: async ({ request, locals }) => {
-		const orgId = requireOrg(locals);
-		const data = await request.formData();
+	createAssignment: async (event) => {
+		const session = requireSession(event);
+		const data = await event.request.formData();
 		const parsed = assignmentCreateSchema.safeParse({
 			resourceId: data.get('resourceId'),
 			projectId: data.get('projectId'),
@@ -163,13 +148,13 @@ export const actions: Actions = {
 		// assignmentCreateSchema は startDate <= endDate を refine 検証済 (inclusive)。
 		// .transform() で endDateExclusive へ変換 (ADR 0004)。
 		// SK は ASN#{startDate}#{ulid()} で時系列順にソートされる。
-		await createAssignment(orgId, parsed.data);
+		await createAssignment(session.teamId, parsed.data);
 		return { action: 'createAssignment', success: true };
 	},
 
-	deleteAssignment: async ({ request, locals }) => {
-		const orgId = requireOrg(locals);
-		const data = await request.formData();
+	deleteAssignment: async (event) => {
+		const session = requireSession(event);
+		const data = await event.request.formData();
 		const id = data.get('id');
 		const startDate = data.get('startDate');
 		if (typeof id !== 'string' || !id) {
@@ -182,7 +167,7 @@ export const actions: Actions = {
 			});
 		}
 		// SK = ASN#{startDate}#{id} で構成されるため startDate も必要 (UC-05 / ADR 0005 参照)。
-		await deleteAssignment(orgId, startDate, id);
+		await deleteAssignment(session.teamId, startDate, id);
 		return { action: 'deleteAssignment', success: true };
 	}
 };

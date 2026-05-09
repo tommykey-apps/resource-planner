@@ -11,16 +11,24 @@ See ../entities.md and ../access-patterns.md for details.
 
 ## Attributes
 
-| Name | Type | Default | Nullable | Children | Parents | Comment                                                                                                                                                                                              |
-| ---- | ---- | ------- | -------- | -------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| pk   | S    |         | false    |          |         | Partition key. Format: ORG#{clerk_org_id}.<br />All data for one organization shares the same pk for efficient queries.<br />                                                                        |
-| sk   | S    |         | false    |          |         | Sort key. Format varies by entity type:<br />- RES#{resource_id} for resources (people)<br />- PRJ#{project_id} for projects (clients)<br />- ASN#{start_date}#{assignment_id} for assignments<br /> |
+| Name   | Type | Default | Nullable | Children | Parents | Comment                                                                                                                                                                                              |
+| ------ | ---- | ------- | -------- | -------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| pk     | S    |         | false    |          |         | Partition key. Format: ORG#{clerk_org_id}.<br />All data for one organization shares the same pk for efficient queries.<br />                                                                        |
+| sk     | S    |         | false    |          |         | Sort key. Format varies by entity type:<br />- RES#{resource_id} for resources (people)<br />- PRJ#{project_id} for projects (clients)<br />- ASN#{start_date}#{assignment_id} for assignments<br /> |
+| GSI1PK | S    |         | false    |          |         |                                                                                                                                                                                                      |
+| GSI1SK | S    |         | false    |          |         |                                                                                                                                                                                                      |
 
 ## Primary Key
 
 | Name        | Type                       | Definition                                                                           |
 | ----------- | -------------------------- | ------------------------------------------------------------------------------------ |
 | Primary Key | Partition key and sort key | [{ AttributeName: "pk", KeyType: "HASH" } { AttributeName: "sk", KeyType: "RANGE" }] |
+
+## Secondary Indexes
+
+| Name | Definition                                                                                                                                       |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| GSI1 | GlobalSecondaryIndex { [{ AttributeName: "GSI1PK", KeyType: "HASH" } { AttributeName: "GSI1SK", KeyType: "RANGE" }], { ProjectionType: "ALL" } } |
 
 ## Relations
 
