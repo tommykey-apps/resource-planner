@@ -56,14 +56,38 @@ resource "aws_iam_role_policy" "lambda_ssm" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = ["ssm:GetParameter"]
-        Resource = [aws_ssm_parameter.clerk_secret_key.arn]
+        Effect = "Allow"
+        Action = ["ssm:GetParameter"]
+        Resource = [
+          aws_ssm_parameter.clerk_secret_key.arn,
+          aws_ssm_parameter.auth_secret.arn
+        ]
       },
       {
         Effect   = "Allow"
         Action   = ["kms:Decrypt"]
         Resource = "arn:aws:kms:${var.region}:${data.aws_caller_identity.current.account_id}:alias/aws/ssm"
+      }
+    ]
+  })
+}
+
+# SES SendEmail 権限 (#85): Auth.js Magic Link を SESv2 SDK 経由で送信する。
+# domain identity (tommykeyapp.com) からの送信のみ許可。
+resource "aws_iam_role_policy" "lambda_ses" {
+  name = "${var.project}-ses-policy"
+  role = aws_iam_role.lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ses:SendEmail",
+          "ses:SendRawEmail"
+        ]
+        Resource = aws_ses_domain_identity.main.arn
       }
     ]
   })
@@ -85,6 +109,9 @@ resource "aws_lambda_function" "app" {
       CLERK_SECRET_KEY_PARAM       = aws_ssm_parameter.clerk_secret_key.name
       PUBLIC_CLERK_PUBLISHABLE_KEY = var.clerk_publishable_key
       ALLOWED_DOMAIN               = var.allowed_domain
+      AUTH_SECRET_PARAM            = aws_ssm_parameter.auth_secret.name
+      AUTH_TRUST_HOST              = "true"
+      EMAIL_FROM                   = var.email_from
     }
   }
 

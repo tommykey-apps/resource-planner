@@ -121,6 +121,7 @@ OpenAPI は使わず、TypeScript 型 + Zod schema を API 仕様の正本とし
 | [0004](docs/adr/0004-end-date-exclusive-with-form-transform.md) | endDate は exclusive 半開区間 + Zod transform | Accepted |
 | [0005](docs/adr/0005-assignment-drag-resize-transport.md) | Assignment ドラッグ / リサイズは `+server.ts` API + Optimistic UI | Accepted |
 | [0006](docs/adr/0006-cascade-delete-strategy.md) | Resource / Project の削除は cascade (TransactWriteItems) | Accepted |
+| [0007](docs/adr/0007-tdd-with-vitest-and-playwright.md) | TDD で開発する: Vitest + Playwright | Accepted |
 
 ### Use Cases
 
@@ -135,6 +136,33 @@ OpenAPI は使わず、TypeScript 型 + Zod schema を API 仕様の正本とし
 
 新機能を追加するときは [`.github/ISSUE_TEMPLATE/feature.yml`](.github/ISSUE_TEMPLATE/feature.yml) を使う。
 ADR / use-case / 型定義の追加が AC に含まれる。
+
+## 本番投入手順 (Auth.js infra、PR-A4)
+
+`infra/` を `terraform apply` した後、以下を **手動で 1 度だけ** 実行する:
+
+```bash
+# 1. AUTH_SECRET を生成して SSM SecureString に投入 (terraform state には残さない)
+SECRET=$(openssl rand -hex 32)
+aws ssm put-parameter \
+  --name /resource-planner/auth-secret \
+  --value "$SECRET" \
+  --type SecureString \
+  --overwrite \
+  --region ap-northeast-1
+
+# 2. SES domain identity の verified 状態を確認 (DKIM CNAME 反映に最大 15 分)
+aws sesv2 get-email-identity \
+  --email-identity tommykeyapp.com \
+  --region ap-northeast-1
+# VerifiedForSendingStatus が true、DkimAttributes.Status が SUCCESS ならOK
+
+# 3. SES Sandbox 解除を申請 (本番ユーザーへの送信を有効化、24-48 時間)
+# AWS Console → SES → Account dashboard → Request production access
+# `ALLOWED_DOMAIN` 配下の社内ユーザーのみに送信する旨を理由に記載
+```
+
+その後 `gh secret set` で CD 用の env を本番用に揃える (`AUTH_SECRET` は SSM 経由で Lambda 起動時に取得するため、CD には不要)。
 
 ## 関連リポジトリ
 
