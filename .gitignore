@@ -8,6 +8,11 @@ web/build
 # Vitest
 web/coverage
 
+# Playwright
+web/test-results
+web/playwright-report
+web/playwright/.cache
+
 # Terraform
 infra/.terraform
 infra/*.tfstate

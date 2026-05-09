@@ -111,6 +111,36 @@ jobs:
         run: pnpm test
         working-directory: web
 
+  # Playwright E2E。Phase 3 (Auth.js + Magic Link) 完了まで disable する。
+  # 有効化条件: web/e2e/ に sign-in fixture + 実 spec が揃った時点で `if: false` を外す。
+  # 詳細: ADR 0007 / issue #77
+  test-e2e:
+    if: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://npm.pkg.github.com
+          scope: '@tommykey-apps'
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: web
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+        working-directory: web
+      - name: Run E2E tests
+        run: pnpm test:e2e
+        working-directory: web
+
   terraform-plan:
     runs-on: ubuntu-latest
     steps:
