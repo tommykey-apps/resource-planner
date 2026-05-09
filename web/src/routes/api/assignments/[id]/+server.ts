@@ -16,7 +16,7 @@ import type { RequestHandler } from './$types';
  * 楽観ロックは未実装 (last-write-wins)。同時編集が問題になったら version 列導入を別 ADR で検討。
  */
 export const PATCH: RequestHandler = async (event) => {
-	const session = requireSession(event);
+	const session = await requireSession(event);
 	const id = event.params.id;
 	if (!id) error(400, 'id is required');
 

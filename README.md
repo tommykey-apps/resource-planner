@@ -14,7 +14,7 @@
 | Styling | Tailwind CSS | 4 |
 | Component Library | `@tommykey-apps/ui-components` | (private) |
 | Adapter | `@sveltejs/adapter-node` | 5 |
-| Auth | Clerk (Microsoft Social Connection) | 1.1+ |
+| Auth | Auth.js + Email Magic Link | `@auth/sveltekit` 1.11+ |
 | DB | DynamoDB (Single Table Design) | — |
 | Hosting | Lambda (ARM64 container) + API Gateway HTTP API + CloudFront | — |
 | Type Checking | TypeScript / svelte-check | 6 / 4 |
@@ -122,6 +122,8 @@ OpenAPI は使わず、TypeScript 型 + Zod schema を API 仕様の正本とし
 | [0005](docs/adr/0005-assignment-drag-resize-transport.md) | Assignment ドラッグ / リサイズは `+server.ts` API + Optimistic UI | Accepted |
 | [0006](docs/adr/0006-cascade-delete-strategy.md) | Resource / Project の削除は cascade (TransactWriteItems) | Accepted |
 | [0007](docs/adr/0007-tdd-with-vitest-and-playwright.md) | TDD で開発する: Vitest + Playwright | Accepted |
+| [0008](docs/adr/0008-auth-migration-clerk-to-authjs.md) | 認証を Clerk → Auth.js + Email Magic Link に移行する | Accepted |
+| [0009](docs/adr/0009-org-to-team-redesign.md) | マルチテナント単位を Clerk Org → 自前 Team モデルに再設計する | Accepted |
 
 ### Use Cases
 

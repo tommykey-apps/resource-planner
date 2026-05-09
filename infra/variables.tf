@@ -13,18 +13,6 @@ variable "domain" {
   default = "planner.tommykeyapp.com"
 }
 
-variable "clerk_publishable_key" {
-  type        = string
-  description = "Clerk publishable key (PUBLIC_CLERK_PUBLISHABLE_KEY)"
-  sensitive   = true
-}
-
-variable "clerk_secret_key" {
-  type        = string
-  description = "Clerk secret key (CLERK_SECRET_KEY)"
-  sensitive   = true
-}
-
 variable "allowed_domain" {
   type        = string
   description = "Email domain allowed to sign in (set via TF_VAR_allowed_domain or GitHub Secret, never commit literal value)"

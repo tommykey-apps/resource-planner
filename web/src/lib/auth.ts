@@ -1,16 +1,13 @@
 /**
- * Provider 非依存の認証セッション抽象 (#65 / #79)。
+ * Provider 非依存の認証セッション抽象 (#65 / #79 / #81 / #87)。
  *
- * Clerk → Auth.js への段階移行中、`+page.server.ts` の form action / `+layout.server.ts` の
- * load から呼ばれる「現在のユーザーを取得する」入り口を 1 箇所に集約する。
+ * Auth.js (`@auth/sveltekit`) が `event.locals.auth` を async session getter として
+ * 注入するため、本関数は **async** で session を await して `AppSession` 形に整形する。
  *
- * **PR-A1 時点の挙動**: hooks.server.ts の `sequence(authHandle, clerkHandler, ...)` 順により
- * `event.locals.auth` は最終的に **Clerk のもの** で上書きされる (Auth.js は providers 空なので
- * 実質 no-op)。本関数は Clerk session を読み出して `AppSession` 形に整形する。
+ * Clerk fallback (PR-A1〜A4 で同居していた経路) は PR-A5 で削除。
  *
- * - PR-A2: `teamId` を Team モデル (DDB GSI1) 経由で取得
- * - PR-A3: Auth.js Magic Link 経由の session も読めるように
- * - PR-A5: Clerk fallback を削除、Auth.js 専用に簡素化
+ * - `teamId`: 現状は `'team_default'` 固定 (PR-A2 で auto-join 済)。将来 multi-team
+ *   対応では last-used team を session に保存する別 PR で。
  */
 import { error, type RequestEvent } from '@sveltejs/kit';
 
@@ -18,49 +15,36 @@ export interface AppSession {
 	userId: string;
 	email: string;
 	name?: string;
-	/** 現在の active team。本 PR では `'team_default'` 固定、将来は last-used / URL ベース。 */
 	teamId: string;
 }
 
 const DEFAULT_TEAM_ID = 'team_default';
 
-interface ClerkLikeAuth {
-	userId: string | null;
-	sessionClaims?: Record<string, unknown>;
+interface AuthJsLocals {
+	auth?: () => Promise<{
+		user?: { id?: string | null; email?: string | null; name?: string | null };
+	} | null>;
 }
 
 /**
  * 認証済セッションを取得する。未認証なら 401 を throw する。
- * 現状は Clerk session 由来。PR-A3 以降で Auth.js session も併読する。
+ * Auth.js session を読み出して `AppSession` に整形。
  */
-export function requireSession(event: RequestEvent): AppSession {
-	const authFn = event.locals.auth as unknown;
-	if (typeof authFn !== 'function') {
+export async function requireSession(event: RequestEvent): Promise<AppSession> {
+	const locals = event.locals as AuthJsLocals;
+	if (typeof locals.auth !== 'function') {
 		error(401, '認証が必要です');
 	}
 
-	const result = (authFn as () => unknown)();
-	// Auth.js は Promise を返す (PR-A3 以降に await で扱う)。Clerk は同期 object を返す。
-	if (!result || typeof result !== 'object' || result instanceof Promise) {
+	const session = await locals.auth();
+	if (!session?.user?.id || !session.user.email) {
 		error(401, '認証が必要です');
-	}
-
-	const clerk = result as ClerkLikeAuth;
-	if (!clerk.userId) {
-		error(401, '認証が必要です');
-	}
-
-	const email = (clerk.sessionClaims?.primaryEmail ?? clerk.sessionClaims?.email) as
-		| string
-		| undefined;
-	if (!email) {
-		error(401, 'メールアドレスがセッションに含まれていません');
 	}
 
 	return {
-		userId: clerk.userId,
-		email,
-		name: undefined,
+		userId: session.user.id,
+		email: session.user.email,
+		name: session.user.name ?? undefined,
 		teamId: DEFAULT_TEAM_ID
 	};
 }

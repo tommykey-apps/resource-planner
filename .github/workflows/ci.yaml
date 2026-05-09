@@ -171,6 +171,4 @@ jobs:
         run: terraform plan -input=false
         working-directory: infra
         env:
-          TF_VAR_clerk_publishable_key: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
-          TF_VAR_clerk_secret_key: ${{ secrets.CLERK_SECRET_KEY }}
           TF_VAR_allowed_domain: ${{ secrets.ALLOWED_DOMAIN }}

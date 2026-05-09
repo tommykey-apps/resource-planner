@@ -1,13 +1,9 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { Button } from '$lib/components/ui/button';
-	import { SignOutButton } from 'svelte-clerk';
 
 	const status = $derived(page.status);
 	const message = $derived(page.error?.message ?? '不明なエラーが発生しました');
-
-	const orgRequired = $derived(status === 403 && message.includes('組織'));
-	const accountPortalUrl = 'https://premium-mutt-63.accounts.dev/';
 </script>
 
 <main>
@@ -15,16 +11,12 @@
 		<h1>{status}</h1>
 		<p class="message">{message}</p>
 
-		{#if orgRequired}
-			<div class="hint">
-				<p>resource-planner は Clerk Organization 必須です。</p>
-				<p>
-					<a href={accountPortalUrl} target="_blank" rel="noopener">Clerk Account Portal</a>
-					から Organization を作成 / 選択してから再度サインインしてください。
-				</p>
-			</div>
-		{:else if status === 401}
-			<p class="hint">サインインが必要です。再読み込みでサインイン画面に戻ります。</p>
+		{#if status === 401}
+			<p class="hint">サインインが必要です。サインイン画面でメールアドレスを入力してください。</p>
+		{:else if status === 403}
+			<p class="hint">
+				許可されていない操作です。サインインしているユーザーで権限を確認してください。
+			</p>
 		{:else if status === 404}
 			<p class="hint">指定された URL は存在しません。</p>
 		{:else if status >= 500}
@@ -33,9 +25,9 @@
 
 		<div class="actions">
 			<Button variant="outline" onclick={() => (window.location.href = '/')}>ホームに戻る</Button>
-			<SignOutButton>
-				<Button variant="ghost">サインアウト</Button>
-			</SignOutButton>
+			<Button variant="ghost" onclick={() => (window.location.href = '/sign-in')}>
+				サインイン
+			</Button>
 		</div>
 	</div>
 </main>
@@ -80,19 +72,6 @@
 		text-align: left;
 		font-size: 0.875rem;
 		color: var(--muted-foreground);
-	}
-
-	.hint p {
-		margin: 0;
-	}
-
-	.hint p + p {
-		margin-top: 0.5rem;
-	}
-
-	.hint a {
-		color: var(--primary);
-		text-decoration: underline;
 	}
 
 	.actions {
