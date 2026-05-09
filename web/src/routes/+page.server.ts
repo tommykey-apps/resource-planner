@@ -35,7 +35,7 @@ function formatErrors<T>(result: z.ZodSafeParseError<T>): Record<string, string>
 
 export const actions: Actions = {
 	createResource: async (event) => {
-		const session = requireSession(event);
+		const session = await requireSession(event);
 		const data = await event.request.formData();
 		const parsed = resourceCreateSchema.safeParse({
 			name: data.get('name')
@@ -51,7 +51,7 @@ export const actions: Actions = {
 	},
 
 	updateResource: async (event) => {
-		const session = requireSession(event);
+		const session = await requireSession(event);
 		const data = await event.request.formData();
 		const parsed = resourceUpdateSchema.safeParse({
 			id: data.get('id'),
@@ -68,7 +68,7 @@ export const actions: Actions = {
 	},
 
 	deleteResource: async (event) => {
-		const session = requireSession(event);
+		const session = await requireSession(event);
 		const data = await event.request.formData();
 		const id = data.get('id');
 		if (typeof id !== 'string' || !id) {
@@ -82,7 +82,7 @@ export const actions: Actions = {
 	},
 
 	createProject: async (event) => {
-		const session = requireSession(event);
+		const session = await requireSession(event);
 		const data = await event.request.formData();
 		const parsed = projectCreateSchema.safeParse({
 			name: data.get('name'),
@@ -99,7 +99,7 @@ export const actions: Actions = {
 	},
 
 	updateProject: async (event) => {
-		const session = requireSession(event);
+		const session = await requireSession(event);
 		const data = await event.request.formData();
 		const parsed = projectUpdateSchema.safeParse({
 			id: data.get('id'),
@@ -117,7 +117,7 @@ export const actions: Actions = {
 	},
 
 	deleteProject: async (event) => {
-		const session = requireSession(event);
+		const session = await requireSession(event);
 		const data = await event.request.formData();
 		const id = data.get('id');
 		if (typeof id !== 'string' || !id) {
@@ -131,7 +131,7 @@ export const actions: Actions = {
 	},
 
 	createAssignment: async (event) => {
-		const session = requireSession(event);
+		const session = await requireSession(event);
 		const data = await event.request.formData();
 		const parsed = assignmentCreateSchema.safeParse({
 			resourceId: data.get('resourceId'),
@@ -153,7 +153,7 @@ export const actions: Actions = {
 	},
 
 	deleteAssignment: async (event) => {
-		const session = requireSession(event);
+		const session = await requireSession(event);
 		const data = await event.request.formData();
 		const id = data.get('id');
 		const startDate = data.get('startDate');

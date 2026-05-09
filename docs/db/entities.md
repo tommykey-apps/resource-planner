@@ -10,18 +10,39 @@ DynamoDB シングルテーブル `resource-planner` には 3 種類のエンテ
 
 ## マルチテナント分離
 
-- **PK = `TEAM#{teamId}`**: Clerk Organization ID をそのまま埋め込む。
+- **PK = `TEAM#{teamId}`**: Team ID を埋め込む (`team_default` に自動 join される、ADR 0009 参照)。
   全 entity 共通のため、1 query で組織内全データ取得 (Scan 不要) が可能。
 - **クロステナント混入防止**: app 層で常に session の `teamId` から PK を組み立て、
   client 入力をそのまま PK に使わない。
 
 ## Entity 一覧
 
+### App entities (Team scope、`pk = TEAM#{teamId}`)
+
 | Entity | SK パターン | 用途 |
 |---|---|---|
 | [Resource](#resource) | `RES#{resource_id}` | リソース (人/メンバー) |
 | [Project](#project) | `PRJ#{project_id}` | 案件 (クライアント / 仕事) |
 | [Assignment](#assignment) | `ASN#{start_date}#{assignment_id}` | 期間内のリソース → 案件アサイン |
+| Team meta | `META` | Team 自体のメタデータ (name, createdAt) |
+| Team membership | `MEMBER#{userId}` | Team の所属メンバー (role) |
+
+### Auth.js entities (`@auth/dynamodb-adapter` 管理、ADR 0008)
+
+| Entity | PK | SK | 用途 |
+|---|---|---|---|
+| User | `USER#{userId}` | `META` | 認証ユーザー (email, name, emailVerified) |
+| Account | `USER#{userId}` | `ACCOUNT#{provider}#{providerAccountId}` | 連携プロバイダ (Magic Link は無し、Microsoft Entra ID 後付け時) |
+| Session | `SESSION#{token}` | `META` | DB session (TTL = `expires`) |
+| VerificationToken | `VERIFICATION#{token}` | `META` | Magic Link 一時トークン (TTL = `expires`) |
+
+### GSI1 (3 用途を兼用、ADR 0009)
+
+| 用途 | GSI1PK | GSI1SK |
+|---|---|---|
+| Auth.js: User by email | `USER#email#{email}` | `USER#email#{email}` |
+| Auth.js: User by account | `ACCOUNT#{provider}` | `ACCOUNT#{providerAccountId}` |
+| App: user → 所属 team 一覧 | `USER#{userId}` | `TEAM#{teamId}` |
 
 ---
 

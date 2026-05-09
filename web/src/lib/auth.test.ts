@@ -2,22 +2,18 @@ import { describe, expect, it } from 'vitest';
 import type { RequestEvent } from '@sveltejs/kit';
 import { requireSession } from './auth';
 
-function mockEvent(authReturn: unknown): RequestEvent {
-	return {
-		locals: {
-			auth: () => authReturn
-		}
-	} as unknown as RequestEvent;
-}
-
 interface HttpErrorLike {
 	status: number;
 	body: { message: string };
 }
 
-function expectHttpError(fn: () => unknown, status: number, messageRegex: RegExp): void {
+async function expectHttpError(
+	fn: () => Promise<unknown>,
+	status: number,
+	messageRegex: RegExp
+): Promise<void> {
 	try {
-		fn();
+		await fn();
 		throw new Error('expected requireSession to throw, but it did not');
 	} catch (e) {
 		const err = e as HttpErrorLike;
@@ -26,54 +22,58 @@ function expectHttpError(fn: () => unknown, status: number, messageRegex: RegExp
 	}
 }
 
-describe('requireSession', () => {
-	it('returns AppSession when Clerk session has userId + primaryEmail', () => {
-		const event = mockEvent({
-			userId: 'user_abc',
-			sessionClaims: { primaryEmail: 'alice@example.com' }
-		});
+function mockEvent(authReturn: () => unknown): RequestEvent {
+	return {
+		locals: { auth: authReturn }
+	} as unknown as RequestEvent;
+}
 
-		const session = requireSession(event);
+describe('requireSession (Auth.js)', () => {
+	it('returns AppSession when Auth.js session has user.id + user.email', async () => {
+		const event = mockEvent(async () => ({
+			user: { id: 'user_abc', email: 'alice@example.com', name: 'Alice' }
+		}));
+
+		const session = await requireSession(event);
 
 		expect(session).toEqual({
 			userId: 'user_abc',
 			email: 'alice@example.com',
-			name: undefined,
+			name: 'Alice',
 			teamId: 'team_default'
 		});
 	});
 
-	it('falls back to sessionClaims.email when primaryEmail is missing', () => {
-		const event = mockEvent({
-			userId: 'user_abc',
-			sessionClaims: { email: 'fallback@example.com' }
-		});
-
-		expect(requireSession(event).email).toBe('fallback@example.com');
+	it('returns AppSession with name=undefined when Auth.js session lacks name', async () => {
+		const event = mockEvent(async () => ({
+			user: { id: 'user_abc', email: 'alice@example.com' }
+		}));
+		const session = await requireSession(event);
+		expect(session.name).toBeUndefined();
 	});
 
-	it('throws 401 when locals.auth is not a function (no auth handler installed)', () => {
+	it('throws 401 when locals.auth is not a function', async () => {
 		const event = { locals: {} } as unknown as RequestEvent;
-		expectHttpError(() => requireSession(event), 401, /認証/);
+		await expectHttpError(() => requireSession(event), 401, /認証/);
 	});
 
-	it('throws 401 when userId is null (Clerk: signed out)', () => {
-		const event = mockEvent({ userId: null });
-		expectHttpError(() => requireSession(event), 401, /認証/);
+	it('throws 401 when session is null (signed out)', async () => {
+		const event = mockEvent(async () => null);
+		await expectHttpError(() => requireSession(event), 401, /認証/);
 	});
 
-	it('throws 401 when locals.auth() returns a Promise (Auth.js without providers, no session)', () => {
-		// Auth.js の locals.auth は Promise<Session | null> を返す。Clerk 上書きが効いていない
-		// 状況のシミュレーション。Clerk 同居中は Promise が返ってくる時点で認証なし扱い。
-		const event = mockEvent(Promise.resolve(null));
-		expectHttpError(() => requireSession(event), 401, /認証/);
+	it('throws 401 when session has no user', async () => {
+		const event = mockEvent(async () => ({}));
+		await expectHttpError(() => requireSession(event), 401, /認証/);
 	});
 
-	it('throws 401 when sessionClaims has no email at all', () => {
-		const event = mockEvent({
-			userId: 'user_abc',
-			sessionClaims: {}
-		});
-		expectHttpError(() => requireSession(event), 401, /メールアドレス/);
+	it('throws 401 when user.id is missing', async () => {
+		const event = mockEvent(async () => ({ user: { email: 'alice@example.com' } }));
+		await expectHttpError(() => requireSession(event), 401, /認証/);
+	});
+
+	it('throws 401 when user.email is missing', async () => {
+		const event = mockEvent(async () => ({ user: { id: 'user_abc' } }));
+		await expectHttpError(() => requireSession(event), 401, /認証/);
 	});
 });

@@ -30,7 +30,7 @@
 ## アプリ本体
 
 - 本番: <https://planner.tommykeyapp.com/>
-- 認証: Clerk (Microsoft Social Connection、許可ドメイン制限あり、具体ドメインは env で管理)
+- 認証: Auth.js + Email Magic Link、許可ドメイン制限 (具体ドメインは env で管理) — 詳細は [ADR 0008](adr/0008-auth-migration-clerk-to-authjs.md)
 
 ## 開発フロー
 

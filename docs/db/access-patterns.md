@@ -1,7 +1,7 @@
 # Access Patterns
 
 resource-planner の DynamoDB 単一テーブルに対するクエリパターン一覧。
-**前提**: app 層は常に Clerk session から `teamId` を取得し、PK を `TEAM#{teamId}` で固定する。
+**前提**: app 層は常に Auth.js session から `teamId` を取得し、PK を `TEAM#{teamId}` で固定する。
 
 > **Note**: 現時点で app 側の DB アクセスコードは未着手。本表は将来 CRUD を実装する際の
 > 設計仕様。実装が入ったら "API" / "Source" 列に handler / repository への行番号リンクを

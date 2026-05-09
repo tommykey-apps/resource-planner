@@ -7,7 +7,6 @@
 	} from '@tommykey-apps/ui-components';
 	import { toast } from 'svelte-sonner';
 	import { toTimelineAssignment, fromTimelineAssignment } from '$lib/timeline-adapter';
-	import { UserButton } from 'svelte-clerk';
 	import ResourceManager from '$lib/components/ResourceManager.svelte';
 	import ProjectManager from '$lib/components/ProjectManager.svelte';
 	import AssignmentCreator from '$lib/components/AssignmentCreator.svelte';
@@ -85,7 +84,11 @@
 			<ProjectManager {projects} assignments={dbAssignments} />
 			<AssignmentCreator {resources} {projects} />
 			<AssignmentManager assignments={dbAssignments} {resources} {projects} />
-			<UserButton />
+			<form method="POST" action="/auth/signout" class="signout-form">
+				<button type="submit" class="signout-btn" title="サインアウト">
+					{data.user?.email ?? 'サインアウト'}
+				</button>
+			</form>
 		</div>
 	</header>
 

@@ -14,6 +14,8 @@ resource-planner の設計判断を Michael Nygard 形式で記録する。
 | [0005](0005-assignment-drag-resize-transport.md) | Assignment ドラッグ / リサイズは `+server.ts` API + Optimistic UI | Accepted | 2026-05-08 |
 | [0006](0006-cascade-delete-strategy.md) | Resource / Project の削除は cascade (TransactWriteItems) | Accepted | 2026-05-08 |
 | [0007](0007-tdd-with-vitest-and-playwright.md) | TDD で開発する: Vitest + Playwright | Accepted | 2026-05-09 |
+| [0008](0008-auth-migration-clerk-to-authjs.md) | 認証を Clerk → Auth.js + Email Magic Link に移行する | Accepted | 2026-05-09 |
+| [0009](0009-org-to-team-redesign.md) | マルチテナント単位を Clerk Org → 自前 Team モデルに再設計する | Accepted | 2026-05-09 |
 
 ## テンプレ
 
