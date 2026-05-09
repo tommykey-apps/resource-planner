@@ -4,7 +4,7 @@
 
 | Name                                    | Attributes | Comment                                                                                                                                                                                                                                                                                                                                          | Type        |
 | --------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- |
-| [resource-planner](resource-planner.md) | 2          | Single Table Design for resource planning.<br />pk: ORG#{clerk_org_id} - Multi-tenant isolation by Clerk organization.<br />sk: Entity prefix (RES#, PRJ#, ASN#) + entity-specific key.<br />Entities: Resource (people), Project (clients), Assignment (time allocations).<br />See ../entities.md and ../access-patterns.md for details.<br /> | BASIC TABLE |
+| [resource-planner](resource-planner.md) | 4          | Single Table Design for resource planning.<br />pk: ORG#{clerk_org_id} - Multi-tenant isolation by Clerk organization.<br />sk: Entity prefix (RES#, PRJ#, ASN#) + entity-specific key.<br />Entities: Resource (people), Project (clients), Assignment (time allocations).<br />See ../entities.md and ../access-patterns.md for details.<br /> | BASIC TABLE |
 
 ## Relations
 
