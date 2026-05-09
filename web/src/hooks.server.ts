@@ -3,6 +3,7 @@ import { error, type Handle } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 import { withClerkHandler, createClerkClient } from 'svelte-clerk/server';
+import { handle as authjsHandle } from './auth';
 
 if (!env.CLERK_SECRET_KEY_PARAM) {
 	throw new Error('CLERK_SECRET_KEY_PARAM env not set');
@@ -52,4 +53,7 @@ const domainCheck: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
-export const handle = sequence(clerkHandler, domainCheck);
+// Auth.js を sequence の **先頭** に置く: locals.auth は最終的に Clerk のもので上書きされ、
+// 既存 Clerk 動作は維持される。Auth.js は providers が空なので no-op だが、`/auth/*` ルート
+// (PR-A3 以降の sign-in flow) を予約する目的で配線しておく。
+export const handle = sequence(authjsHandle, clerkHandler, domainCheck);
