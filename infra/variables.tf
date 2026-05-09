@@ -30,3 +30,9 @@ variable "allowed_domain" {
   description = "Email domain allowed to sign in (set via TF_VAR_allowed_domain or GitHub Secret, never commit literal value)"
   sensitive   = true
 }
+
+variable "email_from" {
+  type        = string
+  description = "Auth.js Magic Link sender (must be on aws_ses_domain_identity.main.domain)"
+  default     = "noreply@tommykeyapp.com"
+}

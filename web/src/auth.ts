@@ -1,17 +1,20 @@
 /**
- * Auth.js 設定の入り口 (#65 / #79 / #81 / #83)。
+ * Auth.js 設定の入り口 (#65 / #79 / #81 / #83 / #85)。
  *
- * PR-A3 (本 PR) で Nodemailer (Magic Link) provider を有効化、ドメイン制限と初回 sign-in 時の
- * default team 自動 join を組み込む。Clerk と並行稼働中、Clerk 撤去は PR-A5。
+ * PR-A4 (本 PR) で **production infra** (SSM AUTH_SECRET + SES SDK 経由送信) を実装。
+ * Clerk と並行稼働中、Clerk 撤去は PR-A5。
  *
- * - PR-A4: SES SMTP / SSM AUTH_SECRET / IAM 配備
- * - PR-A5: Clerk 完全撤去 + Magic Link を default sign-in にする UI 切替 + ADR 0008/0009
+ * - dev / test: env から AUTH_SECRET 直接 / sendVerificationRequest を console.log
+ * - production (Lambda): env.AUTH_SECRET 未設定 + env.AUTH_SECRET_PARAM 設定
+ *   → SSM SecureString から resolve、sendVerificationRequest を SES SDK で送信
  */
 import { SvelteKitAuth } from '@auth/sveltekit';
 import Nodemailer from '@auth/sveltekit/providers/nodemailer';
 import { DynamoDBAdapter } from '@auth/dynamodb-adapter';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
+import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
+import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2';
 import { env } from '$env/dynamic/private';
 import { addMembership, DEFAULT_TEAM_ID, getOrCreateDefaultTeam } from '$lib/repository/team';
 
@@ -29,6 +32,21 @@ export function isDomainAllowed(
 	return email.toLowerCase().endsWith(`@${allowed.toLowerCase()}`);
 }
 
+// ── AUTH_SECRET resolution ──
+// production: env.AUTH_SECRET_PARAM (SSM SecureString) を top-level await で fetch。
+// dev / test:  env.AUTH_SECRET をそのまま使う (vite.config.ts で test 用ダミー注入済)。
+let resolvedAuthSecret = env.AUTH_SECRET;
+if (!resolvedAuthSecret && env.AUTH_SECRET_PARAM) {
+	const ssm = new SSMClient({});
+	const out = await ssm.send(
+		new GetParameterCommand({ Name: env.AUTH_SECRET_PARAM, WithDecryption: true })
+	);
+	resolvedAuthSecret = out.Parameter?.Value;
+	if (!resolvedAuthSecret) {
+		throw new Error(`AUTH_SECRET could not be resolved from SSM param ${env.AUTH_SECRET_PARAM}`);
+	}
+}
+
 const adapterClient = DynamoDBDocument.from(new DynamoDBClient({}), {
 	marshallOptions: {
 		convertEmptyValues: true,
@@ -37,28 +55,60 @@ const adapterClient = DynamoDBDocument.from(new DynamoDBClient({}), {
 	}
 });
 
-// dev / test では SMTP がないので magic link URL を console に出力する。
-// production (PR-A4) では EMAIL_SERVER を設定して default Nodemailer transport で送信。
-const useDevTransport = !env.EMAIL_SERVER;
+// transport 選択:
+// - dev / test (`!env.EMAIL_SERVER` かつ `!env.EMAIL_FROM` が tommykeyapp.com 形式でない):
+//   sendVerificationRequest を console.log で stub
+// - production (Lambda):
+//   env.EMAIL_FROM が tommykeyapp.com 形式 + AWS region 解決可 → SES SDK 経由
+const isProductionTransport =
+	!!env.EMAIL_FROM && env.EMAIL_FROM.endsWith('@tommykeyapp.com') && !env.EMAIL_SERVER;
+
+const sesClient = isProductionTransport ? new SESv2Client({}) : null;
+
+async function sendMagicLinkViaSES(params: { identifier: string; url: string }): Promise<void> {
+	if (!sesClient) throw new Error('SES client not initialized');
+	const subject = 'サインインリンク - resource-planner';
+	const text = `resource-planner にサインインするには以下のリンクをクリックしてください:\n\n${params.url}\n\nこのリンクは 24 時間で失効します。\n身に覚えがない場合は無視してください。\n`;
+	const html = `<p>resource-planner にサインインするには以下のリンクをクリックしてください:</p>
+<p><a href="${params.url}">${params.url}</a></p>
+<p style="font-size:12px;color:#666;">このリンクは 24 時間で失効します。<br>身に覚えがない場合は無視してください。</p>`;
+
+	await sesClient.send(
+		new SendEmailCommand({
+			FromEmailAddress: env.EMAIL_FROM,
+			Destination: { ToAddresses: [params.identifier] },
+			Content: {
+				Simple: {
+					Subject: { Data: subject, Charset: 'UTF-8' },
+					Body: {
+						Text: { Data: text, Charset: 'UTF-8' },
+						Html: { Data: html, Charset: 'UTF-8' }
+					}
+				}
+			}
+		})
+	);
+}
 
 export const { handle, signIn, signOut } = SvelteKitAuth({
+	secret: resolvedAuthSecret,
 	adapter: DynamoDBAdapter(adapterClient, {
 		tableName: env.DYNAMODB_TABLE
 	}),
 	providers: [
 		Nodemailer({
-			server: env.EMAIL_SERVER ?? 'smtp://localhost:1025',
+			// SMTP server 設定は production では SES SDK 経由で send するため未使用。
+			// Auth.js が provider 初期化時に server 値を要求するため dummy を渡す。
+			server: env.EMAIL_SERVER ?? 'smtp://placeholder:25',
 			from: env.EMAIL_FROM ?? 'noreply@example.com',
-			...(useDevTransport
-				? {
-						sendVerificationRequest: async ({ identifier, url }) => {
-							// eslint-disable-next-line no-console
-							console.log(
-								`\n[Magic Link DEV] to=${identifier}\n  ${url}\n  (production は SES SMTP で送信、PR-A4 で配備)\n`
-							);
-						}
+			sendVerificationRequest: isProductionTransport
+				? sendMagicLinkViaSES
+				: async ({ identifier, url }) => {
+						// eslint-disable-next-line no-console
+						console.log(
+							`\n[Magic Link DEV] to=${identifier}\n  ${url}\n  (production は SES SDK で送信)\n`
+						);
 					}
-				: {})
 		})
 	],
 	pages: {
@@ -74,8 +124,6 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 			}
 			return true;
 		},
-		// session に teamId を載せる。PR-A2 で hardcode した default team を使う想定。
-		// 将来 multi-team 対応では last-used team を session に保存する別 PR で。
 		session: async ({ session }) => {
 			return session;
 		}
@@ -85,8 +133,8 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 		signIn: async ({ user, isNewUser }) => {
 			if (!user.id) return;
 			// 既存 user の毎回 sign-in でも idempotent (Put without Condition)。
-			// isNewUser だけにすると、過去 invite された user が初回 sign-in したケースで
-			// membership が無いことになるためスキップしない。
+			// isNewUser だけに絞ると、過去 invite された user の初回 sign-in でメンバーシップ
+			// が抜けるリスクがあるため毎回試行する。
 			void isNewUser;
 			try {
 				await getOrCreateDefaultTeam();

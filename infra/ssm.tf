@@ -22,3 +22,17 @@ resource "aws_ssm_parameter" "clerk_secret_key" {
   value = var.clerk_secret_key
   tier  = "Standard"
 }
+
+# Auth.js JWT secret (#85)。`openssl rand -hex 32` で生成し、terraform apply 後に
+# `aws ssm put-parameter --name /resource-planner/auth-secret --value <secret> --type SecureString --overwrite`
+# で投入する。terraform state に secret 値が残らないよう lifecycle.ignore_changes を設定。
+resource "aws_ssm_parameter" "auth_secret" {
+  name  = "/${var.project}/auth-secret"
+  type  = "SecureString"
+  value = "PLACEHOLDER_REPLACE_VIA_AWS_CLI"
+  tier  = "Standard"
+
+  lifecycle {
+    ignore_changes = [value]
+  }
+}
