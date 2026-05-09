@@ -8,6 +8,8 @@ import { defineConfig } from 'vite';
 if (process.env.VITEST) {
 	process.env.DYNAMODB_TABLE = process.env.DYNAMODB_TABLE ?? 'resource-planner-test';
 	process.env.AUTH_SECRET = process.env.AUTH_SECRET ?? 'test-secret-not-for-production';
+	process.env.ALLOWED_DOMAIN = process.env.ALLOWED_DOMAIN ?? 'example.com';
+	process.env.EMAIL_FROM = process.env.EMAIL_FROM ?? 'noreply@example.com';
 }
 
 export default defineConfig({
