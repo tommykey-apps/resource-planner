@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import Folder from 'phosphor-svelte/lib/Folder';
 	import { Button } from './ui/button';
 	import Dialog from './Dialog.svelte';
 	import { createSubmitState } from '$lib/forms/submit-state.svelte';
@@ -70,7 +71,8 @@
 </script>
 
 <Button variant="outline" onclick={() => (listOpen = true)}>
-	📁<span class="hidden sm:ml-1 sm:inline">案件を管理 ({projects.length})</span>
+	<Folder size={18} weight="regular" aria-hidden="true" />
+	<span class="hidden sm:ml-1 sm:inline">案件を管理 ({projects.length})</span>
 </Button>
 
 <Dialog

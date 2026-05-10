@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import ListChecks from 'phosphor-svelte/lib/ListChecks';
 	import { Button } from './ui/button';
 	import Dialog from './Dialog.svelte';
 	import { addDays } from '$lib/date';
@@ -41,7 +42,8 @@
 </script>
 
 <Button variant="outline" onclick={() => (open = true)}>
-	📋<span class="hidden sm:ml-1 sm:inline">アサイン一覧 ({assignments.length})</span>
+	<ListChecks size={18} weight="regular" aria-hidden="true" />
+	<span class="hidden sm:ml-1 sm:inline">アサイン一覧 ({assignments.length})</span>
 </Button>
 
 <Dialog bind:open title="アサイン一覧" description="登録済みアサインの一覧と削除">

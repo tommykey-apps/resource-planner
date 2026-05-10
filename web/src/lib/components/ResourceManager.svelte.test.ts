@@ -32,12 +32,16 @@ describe('ResourceManager (smoke)', () => {
 		expect(getByRole('button', { name: /\(2\)/ })).toBeInTheDocument();
 	});
 
-	it('keeps the emoji icon visible while wrapping the text label in a sm:inline span (mobile responsive、#96)', () => {
+	it('keeps the icon visible (phosphor svg) while wrapping the text label in a sm:inline span (mobile responsive、#96 / #105)', () => {
 		const { getByRole } = render(ResourceManager, {
 			props: { resources: [], assignments: [] }
 		});
 		const trigger = getByRole('button', { name: /人を管理/ });
-		expect(trigger.textContent).toMatch(/👥/);
+		// 絵文字ではなく phosphor icon (svg + aria-hidden) を使用 (#105)
+		const icon = trigger.querySelector('svg[aria-hidden="true"]');
+		expect(icon).toBeTruthy();
+		// 絵文字 👥 は使わない
+		expect(trigger.textContent).not.toMatch(/👥/);
 		expect(trigger.querySelector('.hidden.sm\\:inline')?.textContent).toMatch(/人を管理/);
 	});
 });

@@ -21,12 +21,14 @@ describe('ProjectManager (smoke)', () => {
 		expect(getByRole('button', { name: /\(1\)/ })).toBeInTheDocument();
 	});
 
-	it('emoji icon visible + text label wrapped in sm:inline span (mobile responsive、#96)', () => {
+	it('phosphor svg icon visible + text label wrapped in sm:inline span (#96 / #105)', () => {
 		const { getByRole } = render(ProjectManager, {
 			props: { projects: [], assignments: [] }
 		});
 		const trigger = getByRole('button', { name: /案件を管理/ });
-		expect(trigger.textContent).toMatch(/📁/);
+		const icon = trigger.querySelector('svg[aria-hidden="true"]');
+		expect(icon).toBeTruthy();
+		expect(trigger.textContent).not.toMatch(/📁/);
 		expect(trigger.querySelector('.hidden.sm\\:inline')?.textContent).toMatch(/案件を管理/);
 	});
 });
