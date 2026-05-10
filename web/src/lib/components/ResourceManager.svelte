@@ -64,8 +64,9 @@
 	const deleteSubmit: SubmitFunction = deleteSubmitState.wrap();
 </script>
 
-<Button variant="outline" onclick={() => (listOpen = true)}>👥 人を管理 ({resources.length})</Button
->
+<Button variant="outline" onclick={() => (listOpen = true)}>
+	👥<span class="hidden sm:ml-1 sm:inline">人を管理 ({resources.length})</span>
+</Button>
 
 <Dialog bind:open={listOpen} title="人を管理" description="リソース (人) の追加・編集・削除">
 	<div class="flex flex-col gap-3">

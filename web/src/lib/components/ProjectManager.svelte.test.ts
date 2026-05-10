@@ -20,4 +20,13 @@ describe('ProjectManager (smoke)', () => {
 		});
 		expect(getByRole('button', { name: /\(1\)/ })).toBeInTheDocument();
 	});
+
+	it('emoji icon visible + text label wrapped in sm:inline span (mobile responsive、#96)', () => {
+		const { getByRole } = render(ProjectManager, {
+			props: { projects: [], assignments: [] }
+		});
+		const trigger = getByRole('button', { name: /案件を管理/ });
+		expect(trigger.textContent).toMatch(/📁/);
+		expect(trigger.querySelector('.hidden.sm\\:inline')?.textContent).toMatch(/案件を管理/);
+	});
 });

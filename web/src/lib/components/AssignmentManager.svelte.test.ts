@@ -10,4 +10,13 @@ describe('AssignmentManager (smoke)', () => {
 		});
 		expect(getByRole('button', { name: /アサイン一覧/ })).toBeInTheDocument();
 	});
+
+	it('emoji icon visible + text label wrapped in sm:inline span (mobile responsive、#96)', () => {
+		const { getByRole } = render(AssignmentManager, {
+			props: { assignments: [], resources: [], projects: [] }
+		});
+		const trigger = getByRole('button', { name: /アサイン一覧/ });
+		expect(trigger.textContent).toMatch(/📋/);
+		expect(trigger.querySelector('.hidden.sm\\:inline')?.textContent).toMatch(/アサイン一覧/);
+	});
 });

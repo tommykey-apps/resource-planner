@@ -41,7 +41,7 @@
 </script>
 
 <Button variant="outline" onclick={() => (open = true)}>
-	📋 アサイン一覧 ({assignments.length})
+	📋<span class="hidden sm:ml-1 sm:inline">アサイン一覧 ({assignments.length})</span>
 </Button>
 
 <Dialog bind:open title="アサイン一覧" description="登録済みアサインの一覧と削除">

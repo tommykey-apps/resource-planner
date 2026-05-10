@@ -10,4 +10,13 @@ describe('AssignmentCreator (smoke)', () => {
 		});
 		expect(getByRole('button', { name: /アサイン/ })).toBeInTheDocument();
 	});
+
+	it('shows + icon always, wraps text label in sm:inline span (mobile responsive、#96)', () => {
+		const { getByRole } = render(AssignmentCreator, {
+			props: { resources: [], projects: [] }
+		});
+		const trigger = getByRole('button');
+		expect(trigger.textContent).toMatch(/\+/);
+		expect(trigger.querySelector('.hidden.sm\\:inline')?.textContent).toMatch(/アサインを追加/);
+	});
 });
