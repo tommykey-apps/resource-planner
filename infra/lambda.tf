@@ -69,8 +69,18 @@ resource "aws_iam_role_policy" "lambda_ssm" {
   })
 }
 
-# SES SendEmail 権限 (#85): Auth.js Magic Link を SESv2 SDK 経由で送信する。
-# domain identity (tommykeyapp.com) からの送信のみ許可。
+# SES SendEmail 権限 (#85, refined #89): Auth.js Magic Link を SESv2 SDK 経由で送信。
+#
+# Resource = "*" + ses:FromAddress condition が AWS docs 推奨パターン:
+# - SES は SendEmail の IAM 認可を sender identity ARN に対して評価する
+# - **Sandbox モードでは recipient identity ARN にも追加 IAM チェックが走る**
+#   ため、Resource を sender 1 件に絞ると recipient で AccessDenied になる
+# - Resource = "*" に広げ、from address を ses:FromAddress condition で固定
+#   することで「from は固定、to は誰でも (sandbox の verify 強制は SES 側で別途)」
+# - ses:ApiVersion=2 で SESv1 経由の悪用も防止 (defense in depth)
+# - ses:SendRawEmail は SESv2 SDK では呼ばれないので不要
+#
+# 参考: https://docs.aws.amazon.com/ses/latest/dg/control-user-access.html
 resource "aws_iam_role_policy" "lambda_ses" {
   name = "${var.project}-ses-policy"
   role = aws_iam_role.lambda.id
@@ -79,12 +89,16 @@ resource "aws_iam_role_policy" "lambda_ses" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect = "Allow"
-        Action = [
-          "ses:SendEmail",
-          "ses:SendRawEmail"
-        ]
-        Resource = aws_ses_domain_identity.main.arn
+        Sid      = "SendMagicLinkEmail"
+        Effect   = "Allow"
+        Action   = ["ses:SendEmail"]
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "ses:FromAddress" = var.email_from
+            "ses:ApiVersion"  = "2"
+          }
+        }
       }
     ]
   })
