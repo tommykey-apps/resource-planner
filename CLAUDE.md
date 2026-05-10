@@ -115,6 +115,15 @@ Single Table Design (詳細: `docs/db/entities.md`、`docs/db/access-patterns.md
    - infra 変更時: terraform apply
    - web: docker build → ECR push → Lambda update
 
+## TDD 運用 (ADR 0007 / #92)
+
+Claude Code session 内で本 repo を編集する際は **必ず先にテストを書く**。
+
+- `/tdd <task>` skill で workflow ガイド (`.claude/skills/tdd/SKILL.md`)
+- `web/src/**.{ts,svelte}` の Edit / Write 前に、対応 `*.test.ts` が `git diff --cached` に出るか **PreToolUse hook** が確認 (`.claude/hooks/warn-untested.sh`)
+- staged されていなければ `permissionDecision: "ask"` で確認 prompt (deny ではなく ask、iterative work を阻害しない)
+- AI / 人間共通の discipline。RED → GREEN → REFACTOR で進める
+
 ## 関連リポジトリ
 
 - [tommykey-apps/ui-components](https://github.com/tommykey-apps/ui-components) — ResourceTimeline コンポーネント
