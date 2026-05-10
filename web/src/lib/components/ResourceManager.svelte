@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { Button } from './ui/button';
 	import Dialog from './Dialog.svelte';
+	import { createSubmitState } from '$lib/forms/submit-state.svelte';
 	import type { Resource, Assignment } from '$lib/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
 
@@ -28,6 +29,10 @@
 	let formName = $state('');
 	let formError = $state<string | null>(null);
 
+	// 連打抑制 + submitting state (#94)。create / update form と delete form でそれぞれ独立に管理。
+	const formSubmitState = createSubmitState();
+	const deleteSubmitState = createSubmitState();
+
 	function startCreate() {
 		editing = null;
 		formName = '';
@@ -42,7 +47,7 @@
 		formOpen = true;
 	}
 
-	const formSubmit: SubmitFunction = () => {
+	const formSubmit: SubmitFunction = formSubmitState.wrap(() => {
 		formError = null;
 		return async ({ result, update }) => {
 			if (result.type === 'success') {
@@ -54,32 +59,29 @@
 			}
 			await update();
 		};
-	};
+	});
 
-	const deleteSubmit: SubmitFunction = () => {
-		return async ({ update }) => {
-			await update();
-		};
-	};
+	const deleteSubmit: SubmitFunction = deleteSubmitState.wrap();
 </script>
 
-<Button variant="outline" onclick={() => (listOpen = true)}>👥 人を管理 ({resources.length})</Button>
+<Button variant="outline" onclick={() => (listOpen = true)}>👥 人を管理 ({resources.length})</Button
+>
 
 <Dialog bind:open={listOpen} title="人を管理" description="リソース (人) の追加・編集・削除">
 	<div class="flex flex-col gap-3">
 		<Button onclick={startCreate}>+ 人を追加</Button>
 
 		{#if resources.length === 0}
-			<p class="text-muted-foreground py-4 text-center text-sm">まだ人が登録されていません。</p>
+			<p class="py-4 text-center text-sm text-muted-foreground">まだ人が登録されていません。</p>
 		{:else}
-			<ul class="border-border divide-border divide-y border">
+			<ul class="divide-y divide-border border border-border">
 				{#each resources as r (r.id)}
 					{@const count = assignmentCountByResource.get(r.id) ?? 0}
 					<li class="flex items-center justify-between gap-2 px-3 py-2">
 						<span class="text-sm">
 							{r.name}
 							{#if count > 0}
-								<span class="text-muted-foreground ml-1 text-xs">({count} 件のアサイン)</span>
+								<span class="ml-1 text-xs text-muted-foreground">({count} 件のアサイン)</span>
 							{/if}
 						</span>
 						<div class="flex gap-1">
@@ -99,7 +101,14 @@
 								}}
 							>
 								<input type="hidden" name="id" value={r.id} />
-								<Button size="xs" variant="destructive" type="submit">削除</Button>
+								<Button
+									size="xs"
+									variant="destructive"
+									type="submit"
+									disabled={deleteSubmitState.submitting}
+								>
+									削除
+								</Button>
 							</form>
 						</div>
 					</li>
@@ -128,16 +137,25 @@
 				required
 				maxlength="100"
 				autocomplete="off"
-				class="border-input bg-background focus-visible:ring-ring h-9 border px-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
+				class="h-9 border border-input bg-background px-2 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 				style="border-radius: calc(var(--radius) * 0.6)"
 			/>
 		</label>
 		{#if formError}
-			<p class="text-destructive text-xs">{formError}</p>
+			<p class="text-xs text-destructive">{formError}</p>
 		{/if}
 		<div class="mt-2 flex justify-end gap-2">
-			<Button variant="ghost" type="button" onclick={() => (formOpen = false)}>キャンセル</Button>
-			<Button type="submit">{editing ? '更新' : '追加'}</Button>
+			<Button
+				variant="ghost"
+				type="button"
+				onclick={() => (formOpen = false)}
+				disabled={formSubmitState.submitting}
+			>
+				キャンセル
+			</Button>
+			<Button type="submit" disabled={formSubmitState.submitting}>
+				{formSubmitState.submitting ? '送信中...' : editing ? '更新' : '追加'}
+			</Button>
 		</div>
 	</form>
 </Dialog>
