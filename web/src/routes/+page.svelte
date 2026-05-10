@@ -12,6 +12,7 @@
 	import AssignmentCreator from '$lib/components/AssignmentCreator.svelte';
 	import AssignmentManager from '$lib/components/AssignmentManager.svelte';
 	import AvatarDropdown from '$lib/components/AvatarDropdown.svelte';
+	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import type { Assignment as DbAssignment } from '$lib/types';
 	import type { PageData } from './$types';
 
@@ -85,6 +86,7 @@
 			<ProjectManager {projects} assignments={dbAssignments} />
 			<AssignmentCreator {resources} {projects} />
 			<AssignmentManager assignments={dbAssignments} {resources} {projects} />
+			<ThemeToggle />
 			<AvatarDropdown email={data.user?.email ?? ''} />
 		</div>
 	</div>
