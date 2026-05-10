@@ -1,6 +1,6 @@
 # resource-planner
 
-要員計画アプリ。SvelteKit (adapter-node) + Lambda + DynamoDB + Clerk 認証。
+要員計画アプリ。SvelteKit (adapter-node) + Lambda + DynamoDB + Auth.js (Email Magic Link) 認証。
 `@tommykey-apps/ui-components` の ResourceTimeline コンポーネントを使用。
 
 ## プロジェクト構成
@@ -45,9 +45,20 @@ export GITHUB_TOKEN=$(gh auth token)
 make help              # 利用可能なコマンド一覧
 make dev               # SvelteKit dev server
 make build             # 本番ビルド
-make db                # DynamoDB Local 起動 + テーブル作成
+make db                # DynamoDB Local 起動 + テーブル作成 (GSI1 含む)
 make db-docs           # DB ドキュメント生成
 make clean             # コンテナ停止
+```
+
+`web/` 直接 (TDD: ADR 0007 参照):
+
+```bash
+cd web
+pnpm test              # Vitest (unit; DDB Local 起動時は integration も含む)
+pnpm test:watch        # watch mode
+pnpm test:coverage     # v8 coverage
+pnpm test:e2e          # Playwright (実 spec は今後追加)
+pnpm check             # svelte-check
 ```
 
 ## インフラ
@@ -63,22 +74,39 @@ terraform apply
 
 - **フロントエンド**: SvelteKit (SSR/Server Actions)
 - **ホスティング**: Lambda (container) + CloudFront
-- **認証**: Clerk (Microsoft Social Connection + アプリ側ドメイン制限)
+- **認証**: Auth.js (`@auth/sveltekit`) + Email Magic Link、`callbacks.signIn` で許可ドメイン制限
+  - 詳細: [`docs/adr/0008-auth-migration-clerk-to-authjs.md`](docs/adr/0008-auth-migration-clerk-to-authjs.md)
+  - 将来 Microsoft Entra ID 追加: [#68 runbook](https://github.com/tommykey-apps/resource-planner/issues/68)
 - **DB**: DynamoDB (Single Table Design)
 
 ## DynamoDB スキーマ
 
-Single Table Design:
-- **pk**: `ORG#{clerk_org_id}` (マルチテナント)
-- **sk**: エンティティ別 (`RES#`, `PRJ#`, `ASN#`)
+Single Table Design (詳細: `docs/db/entities.md`、`docs/db/access-patterns.md`、ADR 0009):
+
+### App entities (Team scope、`pk = TEAM#{teamId}`、初期は `team_default` のみ)
 
 | Entity | SK パターン | Attributes |
 |--------|------------|------------|
 | Resource | `RES#{id}` | id, name |
 | Project | `PRJ#{id}` | id, name, color |
-| Assignment | `ASN#{start_date}#{id}` | id, resourceId, projectId, startDate, endDate |
+| Assignment | `ASN#{start_date}#{id}` | id, resourceId, projectId, startDate, endDateExclusive |
+| Team meta | `META` | id, name, createdAt |
+| Team membership | `MEMBER#{userId}` | teamId, userId, role, joinedAt |
 
-詳細: `docs/db/entities.md`, `docs/db/access-patterns.md`
+### Auth.js entities (`@auth/dynamodb-adapter` 管理)
+
+| Entity | PK | SK |
+|--------|----|----|
+| User | `USER#{userId}` | `META` |
+| Account | `USER#{userId}` | `ACCOUNT#{provider}#{providerAccountId}` |
+| Session | `SESSION#{token}` | `META` (TTL: `expires`) |
+| VerificationToken | `VERIFICATION#{token}` | `META` (TTL: `expires`) |
+
+### GSI1 (3 用途を兼用)
+
+- `GSI1PK = USER#email#{email}` — Auth.js: User by email
+- `GSI1PK = ACCOUNT#{provider}` / `GSI1SK = ACCOUNT#{providerAccountId}` — Auth.js: User by account
+- `GSI1PK = USER#{userId}` / `GSI1SK = TEAM#{teamId}` — App: user の所属 team 一覧
 
 ## デプロイフロー
 
