@@ -3,6 +3,7 @@
 	import { Button } from './ui/button';
 	import Dialog from './Dialog.svelte';
 	import { formatLocalDate } from '$lib/timeline-adapter';
+	import { createSubmitState } from '$lib/forms/submit-state.svelte';
 	import type { Resource, Project } from '$lib/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
 
@@ -45,7 +46,10 @@
 		open = true;
 	}
 
-	const formSubmit: SubmitFunction = () => {
+	// 連打抑制 + submitting state (#94)
+	const formSubmitState = createSubmitState();
+
+	const formSubmit: SubmitFunction = formSubmitState.wrap(() => {
 		formError = null;
 		return async ({ result, update }) => {
 			if (result.type === 'success') {
@@ -61,10 +65,14 @@
 			}
 			await update();
 		};
-	};
+	});
 </script>
 
-<Button onclick={startCreate} disabled={!canCreate} title={canCreate ? '' : '人と案件を 1 件以上登録してから作成できます'}>
+<Button
+	onclick={startCreate}
+	disabled={!canCreate}
+	title={canCreate ? '' : '人と案件を 1 件以上登録してから作成できます'}
+>
 	+ アサインを追加
 </Button>
 
@@ -81,7 +89,7 @@
 				name="resourceId"
 				bind:value={resourceId}
 				required
-				class="border-input bg-background focus-visible:ring-ring h-9 border px-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
+				class="h-9 border border-input bg-background px-2 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 				style="border-radius: calc(var(--radius) * 0.6)"
 			>
 				{#each resources as r (r.id)}
@@ -89,7 +97,7 @@
 				{/each}
 			</select>
 			{#if formError?.resourceId}
-				<span class="text-destructive text-xs">{formError.resourceId}</span>
+				<span class="text-xs text-destructive">{formError.resourceId}</span>
 			{/if}
 		</label>
 
@@ -99,7 +107,7 @@
 				name="projectId"
 				bind:value={projectId}
 				required
-				class="border-input bg-background focus-visible:ring-ring h-9 border px-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
+				class="h-9 border border-input bg-background px-2 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 				style="border-radius: calc(var(--radius) * 0.6)"
 			>
 				{#each projects as p (p.id)}
@@ -107,7 +115,7 @@
 				{/each}
 			</select>
 			{#if formError?.projectId}
-				<span class="text-destructive text-xs">{formError.projectId}</span>
+				<span class="text-xs text-destructive">{formError.projectId}</span>
 			{/if}
 		</label>
 
@@ -119,11 +127,11 @@
 					type="date"
 					bind:value={startDate}
 					required
-					class="border-input bg-background focus-visible:ring-ring h-9 border px-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
+					class="h-9 border border-input bg-background px-2 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 					style="border-radius: calc(var(--radius) * 0.6)"
 				/>
 				{#if formError?.startDate}
-					<span class="text-destructive text-xs">{formError.startDate}</span>
+					<span class="text-xs text-destructive">{formError.startDate}</span>
 				{/if}
 			</label>
 
@@ -135,18 +143,27 @@
 					bind:value={endDate}
 					required
 					min={startDate}
-					class="border-input bg-background focus-visible:ring-ring h-9 border px-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
+					class="h-9 border border-input bg-background px-2 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 					style="border-radius: calc(var(--radius) * 0.6)"
 				/>
 				{#if formError?.endDate}
-					<span class="text-destructive text-xs">{formError.endDate}</span>
+					<span class="text-xs text-destructive">{formError.endDate}</span>
 				{/if}
 			</label>
 		</div>
 
 		<div class="mt-2 flex justify-end gap-2">
-			<Button variant="ghost" type="button" onclick={() => (open = false)}>キャンセル</Button>
-			<Button type="submit">作成</Button>
+			<Button
+				variant="ghost"
+				type="button"
+				onclick={() => (open = false)}
+				disabled={formSubmitState.submitting}
+			>
+				キャンセル
+			</Button>
+			<Button type="submit" disabled={formSubmitState.submitting}>
+				{formSubmitState.submitting ? '送信中...' : '作成'}
+			</Button>
 		</div>
 	</form>
 </Dialog>

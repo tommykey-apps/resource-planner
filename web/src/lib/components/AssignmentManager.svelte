@@ -3,6 +3,7 @@
 	import { Button } from './ui/button';
 	import Dialog from './Dialog.svelte';
 	import { addDays } from '$lib/date';
+	import { createSubmitState } from '$lib/forms/submit-state.svelte';
 	import type { Assignment, Resource, Project } from '$lib/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
 
@@ -34,30 +35,24 @@
 		return addDays(a.endDateExclusive, -1);
 	}
 
-	const deleteSubmit: SubmitFunction = () => {
-		return async ({ update }) => {
-			await update();
-		};
-	};
+	// 連打抑制 + submitting state (#94)
+	const deleteSubmitState = createSubmitState();
+	const deleteSubmit: SubmitFunction = deleteSubmitState.wrap();
 </script>
 
 <Button variant="outline" onclick={() => (open = true)}>
 	📋 アサイン一覧 ({assignments.length})
 </Button>
 
-<Dialog
-	bind:open
-	title="アサイン一覧"
-	description="登録済みアサインの一覧と削除"
->
+<Dialog bind:open title="アサイン一覧" description="登録済みアサインの一覧と削除">
 	<div class="flex flex-col gap-3">
 		{#if sorted.length === 0}
-			<p class="text-muted-foreground py-4 text-center text-sm">
+			<p class="py-4 text-center text-sm text-muted-foreground">
 				まだアサインが登録されていません。<br />
 				右上の「+ アサインを追加」から作成できます。
 			</p>
 		{:else}
-			<ul class="border-border divide-border max-h-[60vh] divide-y overflow-y-auto border">
+			<ul class="max-h-[60vh] divide-y divide-border overflow-y-auto border border-border">
 				{#each sorted as a (a.id)}
 					{@const resource = resourceMap.get(a.resourceId)}
 					{@const project = projectMap.get(a.projectId)}
@@ -65,7 +60,8 @@
 						<div class="flex flex-1 items-center gap-3 text-sm">
 							<span
 								class="inline-block h-3 w-3 shrink-0 border border-black/10"
-								style="background-color: {project?.color ?? '#999'}; border-radius: calc(var(--radius) * 0.4)"
+								style="background-color: {project?.color ??
+									'#999'}; border-radius: calc(var(--radius) * 0.4)"
 								aria-hidden="true"
 							></span>
 							<div class="flex flex-1 flex-col">
@@ -74,7 +70,7 @@
 									<span class="text-muted-foreground">×</span>
 									{project?.name ?? '(削除済案件)'}
 								</span>
-								<span class="text-muted-foreground font-mono text-xs">
+								<span class="font-mono text-xs text-muted-foreground">
 									{a.startDate} 〜 {displayEndDate(a)}
 								</span>
 							</div>
@@ -92,7 +88,14 @@
 						>
 							<input type="hidden" name="id" value={a.id} />
 							<input type="hidden" name="startDate" value={a.startDate} />
-							<Button size="xs" variant="destructive" type="submit">削除</Button>
+							<Button
+								size="xs"
+								variant="destructive"
+								type="submit"
+								disabled={deleteSubmitState.submitting}
+							>
+								削除
+							</Button>
 						</form>
 					</li>
 				{/each}

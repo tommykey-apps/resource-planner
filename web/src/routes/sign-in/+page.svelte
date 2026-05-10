@@ -1,6 +1,18 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	let { data }: { data: PageData } = $props();
+
+	// 連打防止 (#94)。Auth.js auto endpoint への直接 POST なので `use:enhance` ではなく
+	// 生 onsubmit + $state で一回限りに。送信後はページ遷移するため reset は不要。
+	let submitting = $state(false);
+
+	function onSubmit(e: Event) {
+		if (submitting) {
+			e.preventDefault();
+			return;
+		}
+		submitting = true;
+	}
 </script>
 
 <svelte:head>
@@ -16,9 +28,8 @@
 	<!--
 		Auth.js が `/auth/signin/nodemailer` を auto-register (hooks.server.ts の handle 経由)。
 		csrfToken は同じ origin で Auth.js が cookie をセット済 (handle が GET 時に注入)。
-		本 PR では検証用の placeholder ページ。sign-in 主導線への昇格は PR-A5 で。
 	-->
-	<form method="POST" action="/auth/signin/nodemailer" class="space-y-4">
+	<form method="POST" action="/auth/signin/nodemailer" class="space-y-4" onsubmit={onSubmit}>
 		<input type="hidden" name="csrfToken" value={data.csrfToken} />
 		<div>
 			<label for="email" class="mb-1 block text-sm font-medium">メールアドレス</label>
@@ -28,12 +39,17 @@
 				type="email"
 				required
 				autocomplete="email"
-				class="w-full rounded border border-input bg-background px-3 py-2"
+				disabled={submitting}
+				class="w-full rounded border border-input bg-background px-3 py-2 disabled:opacity-60"
 				placeholder="you@your-company.example.com"
 			/>
 		</div>
-		<button type="submit" class="w-full rounded bg-primary px-4 py-2 text-primary-foreground">
-			サインインリンクを送信
+		<button
+			type="submit"
+			disabled={submitting}
+			class="w-full rounded bg-primary px-4 py-2 text-primary-foreground disabled:opacity-60"
+		>
+			{submitting ? '送信中...' : 'サインインリンクを送信'}
 		</button>
 	</form>
 

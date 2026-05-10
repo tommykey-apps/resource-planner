@@ -1,6 +1,7 @@
 /// <reference types="vitest/config" />
 import tailwindcss from '@tailwindcss/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
+import { svelteTesting } from '@testing-library/svelte/vite';
 import { defineConfig } from 'vite';
 
 // SvelteKit の `$env/dynamic/private` は plugin 初期化時に process.env を snapshot するため、
@@ -15,7 +16,32 @@ if (process.env.VITEST) {
 export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
 	test: {
-		include: ['src/**/*.{test,spec}.{js,ts}'],
-		environment: 'node'
+		// 2 種類の test を分離 (#94):
+		// - unit: node 環境、Auth.js / SvelteKit server module を直接 import
+		// - component: jsdom + browser resolve conditions、Svelte 5 component を mount
+		// `svelteTesting()` は browser conditions を要求するので、それが不要な node test に
+		// 影響しないよう projects で隔離する。
+		projects: [
+			{
+				extends: true,
+				test: {
+					name: 'unit',
+					include: ['src/**/*.{test,spec}.{js,ts}'],
+					exclude: ['src/**/*.svelte.{test,spec}.{js,ts}'],
+					environment: 'node',
+					setupFiles: ['./src/test-setup.ts']
+				}
+			},
+			{
+				extends: true,
+				plugins: [svelteTesting()],
+				test: {
+					name: 'component',
+					include: ['src/**/*.svelte.{test,spec}.{js,ts}'],
+					environment: 'jsdom',
+					setupFiles: ['./src/test-setup.ts']
+				}
+			}
+		]
 	}
 });
