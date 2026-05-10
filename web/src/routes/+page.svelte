@@ -11,6 +11,7 @@
 	import ProjectManager from '$lib/components/ProjectManager.svelte';
 	import AssignmentCreator from '$lib/components/AssignmentCreator.svelte';
 	import AssignmentManager from '$lib/components/AssignmentManager.svelte';
+	import AvatarDropdown from '$lib/components/AvatarDropdown.svelte';
 	import type { Assignment as DbAssignment } from '$lib/types';
 	import type { PageData } from './$types';
 
@@ -76,22 +77,20 @@
 	}
 </script>
 
-<main>
-	<header>
-		<h1>resource-planner</h1>
-		<div class="actions">
+<header class="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
+	<div class="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-2 px-4 py-3">
+		<h1 class="m-0 text-lg font-semibold tracking-tight sm:text-xl">resource-planner</h1>
+		<div class="flex flex-wrap items-center gap-2">
 			<ResourceManager {resources} assignments={dbAssignments} />
 			<ProjectManager {projects} assignments={dbAssignments} />
 			<AssignmentCreator {resources} {projects} />
 			<AssignmentManager assignments={dbAssignments} {resources} {projects} />
-			<form method="POST" action="/auth/signout" class="signout-form">
-				<button type="submit" class="signout-btn" title="サインアウト">
-					{data.user?.email ?? 'サインアウト'}
-				</button>
-			</form>
+			<AvatarDropdown email={data.user?.email ?? ''} />
 		</div>
-	</header>
+	</div>
+</header>
 
+<main class="mx-auto max-w-[1200px] px-4 py-6">
 	{#if resources.length === 0}
 		<div class="empty-state">
 			<p>まだ人が登録されていません。</p>
@@ -126,27 +125,7 @@
 
 <style>
 	main {
-		max-width: 1200px;
-		margin: 2rem auto;
-		padding: 0 1rem;
 		font-family: system-ui, sans-serif;
-	}
-
-	header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		margin-bottom: 1.5rem;
-	}
-
-	header .actions {
-		display: flex;
-		gap: 0.5rem;
-	}
-
-	h1 {
-		margin: 0;
-		font-size: 1.5rem;
 	}
 
 	.empty-state {

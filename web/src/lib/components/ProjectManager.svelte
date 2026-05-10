@@ -69,9 +69,9 @@
 	const deleteSubmit: SubmitFunction = deleteSubmitState.wrap();
 </script>
 
-<Button variant="outline" onclick={() => (listOpen = true)}
-	>📁 案件を管理 ({projects.length})</Button
->
+<Button variant="outline" onclick={() => (listOpen = true)}>
+	📁<span class="hidden sm:ml-1 sm:inline">案件を管理 ({projects.length})</span>
+</Button>
 
 <Dialog
 	bind:open={listOpen}

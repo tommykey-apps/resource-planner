@@ -31,4 +31,13 @@ describe('ResourceManager (smoke)', () => {
 		});
 		expect(getByRole('button', { name: /\(2\)/ })).toBeInTheDocument();
 	});
+
+	it('keeps the emoji icon visible while wrapping the text label in a sm:inline span (mobile responsive、#96)', () => {
+		const { getByRole } = render(ResourceManager, {
+			props: { resources: [], assignments: [] }
+		});
+		const trigger = getByRole('button', { name: /人を管理/ });
+		expect(trigger.textContent).toMatch(/👥/);
+		expect(trigger.querySelector('.hidden.sm\\:inline')?.textContent).toMatch(/人を管理/);
+	});
 });
