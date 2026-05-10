@@ -1,0 +1,16 @@
+{
+	"$schema": "https://code.claude.com/settings.schema.json",
+	"hooks": {
+		"PreToolUse": [
+			{
+				"matcher": "Edit|Write",
+				"hooks": [
+					{
+						"type": "command",
+						"command": ".claude/hooks/warn-untested.sh"
+					}
+				]
+			}
+		]
+	}
+}
