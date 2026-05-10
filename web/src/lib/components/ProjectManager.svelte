@@ -4,6 +4,7 @@
 	import { Button } from './ui/button';
 	import Dialog from './Dialog.svelte';
 	import { createSubmitState } from '$lib/forms/submit-state.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 	import type { Project, Assignment } from '$lib/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
 
@@ -72,19 +73,17 @@
 
 <Button variant="outline" onclick={() => (listOpen = true)}>
 	<Folder size={18} weight="regular" aria-hidden="true" />
-	<span class="hidden sm:ml-1 sm:inline">案件を管理 ({projects.length})</span>
+	<span class="hidden sm:ml-1 sm:inline"
+		>{t('projects.manageWithCount', { count: projects.length })}</span
+	>
 </Button>
 
-<Dialog
-	bind:open={listOpen}
-	title="案件を管理"
-	description="案件 (プロジェクト) の追加・編集・削除"
->
+<Dialog bind:open={listOpen} title={t('projects.manage')} description={t('projects.description')}>
 	<div class="flex flex-col gap-3">
-		<Button onclick={startCreate}>+ 案件を追加</Button>
+		<Button onclick={startCreate}>{t('projects.add')}</Button>
 
 		{#if projects.length === 0}
-			<p class="py-4 text-center text-sm text-muted-foreground">まだ案件が登録されていません。</p>
+			<p class="py-4 text-center text-sm text-muted-foreground">{t('projects.empty')}</p>
 		{:else}
 			<ul class="divide-y divide-border border border-border">
 				{#each projects as p (p.id)}
@@ -94,14 +93,19 @@
 							<span
 								class="inline-block h-4 w-4 border border-black/10"
 								style="background-color: {p.color}; border-radius: calc(var(--radius) * 0.4)"
+								aria-hidden="true"
 							></span>
 							{p.name}
 							{#if count > 0}
-								<span class="text-xs text-muted-foreground">({count} 件のアサイン)</span>
+								<span class="text-xs text-muted-foreground"
+									>{t('projects.assignmentCount', { count })}</span
+								>
 							{/if}
 						</span>
 						<div class="flex gap-1">
-							<Button size="xs" variant="outline" onclick={() => startEdit(p)}>編集</Button>
+							<Button size="xs" variant="outline" onclick={() => startEdit(p)}
+								>{t('common.edit')}</Button
+							>
 							<form
 								method="POST"
 								action="?/deleteProject"
@@ -109,8 +113,8 @@
 								onsubmit={(e) => {
 									const msg =
 										count > 0
-											? `「${p.name}」と関連 ${count} 件のアサインを削除しますか?\n(取り消しできません)`
-											: `「${p.name}」を削除しますか?`;
+											? t('projects.confirmDeleteWithAssignments', { name: p.name, count })
+											: t('projects.confirmDelete', { name: p.name });
 									if (!confirm(msg)) {
 										e.preventDefault();
 									}
@@ -123,7 +127,7 @@
 									type="submit"
 									disabled={deleteSubmitState.submitting}
 								>
-									削除
+									{t('common.delete')}
 								</Button>
 							</form>
 						</div>
@@ -134,7 +138,7 @@
 	</div>
 </Dialog>
 
-<Dialog bind:open={formOpen} title={editing ? '案件を編集' : '案件を追加'}>
+<Dialog bind:open={formOpen} title={editing ? t('projects.editTitle') : t('projects.createTitle')}>
 	<form
 		method="POST"
 		action={editing ? '?/updateProject' : '?/createProject'}
@@ -146,7 +150,7 @@
 		{/if}
 
 		<label class="flex flex-col gap-1 text-sm">
-			<span>案件名</span>
+			<span>{t('projects.name')}</span>
 			<input
 				name="name"
 				type="text"
@@ -163,7 +167,7 @@
 		</label>
 
 		<label class="flex flex-col gap-1 text-sm">
-			<span>表示色</span>
+			<span>{t('projects.color')}</span>
 			<div class="flex items-center gap-2">
 				<input
 					name="color"
@@ -186,10 +190,14 @@
 				onclick={() => (formOpen = false)}
 				disabled={formSubmitState.submitting}
 			>
-				キャンセル
+				{t('common.cancel')}
 			</Button>
 			<Button type="submit" disabled={formSubmitState.submitting}>
-				{formSubmitState.submitting ? '送信中...' : editing ? '更新' : '追加'}
+				{formSubmitState.submitting
+					? t('common.submitting')
+					: editing
+						? t('common.update')
+						: t('common.create')}
 			</Button>
 		</div>
 	</form>

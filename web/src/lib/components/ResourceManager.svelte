@@ -4,6 +4,7 @@
 	import { Button } from './ui/button';
 	import Dialog from './Dialog.svelte';
 	import { createSubmitState } from '$lib/forms/submit-state.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 	import type { Resource, Assignment } from '$lib/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
 
@@ -67,15 +68,17 @@
 
 <Button variant="outline" onclick={() => (listOpen = true)}>
 	<Users size={18} weight="regular" aria-hidden="true" />
-	<span class="hidden sm:ml-1 sm:inline">人を管理 ({resources.length})</span>
+	<span class="hidden sm:ml-1 sm:inline"
+		>{t('resources.manageWithCount', { count: resources.length })}</span
+	>
 </Button>
 
-<Dialog bind:open={listOpen} title="人を管理" description="リソース (人) の追加・編集・削除">
+<Dialog bind:open={listOpen} title={t('resources.manage')} description={t('resources.description')}>
 	<div class="flex flex-col gap-3">
-		<Button onclick={startCreate}>+ 人を追加</Button>
+		<Button onclick={startCreate}>{t('resources.add')}</Button>
 
 		{#if resources.length === 0}
-			<p class="py-4 text-center text-sm text-muted-foreground">まだ人が登録されていません。</p>
+			<p class="py-4 text-center text-sm text-muted-foreground">{t('resources.empty')}</p>
 		{:else}
 			<ul class="divide-y divide-border border border-border">
 				{#each resources as r (r.id)}
@@ -84,11 +87,15 @@
 						<span class="text-sm">
 							{r.name}
 							{#if count > 0}
-								<span class="ml-1 text-xs text-muted-foreground">({count} 件のアサイン)</span>
+								<span class="ml-1 text-xs text-muted-foreground"
+									>{t('resources.assignmentCount', { count })}</span
+								>
 							{/if}
 						</span>
 						<div class="flex gap-1">
-							<Button size="xs" variant="outline" onclick={() => startEdit(r)}>編集</Button>
+							<Button size="xs" variant="outline" onclick={() => startEdit(r)}
+								>{t('common.edit')}</Button
+							>
 							<form
 								method="POST"
 								action="?/deleteResource"
@@ -96,8 +103,8 @@
 								onsubmit={(e) => {
 									const msg =
 										count > 0
-											? `「${r.name}」と関連 ${count} 件のアサインを削除しますか?\n(取り消しできません)`
-											: `「${r.name}」を削除しますか?`;
+											? t('resources.confirmDeleteWithAssignments', { name: r.name, count })
+											: t('resources.confirmDelete', { name: r.name });
 									if (!confirm(msg)) {
 										e.preventDefault();
 									}
@@ -110,7 +117,7 @@
 									type="submit"
 									disabled={deleteSubmitState.submitting}
 								>
-									削除
+									{t('common.delete')}
 								</Button>
 							</form>
 						</div>
@@ -121,7 +128,10 @@
 	</div>
 </Dialog>
 
-<Dialog bind:open={formOpen} title={editing ? '人を編集' : '人を追加'}>
+<Dialog
+	bind:open={formOpen}
+	title={editing ? t('resources.editTitle') : t('resources.createTitle')}
+>
 	<form
 		method="POST"
 		action={editing ? '?/updateResource' : '?/createResource'}
@@ -132,7 +142,7 @@
 			<input type="hidden" name="id" value={editing.id} />
 		{/if}
 		<label class="flex flex-col gap-1 text-sm">
-			<span>名前</span>
+			<span>{t('resources.name')}</span>
 			<input
 				name="name"
 				type="text"
@@ -154,10 +164,14 @@
 				onclick={() => (formOpen = false)}
 				disabled={formSubmitState.submitting}
 			>
-				キャンセル
+				{t('common.cancel')}
 			</Button>
 			<Button type="submit" disabled={formSubmitState.submitting}>
-				{formSubmitState.submitting ? '送信中...' : editing ? '更新' : '追加'}
+				{formSubmitState.submitting
+					? t('common.submitting')
+					: editing
+						? t('common.update')
+						: t('common.create')}
 			</Button>
 		</div>
 	</form>

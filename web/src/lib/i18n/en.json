@@ -1,0 +1,127 @@
+{
+	"app": {
+		"title": "resource-planner"
+	},
+	"common": {
+		"create": "Create",
+		"update": "Update",
+		"cancel": "Cancel",
+		"delete": "Delete",
+		"edit": "Edit",
+		"submitting": "Submitting…",
+		"close": "Close",
+		"confirm": "Confirm",
+		"requiredError": "Required",
+		"maxLengthError": "{n} characters max"
+	},
+	"timeline": {
+		"today": "Today",
+		"prev": "Prev",
+		"next": "Next",
+		"prevAria": "Previous period",
+		"nextAria": "Next period",
+		"zoomDay": "Day",
+		"zoomWeek": "Week",
+		"zoomMonth": "Month",
+		"zoomYear": "Year"
+	},
+	"resources": {
+		"manage": "Manage people",
+		"manageWithCount": "Manage people ({count})",
+		"add": "+ Add person",
+		"addNew": "Add person",
+		"editTitle": "Edit person",
+		"createTitle": "Add person",
+		"description": "Add, edit and delete resources (people)",
+		"empty": "No people registered yet.",
+		"emptyHint": "Use the \"Manage people\" button at the top right to add the first resource.",
+		"name": "Name",
+		"assignmentCount": "({count} assignments)",
+		"confirmDelete": "Delete \"{name}\"?",
+		"confirmDeleteWithAssignments": "Delete \"{name}\" and {count} related assignments?\n(Cannot be undone)"
+	},
+	"projects": {
+		"manage": "Manage projects",
+		"manageWithCount": "Manage projects ({count})",
+		"add": "+ Add project",
+		"addNew": "Add project",
+		"editTitle": "Edit project",
+		"createTitle": "Add project",
+		"description": "Add, edit and delete projects",
+		"empty": "No projects registered yet.",
+		"name": "Project name",
+		"color": "Display color",
+		"assignmentCount": "({count} assignments)",
+		"confirmDelete": "Delete \"{name}\"?",
+		"confirmDeleteWithAssignments": "Delete \"{name}\" and {count} related assignments?\n(Cannot be undone)"
+	},
+	"assignments": {
+		"add": "Add assignment",
+		"addLong": "+ Add assignment",
+		"createTitle": "Add assignment",
+		"description": "Assign a person to a project for a date range",
+		"list": "Assignments",
+		"listWithCount": "Assignments ({count})",
+		"listTitle": "Assignments",
+		"listDescription": "List of registered assignments",
+		"empty": "No assignments registered yet.",
+		"emptyHint": "Use \"+ Add assignment\" at the top right to create one.",
+		"resource": "Person",
+		"project": "Project",
+		"startDate": "Start date",
+		"endDate": "End date (inclusive)",
+		"deletedResource": "(deleted resource)",
+		"deletedProject": "(deleted project)",
+		"create": "Create",
+		"requirePeopleAndProjects": "Register at least one person and one project to create assignments",
+		"updateError": "Failed to update the assignment",
+		"networkError": "Network error",
+		"confirmDelete": "Delete this assignment?\n{label}"
+	},
+	"signin": {
+		"title": "Sign in",
+		"description": "Enter your work email. We will send you a sign-in link by email.",
+		"emailLabel": "Email address",
+		"emailPlaceholder": "you@your-company.example.com",
+		"submit": "Send sign-in link",
+		"submitting": "Sending…",
+		"hint": "Only email addresses on the allowed domain can sign in.",
+		"checkEmailTitle": "Check your email",
+		"checkEmailDescription": "We sent a sign-in link to your email. Click the link to complete sign-in.",
+		"checkEmailFootnote": "If the email does not arrive, check your spam folder. The link expires in 24 hours.",
+		"checkEmailRetry": "Send to a different email",
+		"errorTitle": "Sign-in failed",
+		"errorAccessDenied": "This email domain is not allowed.",
+		"errorVerification": "The link is invalid or expired. Please send a new sign-in link.",
+		"errorConfiguration": "There is a problem with the auth configuration. Please contact the administrator.",
+		"errorDefault": "Sign-in failed. Please try again later.",
+		"errorCode": "Error code: {code}",
+		"backToSignin": "Back to sign-in"
+	},
+	"errorPage": {
+		"hint401": "Sign-in is required. Enter your email on the sign-in page.",
+		"hint403": "This action is not permitted. Check your permissions for the signed-in user.",
+		"hint404": "The requested URL does not exist.",
+		"hint5xx": "A server-side error occurred. Please try again later.",
+		"goHome": "Back to home",
+		"signin": "Sign in",
+		"unknownMessage": "An unknown error occurred"
+	},
+	"theme": {
+		"label": "Theme: {mode}",
+		"labelSystem": "Theme: system ({resolved})",
+		"light": "light",
+		"dark": "dark",
+		"system": "system"
+	},
+	"locale": {
+		"label": "Language",
+		"japanese": "日本語",
+		"english": "English"
+	},
+	"avatar": {
+		"label": "User menu",
+		"labelWithEmail": "User menu ({email})",
+		"signout": "Sign out"
+	}
+}

@@ -1,10 +1,13 @@
 <script lang="ts">
 	import { DropdownMenu } from 'bits-ui';
+	import { t } from '$lib/i18n/index.svelte';
 
 	let { email = '' }: { email?: string } = $props();
 
 	const initial = $derived(email.length > 0 ? email[0].toUpperCase() : '?');
-	const ariaLabel = $derived(email.length > 0 ? `ユーザーメニュー (${email})` : 'ユーザーメニュー');
+	const ariaLabel = $derived(
+		email.length > 0 ? t('avatar.labelWithEmail', { email }) : t('avatar.label')
+	);
 </script>
 
 <DropdownMenu.Root>
@@ -34,7 +37,7 @@
 				<DropdownMenu.Item
 					class="flex w-full cursor-pointer items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent"
 				>
-					<button type="submit" class="flex-1 text-left">サインアウト</button>
+					<button type="submit" class="flex-1 text-left">{t('avatar.signout')}</button>
 				</DropdownMenu.Item>
 			</form>
 		</DropdownMenu.Content>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import type { PageData } from './$types';
 	let { data }: { data: PageData } = $props();
 
@@ -16,13 +17,13 @@
 </script>
 
 <svelte:head>
-	<title>サインイン — resource-planner</title>
+	<title>{t('signin.title')} — {t('app.title')}</title>
 </svelte:head>
 
 <main class="container mx-auto max-w-md px-4 py-12">
-	<h1 class="mb-2 text-2xl font-bold">サインイン</h1>
+	<h1 class="mb-2 text-2xl font-bold">{t('signin.title')}</h1>
 	<p class="mb-6 text-sm text-muted-foreground">
-		会社のメールアドレスを入力してください。サインインリンクをメールで送信します。
+		{t('signin.description')}
 	</p>
 
 	<!--
@@ -32,7 +33,7 @@
 	<form method="POST" action="/auth/signin/nodemailer" class="space-y-4" onsubmit={onSubmit}>
 		<input type="hidden" name="csrfToken" value={data.csrfToken} />
 		<div>
-			<label for="email" class="mb-1 block text-sm font-medium">メールアドレス</label>
+			<label for="email" class="mb-1 block text-sm font-medium">{t('signin.emailLabel')}</label>
 			<input
 				id="email"
 				name="email"
@@ -41,7 +42,7 @@
 				autocomplete="email"
 				disabled={submitting}
 				class="w-full rounded border border-input bg-background px-3 py-2 disabled:opacity-60"
-				placeholder="you@your-company.example.com"
+				placeholder={t('signin.emailPlaceholder')}
 			/>
 		</div>
 		<button
@@ -49,11 +50,11 @@
 			disabled={submitting}
 			class="w-full rounded bg-primary px-4 py-2 text-primary-foreground disabled:opacity-60"
 		>
-			{submitting ? '送信中...' : 'サインインリンクを送信'}
+			{submitting ? t('signin.submitting') : t('signin.submit')}
 		</button>
 	</form>
 
 	<p class="mt-6 text-xs text-muted-foreground">
-		許可されたドメインのメールアドレスのみサインイン可能です。
+		{t('signin.hint')}
 	</p>
 </main>

@@ -13,6 +13,8 @@
 	import AssignmentManager from '$lib/components/AssignmentManager.svelte';
 	import AvatarDropdown from '$lib/components/AvatarDropdown.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
+	import LocaleSwitcher from '$lib/components/LocaleSwitcher.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 	import type { Assignment as DbAssignment } from '$lib/types';
 	import type { PageData } from './$types';
 
@@ -71,8 +73,8 @@
 			}
 		} catch (e) {
 			dbAssignments = snapshot;
-			toast.error('アサインの更新に失敗しました', {
-				description: e instanceof Error ? e.message : '通信エラー'
+			toast.error(t('assignments.updateError'), {
+				description: e instanceof Error ? e.message : t('assignments.networkError')
 			});
 		}
 	}
@@ -80,12 +82,13 @@
 
 <header class="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
 	<div class="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-2 px-4 py-3">
-		<h1 class="m-0 text-lg font-semibold tracking-tight sm:text-xl">resource-planner</h1>
+		<h1 class="m-0 text-lg font-semibold tracking-tight sm:text-xl">{t('app.title')}</h1>
 		<div class="flex flex-wrap items-center gap-2">
 			<ResourceManager {resources} assignments={dbAssignments} />
 			<ProjectManager {projects} assignments={dbAssignments} />
 			<AssignmentCreator {resources} {projects} />
 			<AssignmentManager assignments={dbAssignments} {resources} {projects} />
+			<LocaleSwitcher />
 			<ThemeToggle />
 			<AvatarDropdown email={data.user?.email ?? ''} />
 		</div>
@@ -95,23 +98,23 @@
 <main class="mx-auto max-w-[1200px] px-4 py-6">
 	{#if resources.length === 0}
 		<div class="empty-state">
-			<p>まだ人が登録されていません。</p>
-			<p class="hint">右上の「人を管理」ボタンから最初のリソースを追加してください。</p>
+			<p>{t('resources.empty')}</p>
+			<p class="hint">{t('resources.emptyHint')}</p>
 		</div>
 	{:else}
 		<TimelineToolbar
 			bind:viewportStart
 			bind:zoom
 			labels={{
-				today: '今日',
-				prev: '前へ',
-				next: '次へ',
-				zoomDay: '日',
-				zoomWeek: '週',
-				zoomMonth: '月',
-				zoomYear: '年'
+				today: t('timeline.today'),
+				prev: t('timeline.prev'),
+				next: t('timeline.next'),
+				zoomDay: t('timeline.zoomDay'),
+				zoomWeek: t('timeline.zoomWeek'),
+				zoomMonth: t('timeline.zoomMonth'),
+				zoomYear: t('timeline.zoomYear')
 			}}
-			ariaLabels={{ prev: '前の期間へ', next: '次の期間へ' }}
+			ariaLabels={{ prev: t('timeline.prevAria'), next: t('timeline.nextAria') }}
 		/>
 
 		<ResourceTimeline
