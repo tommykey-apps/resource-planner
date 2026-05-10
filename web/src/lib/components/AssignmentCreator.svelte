@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import Plus from 'phosphor-svelte/lib/Plus';
 	import { Button } from './ui/button';
 	import Dialog from './Dialog.svelte';
 	import { formatLocalDate } from '$lib/timeline-adapter';
@@ -73,7 +74,8 @@
 	disabled={!canCreate}
 	title={canCreate ? '' : '人と案件を 1 件以上登録してから作成できます'}
 >
-	+<span class="hidden sm:ml-1 sm:inline">アサインを追加</span>
+	<Plus size={18} weight="bold" aria-hidden="true" />
+	<span class="hidden sm:ml-1 sm:inline">アサインを追加</span>
 </Button>
 
 <Dialog bind:open title="アサインを追加" description="人を案件に期間でアサインする">

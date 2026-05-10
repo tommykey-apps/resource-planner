@@ -11,12 +11,15 @@ describe('AssignmentCreator (smoke)', () => {
 		expect(getByRole('button', { name: /アサイン/ })).toBeInTheDocument();
 	});
 
-	it('shows + icon always, wraps text label in sm:inline span (mobile responsive、#96)', () => {
+	it('shows phosphor Plus icon, wraps text label in sm:inline span (#96 / #105)', () => {
 		const { getByRole } = render(AssignmentCreator, {
 			props: { resources: [], projects: [] }
 		});
 		const trigger = getByRole('button');
-		expect(trigger.textContent).toMatch(/\+/);
+		const icon = trigger.querySelector('svg[aria-hidden="true"]');
+		expect(icon).toBeTruthy();
+		// プレーンな "+" 文字も使わない (text node の plus)
+		expect(trigger.textContent?.replace(/アサインを追加/, '').trim()).not.toContain('+');
 		expect(trigger.querySelector('.hidden.sm\\:inline')?.textContent).toMatch(/アサインを追加/);
 	});
 });

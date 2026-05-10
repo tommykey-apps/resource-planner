@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import Users from 'phosphor-svelte/lib/Users';
 	import { Button } from './ui/button';
 	import Dialog from './Dialog.svelte';
 	import { createSubmitState } from '$lib/forms/submit-state.svelte';
@@ -65,7 +66,8 @@
 </script>
 
 <Button variant="outline" onclick={() => (listOpen = true)}>
-	👥<span class="hidden sm:ml-1 sm:inline">人を管理 ({resources.length})</span>
+	<Users size={18} weight="regular" aria-hidden="true" />
+	<span class="hidden sm:ml-1 sm:inline">人を管理 ({resources.length})</span>
 </Button>
 
 <Dialog bind:open={listOpen} title="人を管理" description="リソース (人) の追加・編集・削除">
