@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { Button } from '$lib/components/ui/button';
+	import { t } from '$lib/i18n/index.svelte';
 
 	const status = $derived(page.status);
-	const message = $derived(page.error?.message ?? '不明なエラーが発生しました');
+	const message = $derived(page.error?.message ?? t('errorPage.unknownMessage'));
 </script>
 
 <main>
@@ -12,21 +13,21 @@
 		<p class="message">{message}</p>
 
 		{#if status === 401}
-			<p class="hint">サインインが必要です。サインイン画面でメールアドレスを入力してください。</p>
+			<p class="hint">{t('errorPage.hint401')}</p>
 		{:else if status === 403}
-			<p class="hint">
-				許可されていない操作です。サインインしているユーザーで権限を確認してください。
-			</p>
+			<p class="hint">{t('errorPage.hint403')}</p>
 		{:else if status === 404}
-			<p class="hint">指定された URL は存在しません。</p>
+			<p class="hint">{t('errorPage.hint404')}</p>
 		{:else if status >= 500}
-			<p class="hint">サーバー側でエラーが発生しました。時間をおいて再度お試しください。</p>
+			<p class="hint">{t('errorPage.hint5xx')}</p>
 		{/if}
 
 		<div class="actions">
-			<Button variant="outline" onclick={() => (window.location.href = '/')}>ホームに戻る</Button>
+			<Button variant="outline" onclick={() => (window.location.href = '/')}>
+				{t('errorPage.goHome')}
+			</Button>
 			<Button variant="ghost" onclick={() => (window.location.href = '/sign-in')}>
-				サインイン
+				{t('errorPage.signin')}
 			</Button>
 		</div>
 	</div>

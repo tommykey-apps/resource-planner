@@ -3,8 +3,15 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import { ModeWatcher } from 'mode-watcher';
 	import { Toaster } from 'svelte-sonner';
+	import { initLocale } from '$lib/i18n/index.svelte';
+	import type { LayoutData } from './$types';
 
-	let { children } = $props();
+	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
+
+	// SSR で決定された locale (cookie / Accept-Language) を client にも同期 (#98)
+	$effect.pre(() => {
+		initLocale(data.locale);
+	});
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>

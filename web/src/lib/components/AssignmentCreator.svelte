@@ -5,6 +5,7 @@
 	import Dialog from './Dialog.svelte';
 	import { formatLocalDate } from '$lib/timeline-adapter';
 	import { createSubmitState } from '$lib/forms/submit-state.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 	import type { Resource, Project } from '$lib/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
 
@@ -72,13 +73,13 @@
 <Button
 	onclick={startCreate}
 	disabled={!canCreate}
-	title={canCreate ? '' : '人と案件を 1 件以上登録してから作成できます'}
+	title={canCreate ? '' : t('assignments.requirePeopleAndProjects')}
 >
 	<Plus size={18} weight="bold" aria-hidden="true" />
-	<span class="hidden sm:ml-1 sm:inline">アサインを追加</span>
+	<span class="hidden sm:ml-1 sm:inline">{t('assignments.add')}</span>
 </Button>
 
-<Dialog bind:open title="アサインを追加" description="人を案件に期間でアサインする">
+<Dialog bind:open title={t('assignments.createTitle')} description={t('assignments.description')}>
 	<form
 		method="POST"
 		action="?/createAssignment"
@@ -86,7 +87,7 @@
 		class="flex flex-col gap-3"
 	>
 		<label class="flex flex-col gap-1 text-sm">
-			<span>人</span>
+			<span>{t('assignments.resource')}</span>
 			<select
 				name="resourceId"
 				bind:value={resourceId}
@@ -104,7 +105,7 @@
 		</label>
 
 		<label class="flex flex-col gap-1 text-sm">
-			<span>案件</span>
+			<span>{t('assignments.project')}</span>
 			<select
 				name="projectId"
 				bind:value={projectId}
@@ -123,7 +124,7 @@
 
 		<div class="grid grid-cols-2 gap-3">
 			<label class="flex flex-col gap-1 text-sm">
-				<span>開始日</span>
+				<span>{t('assignments.startDate')}</span>
 				<input
 					name="startDate"
 					type="date"
@@ -138,7 +139,7 @@
 			</label>
 
 			<label class="flex flex-col gap-1 text-sm">
-				<span>終了日 (含む)</span>
+				<span>{t('assignments.endDate')}</span>
 				<input
 					name="endDate"
 					type="date"
@@ -161,10 +162,10 @@
 				onclick={() => (open = false)}
 				disabled={formSubmitState.submitting}
 			>
-				キャンセル
+				{t('common.cancel')}
 			</Button>
 			<Button type="submit" disabled={formSubmitState.submitting}>
-				{formSubmitState.submitting ? '送信中...' : '作成'}
+				{formSubmitState.submitting ? t('common.submitting') : t('assignments.create')}
 			</Button>
 		</div>
 	</form>

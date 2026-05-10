@@ -5,6 +5,7 @@
 	import Dialog from './Dialog.svelte';
 	import { addDays } from '$lib/date';
 	import { createSubmitState } from '$lib/forms/submit-state.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 	import type { Assignment, Resource, Project } from '$lib/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
 
@@ -43,15 +44,17 @@
 
 <Button variant="outline" onclick={() => (open = true)}>
 	<ListChecks size={18} weight="regular" aria-hidden="true" />
-	<span class="hidden sm:ml-1 sm:inline">アサイン一覧 ({assignments.length})</span>
+	<span class="hidden sm:ml-1 sm:inline"
+		>{t('assignments.listWithCount', { count: assignments.length })}</span
+	>
 </Button>
 
-<Dialog bind:open title="アサイン一覧" description="登録済みアサインの一覧と削除">
+<Dialog bind:open title={t('assignments.listTitle')} description={t('assignments.listDescription')}>
 	<div class="flex flex-col gap-3">
 		{#if sorted.length === 0}
 			<p class="py-4 text-center text-sm text-muted-foreground">
-				まだアサインが登録されていません。<br />
-				右上の「+ アサインを追加」から作成できます。
+				{t('assignments.empty')}<br />
+				{t('assignments.emptyHint')}
 			</p>
 		{:else}
 			<ul class="max-h-[60vh] divide-y divide-border overflow-y-auto border border-border">
@@ -68,9 +71,9 @@
 							></span>
 							<div class="flex flex-1 flex-col">
 								<span>
-									{resource?.name ?? '(削除済リソース)'}
+									{resource?.name ?? t('assignments.deletedResource')}
 									<span class="text-muted-foreground">×</span>
-									{project?.name ?? '(削除済案件)'}
+									{project?.name ?? t('assignments.deletedProject')}
 								</span>
 								<span class="font-mono text-xs text-muted-foreground">
 									{a.startDate} 〜 {displayEndDate(a)}
@@ -82,8 +85,8 @@
 							action="?/deleteAssignment"
 							use:enhance={deleteSubmit}
 							onsubmit={(e) => {
-								const label = `${resource?.name ?? '(不明)'} × ${project?.name ?? '(不明)'} (${a.startDate} 〜 ${displayEndDate(a)})`;
-								if (!confirm(`このアサインを削除しますか?\n${label}`)) {
+								const label = `${resource?.name ?? '?'} × ${project?.name ?? '?'} (${a.startDate} 〜 ${displayEndDate(a)})`;
+								if (!confirm(t('assignments.confirmDelete', { label }))) {
 									e.preventDefault();
 								}
 							}}
@@ -96,7 +99,7 @@
 								type="submit"
 								disabled={deleteSubmitState.submitting}
 							>
-								削除
+								{t('common.delete')}
 							</Button>
 						</form>
 					</li>

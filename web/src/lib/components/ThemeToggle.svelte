@@ -3,6 +3,7 @@
 	import Sun from 'phosphor-svelte/lib/Sun';
 	import Moon from 'phosphor-svelte/lib/Moon';
 	import Monitor from 'phosphor-svelte/lib/Monitor';
+	import { t } from '$lib/i18n/index.svelte';
 
 	/**
 	 * テーマ切替 (light → dark → system → light、#97)。
@@ -18,9 +19,10 @@
 
 	const label = $derived.by(() => {
 		const u = userPrefersMode.current;
-		if (u === 'system') return `テーマ: システム (${mode.current})`;
-		if (u === 'dark') return 'テーマ: ダーク';
-		return 'テーマ: ライト';
+		if (u === 'system') {
+			return t('theme.labelSystem', { resolved: t(`theme.${mode.current ?? 'light'}`) });
+		}
+		return t('theme.label', { mode: t(`theme.${u}`) });
 	});
 </script>
 

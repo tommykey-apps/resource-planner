@@ -1,0 +1,127 @@
+{
+	"app": {
+		"title": "resource-planner"
+	},
+	"common": {
+		"create": "追加",
+		"update": "更新",
+		"cancel": "キャンセル",
+		"delete": "削除",
+		"edit": "編集",
+		"submitting": "送信中...",
+		"close": "閉じる",
+		"confirm": "確認",
+		"requiredError": "必須",
+		"maxLengthError": "{n} 文字以内"
+	},
+	"timeline": {
+		"today": "今日",
+		"prev": "前へ",
+		"next": "次へ",
+		"prevAria": "前の期間へ",
+		"nextAria": "次の期間へ",
+		"zoomDay": "日",
+		"zoomWeek": "週",
+		"zoomMonth": "月",
+		"zoomYear": "年"
+	},
+	"resources": {
+		"manage": "人を管理",
+		"manageWithCount": "人を管理 ({count})",
+		"add": "+ 人を追加",
+		"addNew": "人を追加",
+		"editTitle": "人を編集",
+		"createTitle": "人を追加",
+		"description": "リソース (人) の追加・編集・削除",
+		"empty": "まだ人が登録されていません。",
+		"emptyHint": "右上の「人を管理」ボタンから最初のリソースを追加してください。",
+		"name": "名前",
+		"assignmentCount": "({count} 件のアサイン)",
+		"confirmDelete": "「{name}」を削除しますか?",
+		"confirmDeleteWithAssignments": "「{name}」と関連 {count} 件のアサインを削除しますか?\n(取り消しできません)"
+	},
+	"projects": {
+		"manage": "案件を管理",
+		"manageWithCount": "案件を管理 ({count})",
+		"add": "+ 案件を追加",
+		"addNew": "案件を追加",
+		"editTitle": "案件を編集",
+		"createTitle": "案件を追加",
+		"description": "案件 (プロジェクト) の追加・編集・削除",
+		"empty": "まだ案件が登録されていません。",
+		"name": "案件名",
+		"color": "表示色",
+		"assignmentCount": "({count} 件のアサイン)",
+		"confirmDelete": "「{name}」を削除しますか?",
+		"confirmDeleteWithAssignments": "「{name}」と関連 {count} 件のアサインを削除しますか?\n(取り消しできません)"
+	},
+	"assignments": {
+		"add": "アサインを追加",
+		"addLong": "+ アサインを追加",
+		"createTitle": "アサインを追加",
+		"description": "人を案件に期間でアサインする",
+		"list": "アサイン一覧",
+		"listWithCount": "アサイン一覧 ({count})",
+		"listTitle": "アサイン一覧",
+		"listDescription": "登録済みアサインの一覧と削除",
+		"empty": "まだアサインが登録されていません。",
+		"emptyHint": "右上の「+ アサインを追加」から作成できます。",
+		"resource": "人",
+		"project": "案件",
+		"startDate": "開始日",
+		"endDate": "終了日 (含む)",
+		"deletedResource": "(削除済リソース)",
+		"deletedProject": "(削除済案件)",
+		"create": "作成",
+		"requirePeopleAndProjects": "人と案件を 1 件以上登録してから作成できます",
+		"updateError": "アサインの更新に失敗しました",
+		"networkError": "通信エラー",
+		"confirmDelete": "このアサインを削除しますか?\n{label}"
+	},
+	"signin": {
+		"title": "サインイン",
+		"description": "会社のメールアドレスを入力してください。サインインリンクをメールで送信します。",
+		"emailLabel": "メールアドレス",
+		"emailPlaceholder": "you@your-company.example.com",
+		"submit": "サインインリンクを送信",
+		"submitting": "送信中...",
+		"hint": "許可されたドメインのメールアドレスのみサインイン可能です。",
+		"checkEmailTitle": "メールを確認してください",
+		"checkEmailDescription": "サインインリンクをメールで送信しました。メール内のリンクをクリックしてサインインを完了してください。",
+		"checkEmailFootnote": "メールが届かない場合は、迷惑メールフォルダを確認してください。リンクは 24 時間で失効します。",
+		"checkEmailRetry": "別のメールアドレスで再送信",
+		"errorTitle": "サインインに失敗しました",
+		"errorAccessDenied": "許可されていないドメインのメールアドレスです。",
+		"errorVerification": "リンクが無効または期限切れです。再度サインインリンクを送信してください。",
+		"errorConfiguration": "認証設定に問題があります。管理者に連絡してください。",
+		"errorDefault": "サインインに失敗しました。しばらくして再試行してください。",
+		"errorCode": "エラーコード: {code}",
+		"backToSignin": "サインインに戻る"
+	},
+	"errorPage": {
+		"hint401": "サインインが必要です。サインイン画面でメールアドレスを入力してください。",
+		"hint403": "許可されていない操作です。サインインしているユーザーで権限を確認してください。",
+		"hint404": "指定された URL は存在しません。",
+		"hint5xx": "サーバー側でエラーが発生しました。時間をおいて再度お試しください。",
+		"goHome": "ホームに戻る",
+		"signin": "サインイン",
+		"unknownMessage": "不明なエラーが発生しました"
+	},
+	"theme": {
+		"label": "テーマ: {mode}",
+		"labelSystem": "テーマ: システム ({resolved})",
+		"light": "ライト",
+		"dark": "ダーク",
+		"system": "システム"
+	},
+	"locale": {
+		"label": "言語",
+		"japanese": "日本語",
+		"english": "English"
+	},
+	"avatar": {
+		"label": "ユーザーメニュー",
+		"labelWithEmail": "ユーザーメニュー ({email})",
+		"signout": "サインアウト"
+	}
+}
