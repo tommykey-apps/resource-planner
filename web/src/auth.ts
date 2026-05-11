@@ -8,6 +8,10 @@
  * - production (Lambda): env.AUTH_SECRET 未設定 + env.AUTH_SECRET_PARAM 設定
  *   → SSM SecureString から resolve、sendVerificationRequest を SES SDK で送信
  */
+// 本番安全 guard を副作用 import で最上位に置く (#135、#125 の強化)。
+// auth.ts は独立に DynamoDBClient を構築 (DDB adapter 経由) するので、 client.ts と同じ
+// guard を必ず通すように import する。これを怠ると Auth.js が本番 DDB に到達する事故が再発する。
+import '$lib/db/guard';
 import { SvelteKitAuth } from '@auth/sveltekit';
 import Nodemailer from '@auth/sveltekit/providers/nodemailer';
 import { DynamoDBAdapter } from '@auth/dynamodb-adapter';

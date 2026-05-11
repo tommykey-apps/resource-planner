@@ -1,22 +1,16 @@
+// 本番安全 guard を副作用 import で最上位に置く (#135、#125 の強化)。
+// この副作用 import は client.ts と auth.ts の双方で行うことで、別 DynamoDBClient 経路でも
+// guard を bypass できないことを保証する。
+import './guard';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 import { building } from '$app/environment';
 import { env } from '$env/dynamic/private';
-import { assertSafeDbEnv } from './env-guard';
 
 // SvelteKit の `analyse` ステップ (postbuild) はサーバーモジュールを top-level 評価するため、
 // build 中は env チェックをスキップする (Lambda 実行時にのみ env が揃う)。
-if (!building) {
-	if (!env.DYNAMODB_TABLE) {
-		throw new Error('DYNAMODB_TABLE env not set');
-	}
-	// 本番安全 guard (#125): Lambda 環境 OR localhost endpoint でないと client 構築を拒否。
-	// vite preview などで .env.local が process.env に注入されないケースで AWS SDK が
-	// default credential chain に落ちて本番 AWS に到達する事故を防ぐ。
-	assertSafeDbEnv({
-		isLambda: !!process.env.AWS_LAMBDA_FUNCTION_NAME,
-		endpoint: env.AWS_ENDPOINT_URL
-	});
+if (!building && !env.DYNAMODB_TABLE) {
+	throw new Error('DYNAMODB_TABLE env not set');
 }
 
 // AWS SDK v3 は AWS_ENDPOINT_URL を自動認識する (v3.385+)。
