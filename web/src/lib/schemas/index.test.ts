@@ -3,6 +3,7 @@ import {
 	assignmentApiUpdateSchema,
 	assignmentCreateSchema,
 	assignmentUpdateSchema,
+	assignmentFormUpdateSchema,
 	projectCreateSchema,
 	projectUpdateSchema,
 	resourceCreateSchema,
@@ -163,6 +164,47 @@ describe('assignmentUpdateSchema', () => {
 				endDate: '2026-05-31'
 			}).success
 		).toBe(false);
+	});
+});
+
+describe('assignmentFormUpdateSchema (#99)', () => {
+	const valid = {
+		id: 'a1',
+		resourceId: 'r1',
+		projectId: 'p1',
+		prevStartDate: '2026-05-01',
+		startDate: '2026-05-03',
+		endDate: '2026-05-09'
+	};
+
+	it('splits prevStartDate from payload and applies the +1-day transform', () => {
+		const r = assignmentFormUpdateSchema.safeParse(valid);
+		expect(r.success).toBe(true);
+		if (!r.success) return;
+		expect(r.data).toEqual({
+			prevStartDate: '2026-05-01',
+			payload: {
+				id: 'a1',
+				resourceId: 'r1',
+				projectId: 'p1',
+				startDate: '2026-05-03',
+				endDateExclusive: '2026-05-10'
+			}
+		});
+	});
+
+	it('rejects when prevStartDate is not YYYY-MM-DD', () => {
+		const r = assignmentFormUpdateSchema.safeParse({ ...valid, prevStartDate: 'bad' });
+		expect(r.success).toBe(false);
+	});
+
+	it('rejects when endDate < startDate', () => {
+		const r = assignmentFormUpdateSchema.safeParse({
+			...valid,
+			startDate: '2026-05-10',
+			endDate: '2026-05-09'
+		});
+		expect(r.success).toBe(false);
 	});
 });
 

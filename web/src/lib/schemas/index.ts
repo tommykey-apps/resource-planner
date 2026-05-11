@@ -81,6 +81,36 @@ export const assignmentUpdateSchema = z
 		endDateExclusive: addDays(input.endDate, 1)
 	}));
 
+/**
+ * 編集フォーム送信用 schema (#99 item 1)。`prevStartDate` を含めて受け取り、
+ * post-transform で repository 呼び出しに必要な `(prevStartDate, AssignmentUpdatePayload)` 構造に分割する。
+ *
+ * `prevStartDate` は SK = `ASN#{startDate}#{id}` 再構築に必要 (startDate を変更したとき旧 SK を削除する)。
+ */
+export const assignmentFormUpdateSchema = z
+	.object({
+		id: z.string().min(1),
+		resourceId: z.string().min(1),
+		projectId: z.string().min(1),
+		prevStartDate: dateString,
+		startDate: dateString,
+		endDate: dateString
+	})
+	.refine((v) => v.startDate <= v.endDate, {
+		message: '終了日は開始日以降にしてください',
+		path: ['endDate']
+	})
+	.transform((input) => ({
+		prevStartDate: input.prevStartDate,
+		payload: {
+			id: input.id,
+			resourceId: input.resourceId,
+			projectId: input.projectId,
+			startDate: input.startDate,
+			endDateExclusive: addDays(input.endDate, 1)
+		}
+	}));
+
 /** フォーム生 shape (UX inclusive)。`+page.svelte` のフォームバインディングで使う。 */
 export type AssignmentCreateInput = z.input<typeof assignmentCreateSchema>;
 export type AssignmentUpdateInput = z.input<typeof assignmentUpdateSchema>;

@@ -59,6 +59,7 @@
 		"add": "アサインを追加",
 		"addLong": "+ アサインを追加",
 		"createTitle": "アサインを追加",
+		"editTitle": "アサインを編集",
 		"description": "人を案件に期間でアサインする",
 		"list": "アサイン一覧",
 		"listWithCount": "アサイン一覧 ({count})",
