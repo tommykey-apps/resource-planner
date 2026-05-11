@@ -4,6 +4,7 @@
 	import { Button } from './ui/button';
 	import Dialog from './Dialog.svelte';
 	import { createSubmitState } from '$lib/forms/submit-state.svelte';
+	import { confirmDialog } from '$lib/forms/confirm-dialog';
 	import { t } from '$lib/i18n/index.svelte';
 	import type { Project, Assignment } from '$lib/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
@@ -50,9 +51,8 @@
 		formOpen = true;
 	}
 
-	// 連打抑制 + submitting state (#94)
+	// 連打抑制 + submitting state (#94)。delete は #132 で confirm dialog が modal ブロックする。
 	const formSubmitState = createSubmitState();
-	const deleteSubmitState = createSubmitState();
 
 	const formSubmit: SubmitFunction = formSubmitState.wrap(() => {
 		formError = null;
@@ -68,7 +68,22 @@
 		};
 	});
 
-	const deleteSubmit: SubmitFunction = deleteSubmitState.wrap();
+	/** #132: project の delete 確認 dialog (window.confirm の代替)。 */
+	function makeDeleteSubmit(args: { name: string; count: number }): SubmitFunction {
+		return async ({ cancel }) => {
+			const msg =
+				args.count > 0
+					? t('projects.confirmDeleteWithAssignments', { name: args.name, count: args.count })
+					: t('projects.confirmDelete', { name: args.name });
+			const ok = await confirmDialog({
+				title: t('common.confirm'),
+				message: msg,
+				confirmLabel: t('common.delete'),
+				destructive: true
+			});
+			if (!ok) cancel();
+		};
+	}
 </script>
 
 <Button variant="outline" onclick={() => (listOpen = true)}>
@@ -109,24 +124,10 @@
 							<form
 								method="POST"
 								action="?/deleteProject"
-								use:enhance={deleteSubmit}
-								onsubmit={(e) => {
-									const msg =
-										count > 0
-											? t('projects.confirmDeleteWithAssignments', { name: p.name, count })
-											: t('projects.confirmDelete', { name: p.name });
-									if (!confirm(msg)) {
-										e.preventDefault();
-									}
-								}}
+								use:enhance={makeDeleteSubmit({ name: p.name, count })}
 							>
 								<input type="hidden" name="id" value={p.id} />
-								<Button
-									size="xs"
-									variant="destructive"
-									type="submit"
-									disabled={deleteSubmitState.submitting}
-								>
+								<Button size="xs" variant="destructive" type="submit">
 									{t('common.delete')}
 								</Button>
 							</form>

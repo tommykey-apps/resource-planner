@@ -4,6 +4,7 @@
 	import { ModeWatcher } from 'mode-watcher';
 	import { Toaster } from 'svelte-sonner';
 	import { initLocale } from '$lib/i18n/index.svelte';
+	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import type { LayoutData } from './$types';
 
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
@@ -20,5 +21,8 @@
 <ModeWatcher />
 
 <Toaster richColors closeButton position="top-right" />
+
+<!-- #132: confirmDialog の root mount。app 全体で 1 つだけ。 -->
+<ConfirmDialog />
 
 {@render children()}
