@@ -12,8 +12,15 @@ import type { ServerError } from '$lib/forms/server-error';
  */
 
 const requireSessionMock = vi.fn();
-const updateAssignmentMock = vi.fn();
 const createResourceMock = vi.fn();
+const updateResourceMock = vi.fn();
+const deleteResourceMock = vi.fn();
+const createProjectMock = vi.fn();
+const updateProjectMock = vi.fn();
+const deleteProjectMock = vi.fn();
+const createAssignmentMock = vi.fn();
+const updateAssignmentMock = vi.fn();
+const deleteAssignmentMock = vi.fn();
 
 vi.mock('$lib/auth', () => ({
 	requireSession: (event: unknown) => requireSessionMock(event)
@@ -21,14 +28,14 @@ vi.mock('$lib/auth', () => ({
 
 vi.mock('$lib/repository', () => ({
 	createResource: (...args: unknown[]) => createResourceMock(...args),
-	updateResource: vi.fn(),
-	deleteResource: vi.fn(),
-	createProject: vi.fn(),
-	updateProject: vi.fn(),
-	deleteProject: vi.fn(),
-	createAssignment: vi.fn(),
+	updateResource: (...args: unknown[]) => updateResourceMock(...args),
+	deleteResource: (...args: unknown[]) => deleteResourceMock(...args),
+	createProject: (...args: unknown[]) => createProjectMock(...args),
+	updateProject: (...args: unknown[]) => updateProjectMock(...args),
+	deleteProject: (...args: unknown[]) => deleteProjectMock(...args),
+	createAssignment: (...args: unknown[]) => createAssignmentMock(...args),
 	updateAssignment: (...args: unknown[]) => updateAssignmentMock(...args),
-	deleteAssignment: vi.fn()
+	deleteAssignment: (...args: unknown[]) => deleteAssignmentMock(...args)
 }));
 
 import { actions } from './+page.server';
@@ -225,5 +232,222 @@ describe('#139 server error wire format (code, no localized strings)', () => {
 			expect(typeof v).toBe('object');
 			expect(v).not.toBeNull();
 		}
+	});
+});
+
+/**
+ * P0 coverage 拡張 (#155 で missing test を可視化した結果)。 9 action 中 createResource /
+ * updateAssignment しかカバーされていなかったので、 残り 7 action の success path + 400 failure
+ * を埋める。 各 action の入力 → repository 呼び出し引数 mapping、 zod 検証境界、 SK の構造
+ * (startDate 必須等) の contract を固定する。
+ */
+
+const SESSION = { teamId: 'team_default', userId: 'u1' };
+
+function resetAllMocks() {
+	requireSessionMock.mockReset().mockResolvedValue(SESSION);
+	createResourceMock.mockReset().mockResolvedValue(undefined);
+	updateResourceMock.mockReset().mockResolvedValue(undefined);
+	deleteResourceMock.mockReset().mockResolvedValue(undefined);
+	createProjectMock.mockReset().mockResolvedValue(undefined);
+	updateProjectMock.mockReset().mockResolvedValue(undefined);
+	deleteProjectMock.mockReset().mockResolvedValue(undefined);
+	createAssignmentMock.mockReset().mockResolvedValue(undefined);
+	deleteAssignmentMock.mockReset().mockResolvedValue(undefined);
+}
+
+describe('?/updateResource action', () => {
+	beforeEach(resetAllMocks);
+
+	it('calls updateResource(teamId, { id, name }) on valid input', async () => {
+		await actions.updateResource!(makeEvent({ id: 'r1', name: 'Alice' }));
+		expect(updateResourceMock).toHaveBeenCalledWith('team_default', { id: 'r1', name: 'Alice' });
+	});
+
+	it('fails with 400 when id is missing', async () => {
+		const r = (await actions.updateResource!(makeEvent({ name: 'Alice' }))) as {
+			status: number;
+			data: { errors: Record<string, ServerError> };
+		};
+		expect(r.status).toBe(400);
+		expect(updateResourceMock).not.toHaveBeenCalled();
+	});
+
+	it('fails with 400 when name is empty', async () => {
+		const r = (await actions.updateResource!(makeEvent({ id: 'r1', name: '' }))) as {
+			status: number;
+			data: { errors: Record<string, ServerError> };
+		};
+		expect(r.status).toBe(400);
+		expect(r.data.errors.name).toBeTruthy();
+	});
+});
+
+describe('?/deleteResource action (cascade は repository 側、 ここでは引数 mapping のみ)', () => {
+	beforeEach(resetAllMocks);
+
+	it('calls deleteResource(teamId, id) on valid input', async () => {
+		const r = (await actions.deleteResource!(makeEvent({ id: 'r1' }))) as {
+			action: string;
+			success: boolean;
+		};
+		expect(deleteResourceMock).toHaveBeenCalledWith('team_default', 'r1');
+		expect(r.success).toBe(true);
+	});
+
+	it('fails with 400 when id is missing or empty (no repository call)', async () => {
+		const r = (await actions.deleteResource!(makeEvent({}))) as {
+			status: number;
+			data: { errors: Record<string, ServerError> };
+		};
+		expect(r.status).toBe(400);
+		expect(r.data.errors.id).toBeTruthy();
+		expect(deleteResourceMock).not.toHaveBeenCalled();
+	});
+});
+
+describe('?/createProject action', () => {
+	beforeEach(resetAllMocks);
+
+	it('calls createProject(teamId, { name, color }) on valid input', async () => {
+		await actions.createProject!(makeEvent({ name: 'Alpha', color: '#0EA5E9' }));
+		expect(createProjectMock).toHaveBeenCalledWith('team_default', {
+			name: 'Alpha',
+			color: '#0EA5E9'
+		});
+	});
+
+	it('rejects color not matching #RRGGBB', async () => {
+		const r = (await actions.createProject!(
+			makeEvent({ name: 'X', color: 'red' })
+		)) as { status: number; data: { errors: Record<string, ServerError> } };
+		expect(r.status).toBe(400);
+		expect(r.data.errors.color).toBeTruthy();
+		expect(createProjectMock).not.toHaveBeenCalled();
+	});
+});
+
+describe('?/updateProject action', () => {
+	beforeEach(resetAllMocks);
+
+	it('calls updateProject(teamId, { id, name, color })', async () => {
+		await actions.updateProject!(
+			makeEvent({ id: 'p1', name: 'Beta', color: '#10B981' })
+		);
+		expect(updateProjectMock).toHaveBeenCalledWith('team_default', {
+			id: 'p1',
+			name: 'Beta',
+			color: '#10B981'
+		});
+	});
+
+	it('fails 400 when name exceeds 100 chars', async () => {
+		const r = (await actions.updateProject!(
+			makeEvent({ id: 'p1', name: 'x'.repeat(101), color: '#000000' })
+		)) as { status: number; data: { errors: Record<string, ServerError> } };
+		expect(r.status).toBe(400);
+		expect(r.data.errors.name).toBeTruthy();
+	});
+});
+
+describe('?/deleteProject action', () => {
+	beforeEach(resetAllMocks);
+
+	it('calls deleteProject(teamId, id) on valid input', async () => {
+		await actions.deleteProject!(makeEvent({ id: 'p1' }));
+		expect(deleteProjectMock).toHaveBeenCalledWith('team_default', 'p1');
+	});
+
+	it('fails 400 when id is missing', async () => {
+		const r = (await actions.deleteProject!(makeEvent({}))) as {
+			status: number;
+			data: { errors: Record<string, ServerError> };
+		};
+		expect(r.status).toBe(400);
+		expect(deleteProjectMock).not.toHaveBeenCalled();
+	});
+});
+
+describe('?/createAssignment action (inclusive endDate → endDateExclusive transform, ADR 0004)', () => {
+	beforeEach(resetAllMocks);
+
+	it('transforms endDate (inclusive) → endDateExclusive (+1 day) before calling repository', async () => {
+		await actions.createAssignment!(
+			makeEvent({
+				resourceId: 'r1',
+				projectId: 'p1',
+				startDate: '2026-05-01',
+				endDate: '2026-05-07'
+			})
+		);
+		expect(createAssignmentMock).toHaveBeenCalledWith('team_default', {
+			resourceId: 'r1',
+			projectId: 'p1',
+			startDate: '2026-05-01',
+			endDateExclusive: '2026-05-08'
+		});
+	});
+
+	it('rejects startDate > endDate (zod refine)', async () => {
+		const r = (await actions.createAssignment!(
+			makeEvent({
+				resourceId: 'r1',
+				projectId: 'p1',
+				startDate: '2026-05-10',
+				endDate: '2026-05-09'
+			})
+		)) as { status: number; data: { errors: Record<string, ServerError> } };
+		expect(r.status).toBe(400);
+		expect(r.data.errors.endDate).toBeTruthy();
+		expect(createAssignmentMock).not.toHaveBeenCalled();
+	});
+
+	it('rejects non-ISO date strings', async () => {
+		const r = (await actions.createAssignment!(
+			makeEvent({
+				resourceId: 'r1',
+				projectId: 'p1',
+				startDate: '2026/05/01',
+				endDate: '2026-05-07'
+			})
+		)) as { status: number };
+		expect(r.status).toBe(400);
+	});
+});
+
+describe('?/deleteAssignment action (SK = ASN#{startDate}#{id} 構造に startDate が必要)', () => {
+	beforeEach(resetAllMocks);
+
+	it('calls deleteAssignment(teamId, startDate, id) on valid input', async () => {
+		await actions.deleteAssignment!(makeEvent({ id: 'asn-1', startDate: '2026-05-01' }));
+		expect(deleteAssignmentMock).toHaveBeenCalledWith('team_default', '2026-05-01', 'asn-1');
+	});
+
+	it('fails 400 when id is missing', async () => {
+		const r = (await actions.deleteAssignment!(makeEvent({ startDate: '2026-05-01' }))) as {
+			status: number;
+			data: { errors: Record<string, ServerError> };
+		};
+		expect(r.status).toBe(400);
+		expect(r.data.errors.id).toBeTruthy();
+		expect(deleteAssignmentMock).not.toHaveBeenCalled();
+	});
+
+	it('fails 400 when startDate is missing (SK 再構築に必須)', async () => {
+		const r = (await actions.deleteAssignment!(makeEvent({ id: 'asn-1' }))) as {
+			status: number;
+			data: { errors: Record<string, ServerError> };
+		};
+		expect(r.status).toBe(400);
+		expect(r.data.errors.startDate).toBeTruthy();
+		expect(deleteAssignmentMock).not.toHaveBeenCalled();
+	});
+
+	it('fails 400 when startDate is not ISO YYYY-MM-DD', async () => {
+		const r = (await actions.deleteAssignment!(
+			makeEvent({ id: 'asn-1', startDate: '2026/05/01' })
+		)) as { status: number; data: { errors: Record<string, ServerError> } };
+		expect(r.status).toBe(400);
+		expect(r.data.errors.startDate).toBeTruthy();
 	});
 });
