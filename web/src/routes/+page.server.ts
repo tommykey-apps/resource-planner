@@ -5,7 +5,8 @@ import {
 	resourceUpdateSchema,
 	projectCreateSchema,
 	projectUpdateSchema,
-	assignmentCreateSchema
+	assignmentCreateSchema,
+	assignmentFormUpdateSchema
 } from '$lib/schemas';
 import {
 	createResource,
@@ -15,6 +16,7 @@ import {
 	updateProject,
 	deleteProject,
 	createAssignment,
+	updateAssignment,
 	deleteAssignment
 } from '$lib/repository';
 import { requireSession } from '$lib/auth';
@@ -150,6 +152,28 @@ export const actions: Actions = {
 		// SK は ASN#{startDate}#{ulid()} で時系列順にソートされる。
 		await createAssignment(session.teamId, parsed.data);
 		return { action: 'createAssignment', success: true };
+	},
+
+	updateAssignment: async (event) => {
+		const session = await requireSession(event);
+		const data = await event.request.formData();
+		const parsed = assignmentFormUpdateSchema.safeParse({
+			id: data.get('id'),
+			resourceId: data.get('resourceId'),
+			projectId: data.get('projectId'),
+			prevStartDate: data.get('prevStartDate'),
+			startDate: data.get('startDate'),
+			endDate: data.get('endDate')
+		});
+		if (!parsed.success) {
+			return fail(400, {
+				action: 'updateAssignment',
+				errors: formatErrors(parsed)
+			});
+		}
+		// SK = ASN#{startDate}#{id}: startDate 変更時は旧 SK Delete + 新 SK Put (assignment.ts 参照)。
+		await updateAssignment(session.teamId, parsed.data.prevStartDate, parsed.data.payload);
+		return { action: 'updateAssignment', success: true };
 	},
 
 	deleteAssignment: async (event) => {

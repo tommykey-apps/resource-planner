@@ -59,6 +59,7 @@
 		"add": "Add assignment",
 		"addLong": "+ Add assignment",
 		"createTitle": "Add assignment",
+		"editTitle": "Edit assignment",
 		"description": "Assign a person to a project for a date range",
 		"list": "Assignments",
 		"listWithCount": "Assignments ({count})",
