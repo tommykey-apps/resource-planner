@@ -10,15 +10,8 @@
 	import { goto } from '$app/navigation';
 	import { toTimelineAssignment, fromTimelineAssignment } from '$lib/timeline-adapter';
 	import { applyTimelineParams, parseTimelineParams } from '$lib/timeline-url-state';
-	import ResourceManager from '$lib/components/ResourceManager.svelte';
-	import ProjectManager from '$lib/components/ProjectManager.svelte';
-	import AssignmentCreator from '$lib/components/AssignmentCreator.svelte';
-	import { Button } from '$lib/components/ui/button';
-	import ListChecks from 'phosphor-svelte/lib/ListChecks';
+	import AppHeader from '$lib/components/AppHeader.svelte';
 	import EmptyStateGuide from '$lib/components/EmptyStateGuide.svelte';
-	import AvatarDropdown from '$lib/components/AvatarDropdown.svelte';
-	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
-	import LocaleSwitcher from '$lib/components/LocaleSwitcher.svelte';
 	import { t } from '$lib/i18n/index.svelte';
 	import type { Assignment as DbAssignment } from '$lib/types';
 	import type { PageData } from './$types';
@@ -115,31 +108,15 @@
 	}
 </script>
 
-<header class="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
-	<div class="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-2 px-4 py-3">
-		<h1 class="m-0 text-lg font-semibold tracking-tight sm:text-xl">{t('app.title')}</h1>
-		<div class="flex flex-wrap items-center gap-2">
-			<ResourceManager
-				{resources}
-				assignments={dbAssignments}
-				onOptimisticCreate={optimisticAddResource}
-				onConfirmCreate={confirmResourceCreate}
-				onRollbackCreate={rollbackResourceCreate}
-			/>
-			<ProjectManager {projects} assignments={dbAssignments} />
-			<AssignmentCreator {resources} {projects} />
-			<Button variant="outline" href="/assignments">
-				<ListChecks size={18} weight="regular" aria-hidden="true" />
-				<span class="hidden sm:ml-1 sm:inline"
-					>{t('assignments.listWithCount', { count: dbAssignments.length })}</span
-				>
-			</Button>
-			<LocaleSwitcher />
-			<ThemeToggle />
-			<AvatarDropdown email={data.user?.email ?? ''} />
-		</div>
-	</div>
-</header>
+<AppHeader
+	{resources}
+	{projects}
+	assignments={dbAssignments}
+	user={data.user}
+	onOptimisticCreateResource={optimisticAddResource}
+	onConfirmCreateResource={confirmResourceCreate}
+	onRollbackCreateResource={rollbackResourceCreate}
+/>
 
 <main class="mx-auto max-w-[1200px] px-4 py-6">
 	<EmptyStateGuide
