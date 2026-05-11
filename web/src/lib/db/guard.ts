@@ -10,11 +10,12 @@
  */
 import { building } from '$app/environment';
 import { env } from '$env/dynamic/private';
-import { assertSafeDbEnv } from './env-guard';
+import { assertSafeDbEnv, detectLambda } from './env-guard';
 
 if (!building) {
 	assertSafeDbEnv({
-		isLambda: !!process.env.AWS_LAMBDA_FUNCTION_NAME,
+		// #143: 3 marker AND で paranoid mode
+		isLambda: detectLambda(process.env),
 		endpoint: env.AWS_ENDPOINT_URL
 	});
 }

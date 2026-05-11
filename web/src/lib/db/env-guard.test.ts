@@ -1,13 +1,51 @@
 import { describe, expect, it } from 'vitest';
-import { assertSafeDbEnv } from './env-guard';
+import { assertSafeDbEnv, detectLambda } from './env-guard';
 
 /**
- * #125: DynamoDB client 構築前の env 安全判定。
+ * #125 / #135 / #143: DynamoDB client 構築前の env 安全判定。
  *
- * Lambda 環境 (`AWS_LAMBDA_FUNCTION_NAME` 自動セット) または local endpoint (localhost / 127.0.0.1)
- * のいずれかでないと throw する。dev / preview / CI で env 注入失敗で本番 AWS に到達する事故を防ぐ。
+ * Lambda 環境 (3 つの env marker AND) または local endpoint (localhost / 127.x / [::1]) の
+ * いずれかでないと throw する。 dev / preview / CI で env 注入失敗で AWS SDK が default
+ * credential chain に落ちて本番 AWS に到達する事故を防ぐ。
  */
-describe('assertSafeDbEnv (#125)', () => {
+describe('detectLambda (#143)', () => {
+	it('returns true when all 3 markers are set (real Lambda)', () => {
+		expect(
+			detectLambda({
+				AWS_LAMBDA_FUNCTION_NAME: 'resource-planner',
+				AWS_EXECUTION_ENV: 'AWS_Lambda_nodejs22.x',
+				LAMBDA_TASK_ROOT: '/var/task'
+			})
+		).toBe(true);
+	});
+
+	it('returns false if any single marker is missing (paranoid AND)', () => {
+		const base = {
+			AWS_LAMBDA_FUNCTION_NAME: 'fn',
+			AWS_EXECUTION_ENV: 'AWS_Lambda_nodejs22.x',
+			LAMBDA_TASK_ROOT: '/var/task'
+		};
+		expect(detectLambda({ ...base, AWS_LAMBDA_FUNCTION_NAME: undefined })).toBe(false);
+		expect(detectLambda({ ...base, AWS_EXECUTION_ENV: undefined })).toBe(false);
+		expect(detectLambda({ ...base, LAMBDA_TASK_ROOT: undefined })).toBe(false);
+	});
+
+	it('returns false if AWS_EXECUTION_ENV does not start with AWS_Lambda_ (typo / fake)', () => {
+		expect(
+			detectLambda({
+				AWS_LAMBDA_FUNCTION_NAME: 'fn',
+				AWS_EXECUTION_ENV: 'AWS_Fargate_nodejs',
+				LAMBDA_TASK_ROOT: '/var/task'
+			})
+		).toBe(false);
+	});
+
+	it('returns false for empty env', () => {
+		expect(detectLambda({})).toBe(false);
+	});
+});
+
+describe('assertSafeDbEnv', () => {
 	it('allows Lambda environment (isLambda=true) regardless of endpoint', () => {
 		expect(() => assertSafeDbEnv({ isLambda: true, endpoint: null })).not.toThrow();
 		expect(() => assertSafeDbEnv({ isLambda: true, endpoint: undefined })).not.toThrow();
@@ -25,6 +63,18 @@ describe('assertSafeDbEnv (#125)', () => {
 	it('allows 127.0.0.1 endpoint when not in Lambda', () => {
 		expect(() =>
 			assertSafeDbEnv({ isLambda: false, endpoint: 'http://127.0.0.1:8000' })
+		).not.toThrow();
+	});
+
+	it('allows IPv6 [::1] endpoint when not in Lambda (#143)', () => {
+		expect(() =>
+			assertSafeDbEnv({ isLambda: false, endpoint: 'http://[::1]:8000' })
+		).not.toThrow();
+	});
+
+	it('allows any 127.x.x.x loopback (#143)', () => {
+		expect(() =>
+			assertSafeDbEnv({ isLambda: false, endpoint: 'http://127.1.2.3:8000' })
 		).not.toThrow();
 	});
 
@@ -58,10 +108,19 @@ describe('assertSafeDbEnv (#125)', () => {
 		}
 	});
 
-	it('rejects http://example.localhost-ish prefix bypass attempts', () => {
-		// "http://localhost.evil.com" は host が evil.com で localhost ではない。正規表現が安全であることを確認。
+	it('rejects http://localhost.evil.com prefix bypass attempts', () => {
 		expect(() =>
 			assertSafeDbEnv({ isLambda: false, endpoint: 'http://localhost.evil.com' })
 		).toThrow();
+	});
+
+	it('rejects non-http(s) schemes (#143、 file:// / data: 等 bypass 防止)', () => {
+		expect(() =>
+			assertSafeDbEnv({ isLambda: false, endpoint: 'file:///localhost' })
+		).toThrow();
+	});
+
+	it('rejects malformed URL (parse failure)', () => {
+		expect(() => assertSafeDbEnv({ isLambda: false, endpoint: 'not a url' })).toThrow();
 	});
 });
