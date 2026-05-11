@@ -133,11 +133,14 @@ jobs:
       AWS_ACCESS_KEY_ID: local
       AWS_SECRET_ACCESS_KEY: local
       DYNAMODB_TABLE: resource-planner
-      # Auth.js を初期化するためのダミー値 (signin そのものはこの job では行わない)
+      # Auth.js を初期化するためのダミー値
       AUTH_SECRET: e2e-secret-not-for-production-padding-padding-padding
       AUTH_TRUST_HOST: 'true'
       ALLOWED_DOMAIN: example.com
       EMAIL_FROM: noreply@example.com
+      # #113: dev sendVerificationRequest が magic link URL を書き出すファイル。
+      # Playwright fixture がここから URL を取り出して sign-in flow を走らせる。
+      AUTH_TEST_MAGIC_LINK_FILE: /tmp/playwright-magic-links.txt
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

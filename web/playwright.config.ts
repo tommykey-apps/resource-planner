@@ -1,15 +1,20 @@
 import { defineConfig, devices } from '@playwright/test';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 /**
  * Playwright E2E test configuration.
  *
  * **位置づけ**: Auth.js 移行後 (PR-A3 以降) に Magic Link sign-in → CRUD のフルパス E2E を書く土台。
- * 本 PR (PR-T5) ではホーム画面の smoke 1 件のみ。
+ * 本 PR (PR-T5) ではホーム画面の smoke、#113 で Magic Link sign-in spec を追加。
  *
  * - 既定では preview build (`pnpm build && pnpm preview`) を Playwright が起動
  * - CI は Chromium のみ (コスト削減)、ローカルは 3 ブラウザ並行
- * - storageState は Phase 3 で sign-in fixture を作るときに利用 (現状は authless smoke のみ)
+ * - dev sendVerificationRequest が URL を書き出す `AUTH_TEST_MAGIC_LINK_FILE` を preview server に
+ *   渡すため、ここで process.env に注入する (webServer.env は process.env を引き継がない仕様のため)。
  */
+process.env.AUTH_TEST_MAGIC_LINK_FILE ??= join(tmpdir(), 'playwright-magic-links.txt');
+
 export default defineConfig({
 	testDir: 'e2e',
 	fullyParallel: true,

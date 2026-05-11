@@ -15,6 +15,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
 import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2';
+import { promises as fs } from 'node:fs';
 import { env } from '$env/dynamic/private';
 import { addMembership, DEFAULT_TEAM_ID, getOrCreateDefaultTeam } from '$lib/repository/team';
 
@@ -90,6 +91,29 @@ async function sendMagicLinkViaSES(params: { identifier: string; url: string }):
 	);
 }
 
+/**
+ * dev / test 用 sendVerificationRequest。
+ *
+ * デフォルトは console.log で開発時に URL を出すだけ。E2E test 時は
+ * `AUTH_TEST_MAGIC_LINK_FILE` を設定すると URL を tab 区切りでファイルへ append し、
+ * Playwright fixture が読み取って magic link を踏めるようにする (#113)。
+ * Auth.js は token を hash 化して DDB に保存するため、URL は送信側でしか平文を得られない。
+ */
+export async function sendMagicLinkDev(params: {
+	identifier: string;
+	url: string;
+}): Promise<void> {
+	// eslint-disable-next-line no-console
+	console.log(
+		`\n[Magic Link DEV] to=${params.identifier}\n  ${params.url}\n  (production は SES SDK で送信)\n`
+	);
+	// dev/test 専用 env のため SvelteKit $env (module load 時 snapshot) ではなく process.env を都度参照
+	const file = process.env.AUTH_TEST_MAGIC_LINK_FILE;
+	if (file) {
+		await fs.appendFile(file, `${params.identifier}\t${params.url}\n`);
+	}
+}
+
 export const { handle, signIn, signOut } = SvelteKitAuth({
 	secret: resolvedAuthSecret,
 	adapter: DynamoDBAdapter(adapterClient, {
@@ -101,14 +125,7 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 			// Auth.js が provider 初期化時に server 値を要求するため dummy を渡す。
 			server: env.EMAIL_SERVER ?? 'smtp://placeholder:25',
 			from: env.EMAIL_FROM ?? 'noreply@example.com',
-			sendVerificationRequest: isProductionTransport
-				? sendMagicLinkViaSES
-				: async ({ identifier, url }) => {
-						// eslint-disable-next-line no-console
-						console.log(
-							`\n[Magic Link DEV] to=${identifier}\n  ${url}\n  (production は SES SDK で送信)\n`
-						);
-					}
+			sendVerificationRequest: isProductionTransport ? sendMagicLinkViaSES : sendMagicLinkDev
 		})
 	],
 	pages: {
