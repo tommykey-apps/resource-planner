@@ -124,5 +124,11 @@
 		"label": "User menu",
 		"labelWithEmail": "User menu ({email})",
 		"signout": "Sign out"
+	},
+	"emptyGuide": {
+		"label": "Setup steps",
+		"step1": "Add a person",
+		"step2": "Add a project",
+		"step3": "Create an assignment"
 	}
 }
