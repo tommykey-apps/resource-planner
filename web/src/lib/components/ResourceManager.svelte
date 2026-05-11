@@ -143,11 +143,9 @@
 					<li class="flex items-center justify-between gap-2 px-3 py-2">
 						<span class="text-sm">
 							{r.name}
-							{#if count > 0}
-								<span class="ml-1 text-xs text-muted-foreground"
-									>{t('resources.assignmentCount', { count })}</span
-								>
-							{/if}
+							<span class="ml-1 text-xs text-muted-foreground"
+								>{t('resources.assignmentCount', { count })}</span
+							>
 						</span>
 						<div class="flex gap-1">
 							<Button size="xs" variant="outline" onclick={() => startEdit(r)}

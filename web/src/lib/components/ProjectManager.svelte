@@ -111,11 +111,9 @@
 								aria-hidden="true"
 							></span>
 							{p.name}
-							{#if count > 0}
-								<span class="text-xs text-muted-foreground"
-									>{t('projects.assignmentCount', { count })}</span
-								>
-							{/if}
+							<span class="text-xs text-muted-foreground"
+								>{t('projects.assignmentCount', { count })}</span
+							>
 						</span>
 						<div class="flex gap-1">
 							<Button size="xs" variant="outline" onclick={() => startEdit(p)}
