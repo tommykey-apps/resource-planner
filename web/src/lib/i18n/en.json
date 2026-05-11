@@ -77,7 +77,14 @@
 		"requirePeopleAndProjects": "Register at least one person and one project to create assignments",
 		"updateError": "Failed to update the assignment",
 		"networkError": "Network error",
-		"confirmDelete": "Delete this assignment?\n{label}"
+		"confirmDelete": "Delete this assignment?\n{label}",
+		"searchPlaceholder": "Search by person / project",
+		"allResources": "All people",
+		"allProjects": "All projects",
+		"matchCount": "{count} matches",
+		"clearFilters": "Clear filters",
+		"noMatches": "No assignments match the current filters",
+		"durationDays": "Days"
 	},
 	"signin": {
 		"title": "Sign in",
