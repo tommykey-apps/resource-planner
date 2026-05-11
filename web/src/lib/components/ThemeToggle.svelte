@@ -31,7 +31,7 @@
 	onclick={cycle}
 	aria-label={label}
 	title={label}
-	class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 focus-visible:outline-none"
+	class="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md border border-border bg-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 focus-visible:outline-none"
 >
 	{#if userPrefersMode.current === 'light'}
 		<Sun size={18} weight="regular" aria-hidden="true" />

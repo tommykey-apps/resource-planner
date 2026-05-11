@@ -30,4 +30,9 @@ describe('ThemeToggle (smoke)', () => {
 		const btn = getByRole('button');
 		expect(btn.className).toMatch(/focus-visible:ring/);
 	});
+
+	it('has cursor-pointer class consistent with shadcn Button (#124)', () => {
+		const { getByRole } = render(ThemeToggle);
+		expect(getByRole('button').className).toMatch(/\bcursor-pointer\b/);
+	});
 });

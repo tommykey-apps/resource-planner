@@ -77,4 +77,10 @@ describe('sign-in +page.svelte — email input must remain in form data on submi
 		const submitBtn = container.querySelector('button[type="submit"]') as HTMLButtonElement;
 		expect(submitBtn.className).toMatch(/focus-visible:ring/);
 	});
+
+	it('submit button has cursor-pointer class (#124)', () => {
+		const { container } = render(SignInPage, { props: { data: stubData() } });
+		const submitBtn = container.querySelector('button[type="submit"]') as HTMLButtonElement;
+		expect(submitBtn.className).toMatch(/\bcursor-pointer\b/);
+	});
 });

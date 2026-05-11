@@ -12,7 +12,7 @@
 
 <DropdownMenu.Root>
 	<DropdownMenu.Trigger
-		class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-background text-sm font-semibold transition-colors hover:bg-accent"
+		class="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border bg-background text-sm font-semibold transition-colors hover:bg-accent"
 		aria-label={ariaLabel}
 		title={ariaLabel}
 	>

@@ -36,4 +36,9 @@ describe('LocaleSwitcher (smoke)', () => {
 		const cls = btn.className;
 		expect(cls).toMatch(/focus-visible:ring/);
 	});
+
+	it('has cursor-pointer class consistent with shadcn Button (#124)', () => {
+		const { getByRole } = render(LocaleSwitcher);
+		expect(getByRole('button').className).toMatch(/\bcursor-pointer\b/);
+	});
 });
