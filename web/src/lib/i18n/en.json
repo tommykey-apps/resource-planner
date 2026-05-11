@@ -38,7 +38,8 @@
 		"name": "Name",
 		"assignmentCount": "({count} assignments)",
 		"confirmDelete": "Delete \"{name}\"?",
-		"confirmDeleteWithAssignments": "Delete \"{name}\" and {count} related assignments?\n(Cannot be undone)"
+		"confirmDeleteWithAssignments": "Delete \"{name}\" and {count} related assignments?\n(Cannot be undone)",
+		"createFailed": "Failed to add the person. Please try again."
 	},
 	"projects": {
 		"manage": "Manage projects",

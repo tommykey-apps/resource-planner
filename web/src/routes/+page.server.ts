@@ -48,8 +48,9 @@ export const actions: Actions = {
 				errors: formatErrors(parsed)
 			});
 		}
-		await createResource(session.teamId, parsed.data);
-		return { action: 'createResource', success: true };
+		// #121: 作成された entity を返して optimistic UI の temp → real swap を可能にする。
+		const resource = await createResource(session.teamId, parsed.data);
+		return { action: 'createResource', success: true, resource };
 	},
 
 	updateResource: async (event) => {

@@ -12,13 +12,14 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 const requireSessionMock = vi.fn();
 const updateAssignmentMock = vi.fn();
+const createResourceMock = vi.fn();
 
 vi.mock('$lib/auth', () => ({
 	requireSession: (event: unknown) => requireSessionMock(event)
 }));
 
 vi.mock('$lib/repository', () => ({
-	createResource: vi.fn(),
+	createResource: (...args: unknown[]) => createResourceMock(...args),
 	updateResource: vi.fn(),
 	deleteResource: vi.fn(),
 	createProject: vi.fn(),
@@ -107,5 +108,39 @@ describe('?/updateAssignment action (#99)', () => {
 		expect(result.status).toBe(400);
 		expect(result.data.errors.prevStartDate).toBeTruthy();
 		expect(updateAssignmentMock).not.toHaveBeenCalled();
+	});
+});
+
+/**
+ * #121: createResource action は optimistic UI のため、作成された Resource entity を success
+ * result に含めて返す。フロント側で temp ID → real ID への swap に使う。
+ */
+describe('?/createResource action (#121)', () => {
+	beforeEach(() => {
+		requireSessionMock.mockReset().mockResolvedValue({ teamId: 'team_default', userId: 'u1' });
+		createResourceMock.mockReset();
+	});
+
+	it('returns the created resource on success for optimistic UI swap', async () => {
+		createResourceMock.mockResolvedValue({ id: 'res-real-id', name: 'Alice' });
+		const event = makeEvent({ name: 'Alice' });
+		const result = (await actions.createResource!(event)) as {
+			action: string;
+			success: boolean;
+			resource: { id: string; name: string };
+		};
+		expect(result.action).toBe('createResource');
+		expect(result.success).toBe(true);
+		expect(result.resource).toEqual({ id: 'res-real-id', name: 'Alice' });
+	});
+
+	it('still returns 400 failure for invalid name (no resource in result)', async () => {
+		const event = makeEvent({ name: '' });
+		const result = (await actions.createResource!(event)) as {
+			status: number;
+			data: { errors: Record<string, string> };
+		};
+		expect(result.status).toBe(400);
+		expect(createResourceMock).not.toHaveBeenCalled();
 	});
 });

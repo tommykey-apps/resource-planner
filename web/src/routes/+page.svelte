@@ -32,8 +32,25 @@
 		dbAssignments = data.assignments;
 	});
 
-	const resources = $derived(data.resources);
+	// #121: optimistic UI 用に resources / projects も local state へ lift。
+	// load 再実行で `data.resources` が更新されたら sync (= 楽観的更新 → server confirm 後に
+	// invalidate されたら server truth に rebase される)。
+	let resources = $state<typeof data.resources>([]);
+	$effect(() => {
+		resources = data.resources;
+	});
 	const projects = $derived(data.projects);
+
+	function optimisticAddResource(temp: { id: string; name: string }) {
+		resources = [...resources, temp];
+	}
+	function confirmResourceCreate(temp: { id: string }, real: { id: string; name: string }) {
+		resources = resources.map((r) => (r.id === temp.id ? real : r));
+	}
+	function rollbackResourceCreate(temp: { id: string }) {
+		resources = resources.filter((r) => r.id !== temp.id);
+		toast.error(t('resources.createFailed'));
+	}
 	const projectMap = $derived(new Map(projects.map((p) => [p.id, p])));
 
 	const timelineAssignments = $derived(
@@ -101,7 +118,13 @@
 	<div class="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-2 px-4 py-3">
 		<h1 class="m-0 text-lg font-semibold tracking-tight sm:text-xl">{t('app.title')}</h1>
 		<div class="flex flex-wrap items-center gap-2">
-			<ResourceManager {resources} assignments={dbAssignments} />
+			<ResourceManager
+				{resources}
+				assignments={dbAssignments}
+				onOptimisticCreate={optimisticAddResource}
+				onConfirmCreate={confirmResourceCreate}
+				onRollbackCreate={rollbackResourceCreate}
+			/>
 			<ProjectManager {projects} assignments={dbAssignments} />
 			<AssignmentCreator {resources} {projects} />
 			<AssignmentManager assignments={dbAssignments} {resources} {projects} />
