@@ -10,10 +10,17 @@
 
 	let {
 		resources,
-		assignments
+		assignments,
+		onOptimisticCreate,
+		onConfirmCreate,
+		onRollbackCreate
 	}: {
 		resources: Resource[];
 		assignments: Assignment[];
+		/** #121 optimistic UI hooks。create 時に temp → server entity の swap を親で行う。 */
+		onOptimisticCreate?: (temp: Resource) => void;
+		onConfirmCreate?: (temp: Resource, real: Resource) => void;
+		onRollbackCreate?: (temp: Resource) => void;
 	} = $props();
 
 	/** 各 Resource に紐づく Assignment 数 (cascade delete 時の警告で使う、UC-06) */
@@ -49,9 +56,39 @@
 		formOpen = true;
 	}
 
-	const formSubmit: SubmitFunction = formSubmitState.wrap(() => {
+	/**
+	 * Optimistic UI for create (#121):
+	 * - submit 前に temp ID 付きの Resource を親 state に即時追加 (dialog も即時 close)
+	 * - server success → 親で temp → real swap、`update()` は不要 (refetch 回避)
+	 * - server failure → 親で temp 削除 + 親側で toast、form は再 open しないので入力は失う設計
+	 *   (HTML5 required / maxlength でクライアント側 validation は通過済の前提)
+	 * Update path (editing 時) は従来通り `update()` で invalidateAll、後続 PR で同 pattern 化候補。
+	 */
+	let pendingTemp: Resource | null = null;
+
+	const formSubmit: SubmitFunction = formSubmitState.wrap(({ formData }) => {
 		formError = null;
+		const isCreate = !editing && !!onOptimisticCreate;
+		if (isCreate) {
+			const name = (formData.get('name') ?? '').toString().trim();
+			if (name.length > 0) {
+				pendingTemp = { id: `temp-${crypto.randomUUID()}`, name };
+				onOptimisticCreate(pendingTemp);
+				formOpen = false; // dialog 即時 close
+			}
+		}
 		return async ({ result, update }) => {
+			if (isCreate && pendingTemp) {
+				const tempSnapshot = pendingTemp;
+				pendingTemp = null;
+				if (result.type === 'success') {
+					const real = (result.data as { resource?: Resource })?.resource;
+					if (real && onConfirmCreate) onConfirmCreate(tempSnapshot, real);
+				} else {
+					if (onRollbackCreate) onRollbackCreate(tempSnapshot);
+				}
+				return; // optimistic は update() 不要
+			}
 			if (result.type === 'success') {
 				formOpen = false;
 				editing = null;

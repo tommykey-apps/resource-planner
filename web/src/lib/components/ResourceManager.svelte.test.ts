@@ -44,4 +44,29 @@ describe('ResourceManager (smoke)', () => {
 		expect(trigger.textContent).not.toMatch(/👥/);
 		expect(trigger.querySelector('.hidden.sm\\:inline')?.textContent).toMatch(/人を管理/);
 	});
+
+	/**
+	 * #121: optimistic UI props を受け取り、create flow で callback を発火する。
+	 * 詳細な DOM 駆動 test は use:enhance の SubmitFunction 内部実装 + bits-ui Dialog の
+	 * portal 越しになり jsdom で安定再現しづらいため、callbacks の prop signature だけ assert する。
+	 */
+	it('accepts optimistic create callbacks as props (#121 contract)', () => {
+		const onOptimisticCreate = (_temp: { id: string; name: string }) => {};
+		const onConfirmCreate = (
+			_temp: { id: string },
+			_real: { id: string; name: string }
+		) => {};
+		const onRollbackCreate = (_temp: { id: string }) => {};
+		const result = render(ResourceManager, {
+			props: {
+				resources: [],
+				assignments: [],
+				onOptimisticCreate,
+				onConfirmCreate,
+				onRollbackCreate
+			}
+		});
+		// レンダリングが壊れないことを確認 (callback は実行されない)
+		expect(result.getByRole('button', { name: /人を管理/ })).toBeInTheDocument();
+	});
 });
