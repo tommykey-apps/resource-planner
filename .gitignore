@@ -4,6 +4,8 @@ node_modules
 # SvelteKit (in web/)
 web/.svelte-kit
 web/build
+web/dist
+infra/ses-bounce-handler.zip
 
 # Vitest
 web/coverage

@@ -1,8 +1,14 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { promises as fs } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { isDomainAllowed, sendMagicLinkDev } from './auth';
+
+const isSuppressedMock = vi.fn();
+vi.mock('$lib/repository/suppression', () => ({
+	isSuppressed: (...args: unknown[]) => isSuppressedMock(...args)
+}));
+
+const { isDomainAllowed, sendMagicLinkDev, shouldAllowSignIn } = await import('./auth');
 
 describe('isDomainAllowed', () => {
 	it('returns true when email ends with @{allowed}', () => {
@@ -93,5 +99,42 @@ describe('sendMagicLinkDev (#113)', () => {
 		delete process.env.AUTH_TEST_MAGIC_LINK_FILE;
 		await sendMagicLinkDev({ identifier: 'alice@example.com', url: 'http://x/y' });
 		await expect(fs.access(tmpFile)).rejects.toThrow();
+	});
+});
+
+/**
+ * #134: signIn callback の guard を純粋関数として抽出した shouldAllowSignIn。
+ * domain check + suppression check の AND が正しく合成されることを確認する。
+ */
+describe('shouldAllowSignIn (#134)', () => {
+	beforeEach(() => {
+		isSuppressedMock.mockReset().mockResolvedValue(false);
+	});
+
+	it('domain 拒否 → false (suppression は確認すらしない、 早期 reject)', async () => {
+		const r = await shouldAllowSignIn('alice@evil.com', 'example.com');
+		expect(r).toBe(false);
+		expect(isSuppressedMock).not.toHaveBeenCalled();
+	});
+
+	it('domain 許可 + suppression hit → false', async () => {
+		isSuppressedMock.mockResolvedValueOnce(true);
+		expect(await shouldAllowSignIn('alice@example.com', 'example.com')).toBe(false);
+		expect(isSuppressedMock).toHaveBeenCalledWith('alice@example.com');
+	});
+
+	it('domain 許可 + suppression 無し → true', async () => {
+		isSuppressedMock.mockResolvedValueOnce(false);
+		expect(await shouldAllowSignIn('alice@example.com', 'example.com')).toBe(true);
+	});
+
+	it('email undefined → false (suppression check しない)', async () => {
+		expect(await shouldAllowSignIn(undefined, 'example.com')).toBe(false);
+		expect(isSuppressedMock).not.toHaveBeenCalled();
+	});
+
+	it('allowed undefined → false (fail-closed)', async () => {
+		expect(await shouldAllowSignIn('alice@example.com', undefined)).toBe(false);
+		expect(isSuppressedMock).not.toHaveBeenCalled();
 	});
 });

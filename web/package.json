@@ -16,7 +16,8 @@
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"test:coverage": "vitest run --coverage",
-		"test:e2e": "playwright test"
+		"test:e2e": "playwright test",
+		"build:lambda": "node scripts/build-ses-bounce-lambda.mjs"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^2.0.4",
@@ -34,6 +35,7 @@
 		"@vitest/coverage-v8": "^4.1.5",
 		"aws-sdk-client-mock": "^4.1.0",
 		"aws-sdk-client-mock-vitest": "^7.0.1",
+		"esbuild": "^0.28.0",
 		"eslint": "^10.2.0",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-svelte": "^3.17.0",
