@@ -40,3 +40,9 @@ export const userMetaSk = () => 'META';
 // ── GSI1: user → team 一覧 (membership 逆引き) ──
 export const userTeamsGsi1pk = (userId: string) => `USER#${userId}`;
 export const userTeamsGsi1sk = (teamId: string) => `TEAM#${teamId}`;
+
+// ── SES suppression (#134): bounce / complaint で送信を停止するアドレス ──
+// email は大小文字 insensitive で正規化 (RFC 5321 のローカル部 case-sensitive は実害無し、
+// SES の bounce 報告も lower-case で揃えるので safe)。
+export const suppressionPk = (email: string) => `SUPPRESS#${email.toLowerCase()}`;
+export const suppressionMetaSk = () => 'META';

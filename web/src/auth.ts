@@ -22,6 +22,7 @@ import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2';
 import { promises as fs } from 'node:fs';
 import { env } from '$env/dynamic/private';
 import { addMembership, DEFAULT_TEAM_ID, getOrCreateDefaultTeam } from '$lib/repository/team';
+import { isSuppressed } from '$lib/repository/suppression';
 
 /**
  * 許可ドメイン判定 (純粋関数、テストしやすい形で抽出)。
@@ -35,6 +36,25 @@ export function isDomainAllowed(
 ): boolean {
 	if (!email || !allowed) return false;
 	return email.toLowerCase().endsWith(`@${allowed.toLowerCase()}`);
+}
+
+/**
+ * sign-in を許可するか判定 (#134 で suppression check 追加)。
+ *
+ * 1. ドメイン許可リストに無い → 拒否
+ * 2. SES suppression list (bounce / complaint) に該当 → 拒否 (magic link は送らない)
+ * 3. それ以外 → 許可
+ *
+ * 副作用は `isSuppressed` の DDB Get のみ。 ロジックを純粋にして
+ * SvelteKitAuth wrapper の外でも test 可能にする。
+ */
+export async function shouldAllowSignIn(
+	email: string | null | undefined,
+	allowed: string | null | undefined
+): Promise<boolean> {
+	if (!isDomainAllowed(email, allowed)) return false;
+	if (email && (await isSuppressed(email))) return false;
+	return true;
 }
 
 // ── AUTH_SECRET resolution ──
@@ -138,13 +158,7 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 		error: '/sign-in/error'
 	},
 	callbacks: {
-		signIn: async ({ user }) => {
-			// 許可ドメインのみ通過 (env.ALLOWED_DOMAIN、PR-A1 で配置済)
-			if (!isDomainAllowed(user.email, env.ALLOWED_DOMAIN)) {
-				return false;
-			}
-			return true;
-		},
+		signIn: async ({ user }) => shouldAllowSignIn(user.email, env.ALLOWED_DOMAIN),
 		session: async ({ session }) => {
 			return session;
 		}
