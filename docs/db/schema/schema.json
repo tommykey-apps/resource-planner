@@ -4,19 +4,19 @@
     {
       "name": "resource-planner",
       "type": "BASIC TABLE",
-      "comment": "Single Table Design for resource planning.\npk: ORG#{clerk_org_id} - Multi-tenant isolation by Clerk organization.\nsk: Entity prefix (RES#, PRJ#, ASN#) + entity-specific key.\nEntities: Resource (people), Project (clients), Assignment (time allocations).\nSee ../entities.md and ../access-patterns.md for details.\n",
+      "comment": "Single Table Design for resource planning.\npk varies by entity scope:\n  - TEAM#{teamId}    - App entities (Resource / Project / Assignment / Team / Membership)\n  - USER#{userId}    - Auth.js User / Account (managed by @auth/dynamodb-adapter)\n  - SESSION#{token}  - Auth.js Session (TTL: expires)\n  - VERIFICATION#{token} - Auth.js Magic Link verification token (TTL: expires)\nInitial deployment uses default team \"team_default\"; multi-team support is wired but unused.\nSee ../entities.md and ../access-patterns.md, ADR 0008 / 0009 for history.\n",
       "columns": [
         {
           "name": "pk",
           "type": "S",
           "nullable": false,
-          "comment": "Partition key. Format: ORG#{clerk_org_id}.\nAll data for one organization shares the same pk for efficient queries.\n"
+          "comment": "Partition key. Format varies by entity:\n- TEAM#{teamId}        for app data (Resource / Project / Assignment / Team / Membership)\n- USER#{userId}        for Auth.js User / Account records\n- SESSION#{token}      for Auth.js Session records\n- VERIFICATION#{token} for Auth.js Magic Link verification tokens\n"
         },
         {
           "name": "sk",
           "type": "S",
           "nullable": false,
-          "comment": "Sort key. Format varies by entity type:\n- RES#{resource_id} for resources (people)\n- PRJ#{project_id} for projects (clients)\n- ASN#{start_date}#{assignment_id} for assignments\n"
+          "comment": "Sort key. Format varies by entity type:\n- META                                  for Team / User / Session / Verification meta records\n- MEMBER#{userId}                       for Team membership\n- RES#{resource_id}                     for resources (people)\n- PRJ#{project_id}                      for projects (clients)\n- ASN#{start_date}#{assignment_id}      for assignments\n- ACCOUNT#{provider}#{providerAccountId} for Auth.js Account (per-provider link to User)\n"
         },
         {
           "name": "GSI1PK",

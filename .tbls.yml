@@ -27,16 +27,25 @@ comments:
   - table: resource-planner
     tableComment: |
       Single Table Design for resource planning.
-      pk: ORG#{clerk_org_id} - Multi-tenant isolation by Clerk organization.
-      sk: Entity prefix (RES#, PRJ#, ASN#) + entity-specific key.
-      Entities: Resource (people), Project (clients), Assignment (time allocations).
-      See ../entities.md and ../access-patterns.md for details.
+      pk varies by entity scope:
+        - TEAM#{teamId}    - App entities (Resource / Project / Assignment / Team / Membership)
+        - USER#{userId}    - Auth.js User / Account (managed by @auth/dynamodb-adapter)
+        - SESSION#{token}  - Auth.js Session (TTL: expires)
+        - VERIFICATION#{token} - Auth.js Magic Link verification token (TTL: expires)
+      Initial deployment uses default team "team_default"; multi-team support is wired but unused.
+      See ../entities.md and ../access-patterns.md, ADR 0008 / 0009 for history.
     columnComments:
       pk: |
-        Partition key. Format: ORG#{clerk_org_id}.
-        All data for one organization shares the same pk for efficient queries.
+        Partition key. Format varies by entity:
+        - TEAM#{teamId}        for app data (Resource / Project / Assignment / Team / Membership)
+        - USER#{userId}        for Auth.js User / Account records
+        - SESSION#{token}      for Auth.js Session records
+        - VERIFICATION#{token} for Auth.js Magic Link verification tokens
       sk: |
         Sort key. Format varies by entity type:
-        - RES#{resource_id} for resources (people)
-        - PRJ#{project_id} for projects (clients)
-        - ASN#{start_date}#{assignment_id} for assignments
+        - META                                  for Team / User / Session / Verification meta records
+        - MEMBER#{userId}                       for Team membership
+        - RES#{resource_id}                     for resources (people)
+        - PRJ#{project_id}                      for projects (clients)
+        - ASN#{start_date}#{assignment_id}      for assignments
+        - ACCOUNT#{provider}#{providerAccountId} for Auth.js Account (per-provider link to User)
