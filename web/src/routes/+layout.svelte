@@ -17,8 +17,12 @@
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
 
-<!-- mode-watcher (#97): light / dark / system theme を <html class> + cookie で同期 -->
-<ModeWatcher />
+<!--
+  mode-watcher (#97): light / dark / system theme を <html class> + cookie で同期。
+  #141: SSR で cookie から復元した data.theme を defaultMode に渡し、hydration 時の
+  userPrefersMode 初期値が 'system' に戻る race を防ぐ。
+-->
+<ModeWatcher defaultMode={data.theme} />
 
 <Toaster richColors closeButton position="top-right" />
 

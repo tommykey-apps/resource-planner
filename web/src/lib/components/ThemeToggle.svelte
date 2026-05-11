@@ -4,11 +4,13 @@
 	import Moon from 'phosphor-svelte/lib/Moon';
 	import Monitor from 'phosphor-svelte/lib/Monitor';
 	import { t } from '$lib/i18n/index.svelte';
+	import { THEME_COOKIE_NAME } from '$lib/theme';
 
 	/**
 	 * テーマ切替 (light → dark → system → light、#97)。
-	 * - `mode-watcher` が cookie / localStorage 同期と `<html class="dark">` 反映を担う
-	 * - 初期値は `prefers-color-scheme` + cookie (`+layout.svelte` の `<ModeWatcher />` 経由)
+	 * - `mode-watcher` は localStorage しか書かない → SSR で初期 mode を復元するため、
+	 *   localStorage と同じ key (`mode-watcher-mode`) で cookie も併記する (#141)
+	 * - 初期値は SSR で cookie 復元 → `<ModeWatcher defaultMode={data.theme} />`
 	 * - icon は phosphor (#105 と一貫)
 	 */
 	function cycle() {
@@ -16,6 +18,15 @@
 		const next = current === 'light' ? 'dark' : current === 'dark' ? 'system' : 'light';
 		setMode(next);
 	}
+
+	// userPrefersMode を cookie にミラー (#141)。
+	// setMode 直後だけでなく、初回 hydration で localStorage 由来の mode に確定したタイミング
+	// (cookie が未書込のレガシーユーザー) でも cookie を書くため、$effect で reactive に同期する。
+	$effect(() => {
+		const current = userPrefersMode.current;
+		if (typeof document === 'undefined') return;
+		document.cookie = `${THEME_COOKIE_NAME}=${current}; path=/; max-age=31536000; samesite=lax`;
+	});
 
 	const label = $derived.by(() => {
 		const u = userPrefersMode.current;
