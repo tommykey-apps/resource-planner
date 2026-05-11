@@ -25,7 +25,8 @@ test('Magic Link sign-in completes the flow and lands on home (regression for #1
 
 	const url = await getMagicLinkUrl('allowed@example.com');
 	await page.goto(url);
-	await expect(page).toHaveURL('/');
+	// home page。#99 で viewport / zoom が `?d=...&z=...` に同期されるため path のみで match。
+	await expect(page).toHaveURL(/^http:\/\/localhost:4173\/(\?|$)/);
 });
 
 test('Direct navigation to /sign-in/check-email redirects to /sign-in (#101 guard)', async ({
