@@ -1,8 +1,16 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen, within } from '@testing-library/svelte';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import AssignmentManager from './AssignmentManager.svelte';
 import type { Assignment, Project, Resource } from '$lib/types';
+
+// edit dialog を開く test で bits-ui body-scroll-lock が 24ms 遅延 cleanup timer を仕込む。
+// testing-library の auto-cleanup 後に timer が発火し、その時点で jsdom document が
+// 消えていると CI で "ReferenceError: document is not defined" の unhandled error になる。
+// teardown 前に必ず timer を消化するため少し待つ。
+afterEach(async () => {
+	await new Promise((resolve) => setTimeout(resolve, 50));
+});
 
 const sampleResources: Resource[] = [
 	{ id: 'r1', name: 'Alice' },
