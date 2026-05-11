@@ -6,6 +6,7 @@
 	import { createSubmitState } from '$lib/forms/submit-state.svelte';
 	import { confirmDialog } from '$lib/forms/confirm-dialog';
 	import { translateServerError, type ServerErrors } from '$lib/forms/server-error';
+	import { rollbackRecoverState } from '$lib/forms/optimistic-rollback';
 	import { t } from '$lib/i18n/index.svelte';
 	import type { Resource, Assignment } from '$lib/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
@@ -58,11 +59,12 @@
 	}
 
 	/**
-	 * Optimistic UI for create (#121):
+	 * Optimistic UI for create (#121 + #140):
 	 * - submit 前に temp ID 付きの Resource を親 state に即時追加 (dialog も即時 close)
 	 * - server success → 親で temp → real swap、`update()` は不要 (refetch 回避)
-	 * - server failure → 親で temp 削除 + 親側で toast、form は再 open しないので入力は失う設計
-	 *   (HTML5 required / maxlength でクライアント側 validation は通過済の前提)
+	 * - server failure → 親で temp 削除 + 親側で toast、
+	 *   **加えて dialog を再 open + 入力値を formName に復元 + server error を formError に**
+	 *   (#140: 旧設計は入力破棄で UX 退行していた、 #155 / #157 と整合する形で復元)
 	 * Update path (editing 時) は従来通り `update()` で invalidateAll、後続 PR で同 pattern 化候補。
 	 */
 	let pendingTemp: Resource | null = null;
@@ -86,7 +88,18 @@
 					const real = (result.data as { resource?: Resource })?.resource;
 					if (real && onConfirmCreate) onConfirmCreate(tempSnapshot, real);
 				} else {
+					// #140: rollback だけでなく form を復活させてユーザーが再入力せずに済むようにする
 					if (onRollbackCreate) onRollbackCreate(tempSnapshot);
+					const recovered = rollbackRecoverState({
+						temp: tempSnapshot,
+						failureData: result.type === 'failure' ? (result.data as { errors?: ServerErrors }) : undefined,
+						translate: translateServerError,
+						fallback: t('errors.generic'),
+						field: 'name'
+					});
+					formName = recovered.formName;
+					formError = recovered.formError;
+					formOpen = true;
 				}
 				return; // optimistic は update() 不要
 			}
