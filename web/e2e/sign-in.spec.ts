@@ -28,6 +28,14 @@ test('Magic Link sign-in completes the flow and lands on home (regression for #1
 	await expect(page).toHaveURL('/');
 });
 
+test('Direct navigation to /sign-in/check-email redirects to /sign-in (#101 guard)', async ({
+	page
+}) => {
+	// 初回直接アクセス: sec-fetch-site: none → /sign-in に redirect
+	await page.goto('/sign-in/check-email');
+	await expect(page).toHaveURL(/\/sign-in($|\?)/);
+});
+
 test('Disallowed domain is rejected at submit before any email is sent', async ({ page }) => {
 	await page.goto('/sign-in');
 	await page.fill('input[name="email"]', 'evil@other.example');

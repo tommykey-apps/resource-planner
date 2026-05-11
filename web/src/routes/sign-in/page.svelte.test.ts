@@ -69,4 +69,12 @@ describe('sign-in +page.svelte — email input must remain in form data on submi
 		const fd = new FormData(form);
 		expect(fd.get('email')).toBe('alice@example.com');
 	});
+
+	it('submit button has focus-visible ring classes consistent with shadcn Button (#101 item 5)', () => {
+		const { container } = render(SignInPage, {
+			props: { data: stubData() }
+		});
+		const submitBtn = container.querySelector('button[type="submit"]') as HTMLButtonElement;
+		expect(submitBtn.className).toMatch(/focus-visible:ring/);
+	});
 });

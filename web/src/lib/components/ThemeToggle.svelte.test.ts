@@ -24,4 +24,10 @@ describe('ThemeToggle (smoke)', () => {
 		const icon = btn.querySelector('svg[aria-hidden="true"]');
 		expect(icon).toBeTruthy();
 	});
+
+	it('has focus-visible ring classes consistent with shadcn Button (#101 item 5)', () => {
+		const { getByRole } = render(ThemeToggle);
+		const btn = getByRole('button');
+		expect(btn.className).toMatch(/focus-visible:ring/);
+	});
 });
