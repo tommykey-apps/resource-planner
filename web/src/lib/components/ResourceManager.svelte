@@ -5,6 +5,7 @@
 	import Dialog from './Dialog.svelte';
 	import { createSubmitState } from '$lib/forms/submit-state.svelte';
 	import { confirmDialog } from '$lib/forms/confirm-dialog';
+	import { translateServerError, type ServerErrors } from '$lib/forms/server-error';
 	import { t } from '$lib/i18n/index.svelte';
 	import type { Resource, Assignment } from '$lib/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
@@ -93,8 +94,8 @@
 				formOpen = false;
 				editing = null;
 			} else if (result.type === 'failure') {
-				formError =
-					(result.data as { errors?: Record<string, string> })?.errors?.name ?? '入力エラー';
+				const errs = (result.data as { errors?: ServerErrors })?.errors;
+				formError = errs?.name ? translateServerError(errs.name) : t('errors.generic');
 			}
 			await update();
 		};
