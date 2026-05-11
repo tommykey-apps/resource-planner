@@ -48,7 +48,7 @@
 		<button
 			type="submit"
 			disabled={submitting}
-			class="w-full rounded bg-primary px-4 py-2 text-primary-foreground disabled:opacity-60"
+			class="w-full rounded bg-primary px-4 py-2 text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-60"
 		>
 			{submitting ? t('signin.submitting') : t('signin.submit')}
 		</button>

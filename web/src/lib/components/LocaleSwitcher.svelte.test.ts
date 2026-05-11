@@ -29,4 +29,11 @@ describe('LocaleSwitcher (smoke)', () => {
 		const label = btn.getAttribute('aria-label') ?? '';
 		expect(label.toLowerCase()).toMatch(/language|言語/);
 	});
+
+	it('has focus-visible ring classes consistent with shadcn Button (#101 item 5)', () => {
+		const { getByRole } = render(LocaleSwitcher);
+		const btn = getByRole('button');
+		const cls = btn.className;
+		expect(cls).toMatch(/focus-visible:ring/);
+	});
 });

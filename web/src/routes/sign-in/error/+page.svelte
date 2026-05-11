@@ -22,16 +22,25 @@
 	<title>{t('signin.errorTitle')} — {t('app.title')}</title>
 </svelte:head>
 
-<main class="container mx-auto max-w-md px-4 py-12">
-	<h1 class="mb-2 text-2xl font-bold">{t('signin.errorTitle')}</h1>
-	<p class="mb-4 rounded border-l-4 border-destructive bg-destructive/10 p-4 text-sm">
-		{message}
-	</p>
-	<p class="text-xs text-muted-foreground">{t('signin.errorCode', { code: errorCode })}</p>
+<!--
+	#101 item 2: 404 (`+error.svelte`) と同じ centered-card レイアウトに揃える。
+	min-h-screen + flex 中央配置 + max-w カード で alignment を統一。
+-->
+<main class="flex min-h-screen items-center justify-center bg-background px-4 py-12">
+	<div class="w-full max-w-md rounded border border-border bg-card p-8 text-center">
+		<h1 class="mb-2 text-2xl font-bold text-destructive">{t('signin.errorTitle')}</h1>
+		<p class="mb-4 rounded border-l-4 border-destructive bg-destructive/10 p-4 text-left text-sm">
+			{message}
+		</p>
+		<p class="text-xs text-muted-foreground">{t('signin.errorCode', { code: errorCode })}</p>
 
-	<div class="mt-6">
-		<a href="/sign-in" class="inline-block rounded bg-primary px-4 py-2 text-primary-foreground">
-			{t('signin.backToSignin')}
-		</a>
+		<div class="mt-6">
+			<a
+				href="/sign-in"
+				class="inline-block rounded bg-primary px-4 py-2 text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 focus-visible:outline-none"
+			>
+				{t('signin.backToSignin')}
+			</a>
+		</div>
 	</div>
 </main>
