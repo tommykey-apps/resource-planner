@@ -153,12 +153,68 @@
 		</button>
 	</div>
 
+	{#snippet rowActions(a: Assignment, resource: typeof resources[number] | undefined, project: typeof projects[number] | undefined)}
+		<div class="flex justify-end gap-1">
+			<Button size="xs" variant="outline" onclick={() => openEditor(a)}>
+				{t('common.edit')}
+			</Button>
+			<form
+				method="POST"
+				action="/?/deleteAssignment"
+				use:enhance={makeDeleteSubmit({
+					label: `${resource?.name ?? '?'} × ${project?.name ?? '?'} (${a.startDate} 〜 ${displayEndDate(a)})`
+				})}
+			>
+				<input type="hidden" name="id" value={a.id} />
+				<input type="hidden" name="startDate" value={a.startDate} />
+				<Button size="xs" variant="destructive" type="submit">
+					{t('common.delete')}
+				</Button>
+			</form>
+		</div>
+	{/snippet}
+
 	{#if filtered.length === 0}
 		<div class="rounded border border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
 			{t('assignments.noMatches')}
 		</div>
 	{:else}
-		<div class="overflow-x-auto rounded border border-border">
+		<!-- #142: mobile (<sm) は table 6 列が 375px 幅で見切れるため card layout に切替。
+		     desktop (>=sm) は従来 table を維持。 共通の edit/delete UI は rowActions snippet で. -->
+		<ul class="space-y-2 sm:hidden" aria-label={t('assignments.list')}>
+			{#each filtered as a (a.id)}
+				{@const resource = resourceMap.get(a.resourceId)}
+				{@const project = projectMap.get(a.projectId)}
+				<li class="rounded border border-border bg-card p-3">
+					<div class="mb-2 flex items-start justify-between gap-2">
+						<div class="flex min-w-0 flex-col gap-0.5">
+							<span class="truncate text-sm font-semibold">
+								{resource?.name ?? t('assignments.deletedResource')}
+							</span>
+							<span class="inline-flex items-center gap-2 text-xs">
+								<span
+									class="inline-block h-3 w-3 shrink-0 rounded-sm border border-black/10"
+									style="background-color: {project?.color ?? '#999'}"
+									aria-hidden="true"
+								></span>
+								<span class="truncate">{project?.name ?? t('assignments.deletedProject')}</span>
+							</span>
+						</div>
+						{@render rowActions(a, resource, project)}
+					</div>
+					<dl class="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 text-xs text-muted-foreground">
+						<dt>{t('assignments.startDate')}</dt>
+						<dd class="font-mono">{a.startDate}</dd>
+						<dt>{t('assignments.endDate')}</dt>
+						<dd class="font-mono">{displayEndDate(a)}</dd>
+						<dt>{t('assignments.durationDays')}</dt>
+						<dd class="font-mono">{duration(a)}</dd>
+					</dl>
+				</li>
+			{/each}
+		</ul>
+
+		<div class="hidden overflow-x-auto rounded border border-border sm:block">
 			<Table.Root>
 				<Table.Header>
 					<Table.Row>
@@ -189,26 +245,7 @@
 							<Table.Cell class="font-mono text-xs">{a.startDate}</Table.Cell>
 							<Table.Cell class="font-mono text-xs">{displayEndDate(a)}</Table.Cell>
 							<Table.Cell class="text-right font-mono text-xs">{duration(a)}</Table.Cell>
-							<Table.Cell class="text-right">
-								<div class="flex justify-end gap-1">
-									<Button size="xs" variant="outline" onclick={() => openEditor(a)}>
-										{t('common.edit')}
-									</Button>
-									<form
-										method="POST"
-										action="/?/deleteAssignment"
-										use:enhance={makeDeleteSubmit({
-											label: `${resource?.name ?? '?'} × ${project?.name ?? '?'} (${a.startDate} 〜 ${displayEndDate(a)})`
-										})}
-									>
-										<input type="hidden" name="id" value={a.id} />
-										<input type="hidden" name="startDate" value={a.startDate} />
-										<Button size="xs" variant="destructive" type="submit">
-											{t('common.delete')}
-										</Button>
-									</form>
-								</div>
-							</Table.Cell>
+							<Table.Cell class="text-right">{@render rowActions(a, resource, project)}</Table.Cell>
 						</Table.Row>
 					{/each}
 				</Table.Body>
