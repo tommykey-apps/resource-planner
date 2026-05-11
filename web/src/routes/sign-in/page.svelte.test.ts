@@ -15,6 +15,7 @@ import type { PageData } from './$types';
 const stubData = (): PageData => ({
 	csrfToken: 'test-csrf',
 	locale: 'ja',
+	theme: 'system',
 	resources: [],
 	projects: [],
 	assignments: []
