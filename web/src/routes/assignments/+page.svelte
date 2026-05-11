@@ -7,6 +7,7 @@
 	import { addDays } from '$lib/date';
 	import { confirmDialog } from '$lib/forms/confirm-dialog';
 	import { t } from '$lib/i18n/index.svelte';
+	import AppHeader from '$lib/components/AppHeader.svelte';
 	import AssignmentEditor from '$lib/components/AssignmentEditor.svelte';
 	import {
 		applyAssignmentParams,
@@ -98,11 +99,10 @@
 	<title>{t('assignments.listTitle')} — {t('app.title')}</title>
 </svelte:head>
 
+<AppHeader {resources} {projects} {assignments} user={data.user} isAssignmentsActive />
+
 <main class="mx-auto max-w-[1200px] px-4 py-6">
-	<div class="mb-4 flex items-center justify-between gap-2">
-		<h1 class="text-xl font-semibold">{t('assignments.listTitle')}</h1>
-		<Button variant="outline" href="/">{t('errorPage.goHome')}</Button>
-	</div>
+	<h1 class="mb-4 text-xl font-semibold">{t('assignments.listTitle')}</h1>
 
 	<div class="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-5">
 		<input

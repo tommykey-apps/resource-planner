@@ -1,6 +1,5 @@
 <script lang="ts">
 	import './layout.css';
-	import favicon from '$lib/assets/favicon.svg';
 	import { ModeWatcher } from 'mode-watcher';
 	import { Toaster } from 'svelte-sonner';
 	import { initLocale } from '$lib/i18n/index.svelte';
@@ -15,7 +14,7 @@
 	});
 </script>
 
-<svelte:head><link rel="icon" href={favicon} /></svelte:head>
+<!-- favicon / apple-touch-icon / manifest は app.html で全ページに静的 inject (#146)。 -->
 
 <!-- mode-watcher (#97): light / dark / system theme を <html class> + cookie で同期 -->
 <ModeWatcher />
