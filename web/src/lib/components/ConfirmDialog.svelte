@@ -10,10 +10,16 @@
 </script>
 
 <!--
-	#137: shadcn-svelte の AlertDialog.Content は内部で Portal + Overlay を mount するため
-	outer に `<AlertDialog.Portal>` / `<AlertDialog.Overlay />` を書くと **二重 Portal / 二重 Overlay**
-	になる (overlay の bg が暗くなる、focus trap 二重発火の risk)。shadcn 公式 example に揃えて
-	Root → Content の直構成にする。
+	#137: shadcn-svelte の AlertDialog.Content は内部で Portal + Overlay を mount する。
+
+	#157 (root cause): ConfirmDialog は +layout.svelte で常駐 mount → bits-ui の Portal は
+	mount 時に body へ consumer を append するため、 後から open する page 側の `<Dialog>`
+	(BitsDialog.Portal) の方が body 内で **後 = 前面** になる。 両方 z-50 なので、 confirm を開いても
+	page 側の Dialog 内 click target が pointer event を奪い続けて「ダイアログが押せない / 出ない」
+	症状になる。 confirm は destructive 操作の最終ゲートなので必ず最前面に来るべき。
+
+	→ AlertDialog の Overlay / Content を `z-[60]` で上書きして他 Dialog より一段上に乗せる。
+	  z-50 のままだと shadcn の `cn()` が tailwind-merge で重複解消 → 後勝ち で z-[60] になる。
 -->
 <AlertDialog.Root
 	{open}
