@@ -6,6 +6,9 @@
       "awscli2": {
         "pkg-path": "awscli2"
       },
+      "drawio": {
+        "pkg-path": "drawio"
+      },
       "nodejs_22": {
         "pkg-path": "nodejs_22"
       },
@@ -46,8 +49,8 @@
       "rev_date": "2025-07-23T06:00:50Z",
       "scrape_date": "2025-07-25T00:29:03.637535Z",
       "stabilities": [
-        "unstable",
         "staging",
+        "unstable",
         "stable"
       ],
       "unfree": false,
@@ -78,8 +81,8 @@
       "rev_date": "2025-07-23T06:00:50Z",
       "scrape_date": "2025-07-25T00:52:20.434805Z",
       "stabilities": [
-        "unstable",
         "staging",
+        "unstable",
         "stable"
       ],
       "unfree": false,
@@ -110,8 +113,8 @@
       "rev_date": "2025-07-23T06:00:50Z",
       "scrape_date": "2025-07-25T01:11:38.872478Z",
       "stabilities": [
-        "unstable",
         "staging",
+        "unstable",
         "stable"
       ],
       "unfree": false,
@@ -142,8 +145,8 @@
       "rev_date": "2025-07-23T06:00:50Z",
       "scrape_date": "2025-07-25T01:36:31.317265Z",
       "stabilities": [
-        "unstable",
         "staging",
+        "unstable",
         "stable"
       ],
       "unfree": false,
@@ -154,6 +157,130 @@
       "outputs": {
         "dist": "/nix/store/p05rkykwh1h0wfkdmqlc5dy6afqbx434-awscli2-2.27.50-dist",
         "out": "/nix/store/84x45xrqhadw16y11xkmyy9chh4hmd5m-awscli2-2.27.50"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "drawio",
+      "broken": false,
+      "derivation": "/nix/store/5d067kv1czrdn26sfadxlwlbsinbspxz-drawio-26.1.1.drv",
+      "description": "Desktop version of draw.io for creating diagrams",
+      "install_id": "drawio",
+      "license": "[ Apache-2.0, Unfree redistributable ]",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=fc02ee70efb805d3b2865908a13ddd4474557ecf",
+      "name": "drawio-26.1.1",
+      "pname": "drawio",
+      "rev": "fc02ee70efb805d3b2865908a13ddd4474557ecf",
+      "rev_count": 833752,
+      "rev_date": "2025-07-23T06:00:50Z",
+      "scrape_date": "2025-07-25T00:29:04.117899Z",
+      "stabilities": [
+        "staging",
+        "unstable",
+        "stable"
+      ],
+      "unfree": true,
+      "version": "26.1.1",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/zq0qmz70rlir6ibpd370df3bgxzbaimc-drawio-26.1.1"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "drawio",
+      "broken": false,
+      "derivation": "/nix/store/b1dsncmm7160bpffrrc08ki1q75npcrf-drawio-26.1.1.drv",
+      "description": "Desktop version of draw.io for creating diagrams",
+      "install_id": "drawio",
+      "license": "[ Apache-2.0, Unfree redistributable ]",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=fc02ee70efb805d3b2865908a13ddd4474557ecf",
+      "name": "drawio-26.1.1",
+      "pname": "drawio",
+      "rev": "fc02ee70efb805d3b2865908a13ddd4474557ecf",
+      "rev_count": 833752,
+      "rev_date": "2025-07-23T06:00:50Z",
+      "scrape_date": "2025-07-25T00:52:21.132351Z",
+      "stabilities": [
+        "staging",
+        "unstable",
+        "stable"
+      ],
+      "unfree": true,
+      "version": "26.1.1",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/ds5s3wgln462adk25c92wg1zqilva8li-drawio-26.1.1"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "drawio",
+      "broken": false,
+      "derivation": "/nix/store/2k4a2nmnykhjg90s9irwa3l82q4sls1a-drawio-26.1.1.drv",
+      "description": "Desktop version of draw.io for creating diagrams",
+      "install_id": "drawio",
+      "license": "[ Apache-2.0, Unfree redistributable ]",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=fc02ee70efb805d3b2865908a13ddd4474557ecf",
+      "name": "drawio-26.1.1",
+      "pname": "drawio",
+      "rev": "fc02ee70efb805d3b2865908a13ddd4474557ecf",
+      "rev_count": 833752,
+      "rev_date": "2025-07-23T06:00:50Z",
+      "scrape_date": "2025-07-25T01:11:39.327658Z",
+      "stabilities": [
+        "staging",
+        "unstable",
+        "stable"
+      ],
+      "unfree": true,
+      "version": "26.1.1",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/x29y4fabfjg44ml08nd4s7nv7vqhm3pj-drawio-26.1.1"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "drawio",
+      "broken": false,
+      "derivation": "/nix/store/3w0i0mjfy2w252b10sjrq2c945c19nbk-drawio-26.1.1.drv",
+      "description": "Desktop version of draw.io for creating diagrams",
+      "install_id": "drawio",
+      "license": "[ Apache-2.0, Unfree redistributable ]",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=fc02ee70efb805d3b2865908a13ddd4474557ecf",
+      "name": "drawio-26.1.1",
+      "pname": "drawio",
+      "rev": "fc02ee70efb805d3b2865908a13ddd4474557ecf",
+      "rev_count": 833752,
+      "rev_date": "2025-07-23T06:00:50Z",
+      "scrape_date": "2025-07-25T01:36:32.091825Z",
+      "stabilities": [
+        "staging",
+        "unstable",
+        "stable"
+      ],
+      "unfree": true,
+      "version": "26.1.1",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/7pj62ykdv4542l26xqlwz7fmqg9lcxs4-drawio-26.1.1"
       },
       "system": "x86_64-linux",
       "group": "toplevel",
@@ -174,8 +301,8 @@
       "rev_date": "2025-07-23T06:00:50Z",
       "scrape_date": "2025-07-25T00:29:07.271281Z",
       "stabilities": [
-        "unstable",
         "staging",
+        "unstable",
         "stable"
       ],
       "unfree": false,
@@ -207,8 +334,8 @@
       "rev_date": "2025-07-23T06:00:50Z",
       "scrape_date": "2025-07-25T00:52:31.237100Z",
       "stabilities": [
-        "unstable",
         "staging",
+        "unstable",
         "stable"
       ],
       "unfree": false,
@@ -240,8 +367,8 @@
       "rev_date": "2025-07-23T06:00:50Z",
       "scrape_date": "2025-07-25T01:11:42.437888Z",
       "stabilities": [
-        "unstable",
         "staging",
+        "unstable",
         "stable"
       ],
       "unfree": false,
@@ -273,8 +400,8 @@
       "rev_date": "2025-07-23T06:00:50Z",
       "scrape_date": "2025-07-25T01:36:43.961940Z",
       "stabilities": [
-        "unstable",
         "staging",
+        "unstable",
         "stable"
       ],
       "unfree": false,
@@ -306,8 +433,8 @@
       "rev_date": "2025-07-23T06:00:50Z",
       "scrape_date": "2025-07-25T00:29:12.639520Z",
       "stabilities": [
-        "unstable",
         "staging",
+        "unstable",
         "stable"
       ],
       "unfree": false,
@@ -337,8 +464,8 @@
       "rev_date": "2025-07-23T06:00:50Z",
       "scrape_date": "2025-07-25T00:52:41.005329Z",
       "stabilities": [
-        "unstable",
         "staging",
+        "unstable",
         "stable"
       ],
       "unfree": false,
@@ -368,8 +495,8 @@
       "rev_date": "2025-07-23T06:00:50Z",
       "scrape_date": "2025-07-25T01:11:47.859853Z",
       "stabilities": [
-        "unstable",
         "staging",
+        "unstable",
         "stable"
       ],
       "unfree": false,
@@ -399,8 +526,8 @@
       "rev_date": "2025-07-23T06:00:50Z",
       "scrape_date": "2025-07-25T01:36:54.585558Z",
       "stabilities": [
-        "unstable",
         "staging",
+        "unstable",
         "stable"
       ],
       "unfree": false,
@@ -430,8 +557,8 @@
       "rev_date": "2025-07-23T06:00:50Z",
       "scrape_date": "2025-07-25T00:29:48.856273Z",
       "stabilities": [
-        "unstable",
         "staging",
+        "unstable",
         "stable"
       ],
       "unfree": true,
@@ -461,8 +588,8 @@
       "rev_date": "2025-07-23T06:00:50Z",
       "scrape_date": "2025-07-25T00:53:31.251270Z",
       "stabilities": [
-        "unstable",
         "staging",
+        "unstable",
         "stable"
       ],
       "unfree": true,
@@ -492,8 +619,8 @@
       "rev_date": "2025-07-23T06:00:50Z",
       "scrape_date": "2025-07-25T01:12:23.184727Z",
       "stabilities": [
-        "unstable",
         "staging",
+        "unstable",
         "stable"
       ],
       "unfree": true,
@@ -523,8 +650,8 @@
       "rev_date": "2025-07-23T06:00:50Z",
       "scrape_date": "2025-07-25T01:37:48.220497Z",
       "stabilities": [
-        "unstable",
         "staging",
+        "unstable",
         "stable"
       ],
       "unfree": true,
@@ -552,8 +679,8 @@
       "rev_date": "2025-07-23T06:00:50Z",
       "scrape_date": "2025-07-25T00:30:11.800451Z",
       "stabilities": [
-        "unstable",
         "staging",
+        "unstable",
         "stable"
       ],
       "unfree": false,
@@ -581,8 +708,8 @@
       "rev_date": "2025-07-23T06:00:50Z",
       "scrape_date": "2025-07-25T00:54:01.707874Z",
       "stabilities": [
-        "unstable",
         "staging",
+        "unstable",
         "stable"
       ],
       "unfree": false,
@@ -610,8 +737,8 @@
       "rev_date": "2025-07-23T06:00:50Z",
       "scrape_date": "2025-07-25T01:12:46.135814Z",
       "stabilities": [
-        "unstable",
         "staging",
+        "unstable",
         "stable"
       ],
       "unfree": false,
@@ -639,8 +766,8 @@
       "rev_date": "2025-07-23T06:00:50Z",
       "scrape_date": "2025-07-25T01:38:20.400186Z",
       "stabilities": [
-        "unstable",
         "staging",
+        "unstable",
         "stable"
       ],
       "unfree": false,
@@ -670,8 +797,8 @@
       "rev_date": "2025-07-23T06:00:50Z",
       "scrape_date": "2025-07-25T00:54:01.955501Z",
       "stabilities": [
-        "unstable",
         "staging",
+        "unstable",
         "stable"
       ],
       "unfree": false,
@@ -701,8 +828,8 @@
       "rev_date": "2025-07-23T06:00:50Z",
       "scrape_date": "2025-07-25T01:38:20.669512Z",
       "stabilities": [
-        "unstable",
         "staging",
+        "unstable",
         "stable"
       ],
       "unfree": false,

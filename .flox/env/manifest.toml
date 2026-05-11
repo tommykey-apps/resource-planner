@@ -16,6 +16,7 @@ terraform.pkg-path = "terraform"
 xvfb.pkg-path = "xorg.xvfb"
 xvfb-run.pkg-path = "xvfb-run"
 xvfb-run.systems = ["x86_64-linux", "aarch64-linux"]
+drawio.pkg-path = "drawio"
 # gum.pkg-path = "gum"
 # gum.version = "^0.14.5"
 

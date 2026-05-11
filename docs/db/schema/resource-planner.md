@@ -3,20 +3,23 @@
 ## Description
 
 Single Table Design for resource planning.  
-pk: ORG#{clerk_org_id} - Multi-tenant isolation by Clerk organization.  
-sk: Entity prefix (RES#, PRJ#, ASN#) + entity-specific key.  
-Entities: Resource (people), Project (clients), Assignment (time allocations).  
-See ../entities.md and ../access-patterns.md for details.  
+pk varies by entity scope:  
+  - TEAM#{teamId}    - App entities (Resource / Project / Assignment / Team / Membership)  
+  - USER#{userId}    - Auth.js User / Account (managed by @auth/dynamodb-adapter)  
+  - SESSION#{token}  - Auth.js Session (TTL: expires)  
+  - VERIFICATION#{token} - Auth.js Magic Link verification token (TTL: expires)  
+Initial deployment uses default team "team_default"; multi-team support is wired but unused.  
+See ../entities.md and ../access-patterns.md, ADR 0008 / 0009 for history.  
 
 
 ## Attributes
 
-| Name   | Type | Default | Nullable | Children | Parents | Comment                                                                                                                                                                                              |
-| ------ | ---- | ------- | -------- | -------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| pk     | S    |         | false    |          |         | Partition key. Format: ORG#{clerk_org_id}.<br />All data for one organization shares the same pk for efficient queries.<br />                                                                        |
-| sk     | S    |         | false    |          |         | Sort key. Format varies by entity type:<br />- RES#{resource_id} for resources (people)<br />- PRJ#{project_id} for projects (clients)<br />- ASN#{start_date}#{assignment_id} for assignments<br /> |
-| GSI1PK | S    |         | false    |          |         |                                                                                                                                                                                                      |
-| GSI1SK | S    |         | false    |          |         |                                                                                                                                                                                                      |
+| Name   | Type | Default | Nullable | Children | Parents | Comment                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ------ | ---- | ------- | -------- | -------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| pk     | S    |         | false    |          |         | Partition key. Format varies by entity:<br />- TEAM#{teamId}        for app data (Resource / Project / Assignment / Team / Membership)<br />- USER#{userId}        for Auth.js User / Account records<br />- SESSION#{token}      for Auth.js Session records<br />- VERIFICATION#{token} for Auth.js Magic Link verification tokens<br />                                                                                                                                                                           |
+| sk     | S    |         | false    |          |         | Sort key. Format varies by entity type:<br />- META                                  for Team / User / Session / Verification meta records<br />- MEMBER#{userId}                       for Team membership<br />- RES#{resource_id}                     for resources (people)<br />- PRJ#{project_id}                      for projects (clients)<br />- ASN#{start_date}#{assignment_id}      for assignments<br />- ACCOUNT#{provider}#{providerAccountId} for Auth.js Account (per-provider link to User)<br /> |
+| GSI1PK | S    |         | false    |          |         |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| GSI1SK | S    |         | false    |          |         |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 ## Primary Key
 
