@@ -124,5 +124,11 @@
 		"label": "ユーザーメニュー",
 		"labelWithEmail": "ユーザーメニュー ({email})",
 		"signout": "サインアウト"
+	},
+	"emptyGuide": {
+		"label": "セットアップステップ",
+		"step1": "人を追加",
+		"step2": "案件を追加",
+		"step3": "アサインを作成"
 	}
 }

@@ -14,6 +14,7 @@
 	import ProjectManager from '$lib/components/ProjectManager.svelte';
 	import AssignmentCreator from '$lib/components/AssignmentCreator.svelte';
 	import AssignmentManager from '$lib/components/AssignmentManager.svelte';
+	import EmptyStateGuide from '$lib/components/EmptyStateGuide.svelte';
 	import AvatarDropdown from '$lib/components/AvatarDropdown.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import LocaleSwitcher from '$lib/components/LocaleSwitcher.svelte';
@@ -112,10 +113,15 @@
 </header>
 
 <main class="mx-auto max-w-[1200px] px-4 py-6">
+	<EmptyStateGuide
+		resourceCount={resources.length}
+		projectCount={projects.length}
+		assignmentCount={dbAssignments.length}
+	/>
+
 	{#if resources.length === 0}
 		<div class="empty-state">
-			<p>{t('resources.empty')}</p>
-			<p class="hint">{t('resources.emptyHint')}</p>
+			<p>{t('resources.emptyHint')}</p>
 		</div>
 	{:else}
 		<TimelineToolbar
