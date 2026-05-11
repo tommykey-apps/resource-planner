@@ -40,13 +40,16 @@ resource-planner はこれまで「動くコードを書いて手動で確認」
 - `pnpm test` — `vitest run` (CI / 一回実行)
 - `pnpm test:watch` — `vitest` (開発時の watch モード)
 - `pnpm test:coverage` — `vitest run --coverage`
-- `pnpm test:e2e` — `playwright test` (PR-T5 で導入、Phase 3 完了まで CI は disable)
+- `pnpm test:e2e` — `playwright test` (PR-T5 で導入、Phase 3 完了後 #112 で CI 有効化、未認証 smoke 段階)
 
 **Playwright 設定**:
 - `web/playwright.config.ts`: ローカル = Chromium / Firefox / WebKit、CI = Chromium のみ
 - `webServer` で `pnpm preview` を auto-start、port 4173
 - spec は `web/e2e/**/*.spec.ts`、結果は `test-results/` (.gitignore 済)
 - 実 sign-in fixture が必要なため、本格的な spec は **PR-A3 (Magic Link 移行)** 以降に書く
+- 履歴: PR-T5 (#77) では Phase 3 未完で `if: false` で disable、PR #109 / #110 を経て Phase 3
+  完了済となり #112 で test-e2e job を再有効化 (DDB Local + AUTH env stubs、未認証 smoke のみ)。
+  Magic Link sign-in fixture + 認証済 spec は #113 で扱う
 
 **起票プロセスへの反映**:
 - `.github/ISSUE_TEMPLATE/feature.yml` の AC に「unit test」「integration test (該当時)」「E2E
