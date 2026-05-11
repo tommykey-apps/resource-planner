@@ -5,6 +5,7 @@
 	import Dialog from './Dialog.svelte';
 	import { formatLocalDate } from '$lib/timeline-adapter';
 	import { createSubmitState } from '$lib/forms/submit-state.svelte';
+	import { translateServerError, type ServerErrors } from '$lib/forms/server-error';
 	import { t } from '$lib/i18n/index.svelte';
 	import type { Resource, Project } from '$lib/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
@@ -57,12 +58,12 @@
 			if (result.type === 'success') {
 				open = false;
 			} else if (result.type === 'failure') {
-				const errs = (result.data as { errors?: Record<string, string> })?.errors;
+				const errs = (result.data as { errors?: ServerErrors })?.errors;
 				formError = {
-					resourceId: errs?.resourceId,
-					projectId: errs?.projectId,
-					startDate: errs?.startDate,
-					endDate: errs?.endDate
+					resourceId: errs?.resourceId ? translateServerError(errs.resourceId) : undefined,
+					projectId: errs?.projectId ? translateServerError(errs.projectId) : undefined,
+					startDate: errs?.startDate ? translateServerError(errs.startDate) : undefined,
+					endDate: errs?.endDate ? translateServerError(errs.endDate) : undefined
 				};
 			}
 			await update();

@@ -5,6 +5,7 @@
 	import Dialog from './Dialog.svelte';
 	import { createSubmitState } from '$lib/forms/submit-state.svelte';
 	import { confirmDialog } from '$lib/forms/confirm-dialog';
+	import { translateServerError, type ServerErrors } from '$lib/forms/server-error';
 	import { t } from '$lib/i18n/index.svelte';
 	import type { Project, Assignment } from '$lib/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
@@ -61,8 +62,11 @@
 				formOpen = false;
 				editing = null;
 			} else if (result.type === 'failure') {
-				const errs = (result.data as { errors?: Record<string, string> })?.errors;
-				formError = { name: errs?.name, color: errs?.color };
+				const errs = (result.data as { errors?: ServerErrors })?.errors;
+				formError = {
+					name: errs?.name ? translateServerError(errs.name) : undefined,
+					color: errs?.color ? translateServerError(errs.color) : undefined
+				};
 			}
 			await update();
 		};

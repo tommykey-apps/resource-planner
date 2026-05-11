@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import type { ServerError } from '$lib/forms/server-error';
 
 /**
  * `?/updateAssignment` action の TDD (#99 item 1)。
@@ -85,10 +86,11 @@ describe('?/updateAssignment action (#99)', () => {
 		});
 		const result = (await actions.updateAssignment!(event)) as {
 			status: number;
-			data: { action: string; errors: Record<string, string> };
+			data: { action: string; errors: Record<string, ServerError> };
 		};
 		expect(result.status).toBe(400);
-		expect(result.data.errors.endDate).toBeTruthy();
+		// #139: server は i18n 済文字列を返さず { code, field } を返す契約
+		expect(result.data.errors.endDate).toEqual({ code: 'endBeforeStart', field: 'endDate' });
 		expect(updateAssignmentMock).not.toHaveBeenCalled();
 	});
 
@@ -103,10 +105,13 @@ describe('?/updateAssignment action (#99)', () => {
 		});
 		const result = (await actions.updateAssignment!(event)) as {
 			status: number;
-			data: { errors: Record<string, string> };
+			data: { errors: Record<string, ServerError> };
 		};
 		expect(result.status).toBe(400);
-		expect(result.data.errors.prevStartDate).toBeTruthy();
+		expect(result.data.errors.prevStartDate).toEqual({
+			code: 'invalidDateFormat',
+			field: 'prevStartDate'
+		});
 		expect(updateAssignmentMock).not.toHaveBeenCalled();
 	});
 });
@@ -138,9 +143,87 @@ describe('?/createResource action (#121)', () => {
 		const event = makeEvent({ name: '' });
 		const result = (await actions.createResource!(event)) as {
 			status: number;
-			data: { errors: Record<string, string> };
+			data: { errors: Record<string, ServerError> };
 		};
 		expect(result.status).toBe(400);
+		expect(result.data.errors.name).toEqual({ code: 'required', field: 'name' });
 		expect(createResourceMock).not.toHaveBeenCalled();
+	});
+});
+
+/**
+ * #139: server から i18n 済文字列を返さない契約。 deleteResource / deleteProject /
+ * deleteAssignment の id missing / startDate missing は { code, field } 形式で返ること
+ * と、 zod 経由の error が { code: 'required' | 'tooLong' | ... } になることを固定する。
+ */
+describe('#139 server error wire format (code, no localized strings)', () => {
+	beforeEach(() => {
+		requireSessionMock.mockReset().mockResolvedValue({ teamId: 'team_default', userId: 'u1' });
+	});
+
+	it('deleteResource: id missing → { code: required, field: id }', async () => {
+		const r = (await actions.deleteResource!(makeEvent({}))) as {
+			status: number;
+			data: { errors: Record<string, ServerError> };
+		};
+		expect(r.status).toBe(400);
+		expect(r.data.errors.id).toEqual({ code: 'required', field: 'id' });
+	});
+
+	it('deleteProject: id missing → { code: required, field: id }', async () => {
+		const r = (await actions.deleteProject!(makeEvent({}))) as {
+			status: number;
+			data: { errors: Record<string, ServerError> };
+		};
+		expect(r.status).toBe(400);
+		expect(r.data.errors.id).toEqual({ code: 'required', field: 'id' });
+	});
+
+	it('deleteAssignment: id missing → { code: required, field: id }', async () => {
+		const r = (await actions.deleteAssignment!(
+			makeEvent({ startDate: '2026-05-01' })
+		)) as { status: number; data: { errors: Record<string, ServerError> } };
+		expect(r.status).toBe(400);
+		expect(r.data.errors.id).toEqual({ code: 'required', field: 'id' });
+	});
+
+	it('deleteAssignment: startDate 不正 → { code: invalidDateFormat, field: startDate }', async () => {
+		const r = (await actions.deleteAssignment!(
+			makeEvent({ id: 'a1', startDate: '2026/05/01' })
+		)) as { status: number; data: { errors: Record<string, ServerError> } };
+		expect(r.status).toBe(400);
+		expect(r.data.errors.startDate).toEqual({
+			code: 'invalidDateFormat',
+			field: 'startDate'
+		});
+	});
+
+	it('createProject: 不正 color → { code: invalidColorFormat, field: color }', async () => {
+		const r = (await actions.createProject!(
+			makeEvent({ name: 'P', color: 'red' })
+		)) as { status: number; data: { errors: Record<string, ServerError> } };
+		expect(r.status).toBe(400);
+		expect(r.data.errors.color).toEqual({
+			code: 'invalidColorFormat',
+			field: 'color'
+		});
+	});
+
+	it('createResource: name 超過 → { code: tooLong, field: name, max: 100 }', async () => {
+		const r = (await actions.createResource!(
+			makeEvent({ name: 'a'.repeat(101) })
+		)) as { status: number; data: { errors: Record<string, ServerError> } };
+		expect(r.status).toBe(400);
+		expect(r.data.errors.name).toEqual({ code: 'tooLong', field: 'name', max: 100 });
+	});
+
+	it('error value は **必ず object** (string が混ざらない)', async () => {
+		const r = (await actions.deleteResource!(makeEvent({}))) as {
+			data: { errors: Record<string, unknown> };
+		};
+		for (const v of Object.values(r.data.errors)) {
+			expect(typeof v).toBe('object');
+			expect(v).not.toBeNull();
+		}
 	});
 });

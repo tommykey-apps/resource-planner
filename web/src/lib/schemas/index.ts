@@ -1,18 +1,30 @@
 import { z } from 'zod';
 import { addDays } from '$lib/date';
 
-const dateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'YYYY-MM-DD 形式で入力してください');
+/**
+ * #139: schema 内の `message` は **i18n code** に統一する (`errors.required` 等)。
+ * UI 側で `t(\`errors.${msg}\`)` で翻訳することで、 サーバから locale 済文字列を返さない契約。
+ *
+ * code 体系:
+ *   required           — 必須欠落 (min(1) など)
+ *   tooLong            — 長さ超過 (max())
+ *   invalidDateFormat  — 日付 YYYY-MM-DD パターン不一致
+ *   invalidColorFormat — #RRGGBB パターン不一致
+ *   endBeforeStart     — 終了日 < 開始日 (refine)
+ */
 
-const colorString = z.string().regex(/^#[0-9a-fA-F]{6}$/, '#RRGGBB 形式で入力してください');
+const dateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'invalidDateFormat');
+
+const colorString = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'invalidColorFormat');
 
 // ── Resource ────────────────────────────────────────────────────────
 
 export const resourceCreateSchema = z.object({
-	name: z.string().min(1, '必須').max(100, '100 文字以内')
+	name: z.string().min(1, 'required').max(100, 'tooLong')
 });
 
 export const resourceUpdateSchema = resourceCreateSchema.extend({
-	id: z.string().min(1)
+	id: z.string().min(1, 'required')
 });
 
 export type ResourceCreateInput = z.infer<typeof resourceCreateSchema>;
@@ -21,12 +33,12 @@ export type ResourceUpdateInput = z.infer<typeof resourceUpdateSchema>;
 // ── Project ─────────────────────────────────────────────────────────
 
 export const projectCreateSchema = z.object({
-	name: z.string().min(1, '必須').max(100, '100 文字以内'),
+	name: z.string().min(1, 'required').max(100, 'tooLong'),
 	color: colorString
 });
 
 export const projectUpdateSchema = projectCreateSchema.extend({
-	id: z.string().min(1)
+	id: z.string().min(1, 'required')
 });
 
 export type ProjectCreateInput = z.infer<typeof projectCreateSchema>;
@@ -45,13 +57,13 @@ export type ProjectUpdateInput = z.infer<typeof projectUpdateSchema>;
 
 export const assignmentCreateSchema = z
 	.object({
-		resourceId: z.string().min(1),
-		projectId: z.string().min(1),
+		resourceId: z.string().min(1, 'required'),
+		projectId: z.string().min(1, 'required'),
 		startDate: dateString,
 		endDate: dateString
 	})
 	.refine((v) => v.startDate <= v.endDate, {
-		message: '終了日は開始日以降にしてください',
+		message: 'endBeforeStart',
 		path: ['endDate']
 	})
 	.transform((input) => ({
@@ -63,14 +75,14 @@ export const assignmentCreateSchema = z
 
 export const assignmentUpdateSchema = z
 	.object({
-		id: z.string().min(1),
-		resourceId: z.string().min(1),
-		projectId: z.string().min(1),
+		id: z.string().min(1, 'required'),
+		resourceId: z.string().min(1, 'required'),
+		projectId: z.string().min(1, 'required'),
 		startDate: dateString,
 		endDate: dateString
 	})
 	.refine((v) => v.startDate <= v.endDate, {
-		message: '終了日は開始日以降にしてください',
+		message: 'endBeforeStart',
 		path: ['endDate']
 	})
 	.transform((input) => ({
@@ -89,15 +101,15 @@ export const assignmentUpdateSchema = z
  */
 export const assignmentFormUpdateSchema = z
 	.object({
-		id: z.string().min(1),
-		resourceId: z.string().min(1),
-		projectId: z.string().min(1),
+		id: z.string().min(1, 'required'),
+		resourceId: z.string().min(1, 'required'),
+		projectId: z.string().min(1, 'required'),
 		prevStartDate: dateString,
 		startDate: dateString,
 		endDate: dateString
 	})
 	.refine((v) => v.startDate <= v.endDate, {
-		message: '終了日は開始日以降にしてください',
+		message: 'endBeforeStart',
 		path: ['endDate']
 	})
 	.transform((input) => ({
@@ -131,13 +143,13 @@ export type AssignmentUpdatePayload = z.output<typeof assignmentUpdateSchema>;
 export const assignmentApiUpdateSchema = z
 	.object({
 		prevStartDate: dateString,
-		resourceId: z.string().min(1),
-		projectId: z.string().min(1),
+		resourceId: z.string().min(1, 'required'),
+		projectId: z.string().min(1, 'required'),
 		startDate: dateString,
 		endDateExclusive: dateString
 	})
 	.refine((v) => v.startDate < v.endDateExclusive, {
-		message: 'endDateExclusive must be strictly after startDate',
+		message: 'endBeforeStart',
 		path: ['endDateExclusive']
 	});
 

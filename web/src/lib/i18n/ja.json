@@ -138,5 +138,23 @@
 		"step1": "人を追加",
 		"step2": "案件を追加",
 		"step3": "アサインを作成"
+	},
+	"errors": {
+		"generic": "入力エラー",
+		"required": "{field} は必須です",
+		"tooLong": "{field} は {max} 文字以内で入力してください",
+		"invalidDateFormat": "{field} は YYYY-MM-DD 形式で入力してください",
+		"invalidColorFormat": "色は #RRGGBB 形式で入力してください",
+		"endBeforeStart": "終了日は開始日以降にしてください"
+	},
+	"fields": {
+		"id": "id",
+		"name": "名前",
+		"color": "色",
+		"startDate": "開始日",
+		"endDate": "終了日",
+		"prevStartDate": "前回開始日",
+		"resourceId": "人",
+		"projectId": "案件"
 	}
 }

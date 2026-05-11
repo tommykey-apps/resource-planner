@@ -208,6 +208,85 @@ describe('assignmentFormUpdateSchema (#99)', () => {
 	});
 });
 
+/**
+ * #139: schema 内 `message` は **i18n code** であること (UI で `t(`errors.${msg}`)` で翻訳)。
+ * 日本語 hardcode を含まないことを正規表現で守る。
+ */
+describe('error message contract — i18n codes (#139)', () => {
+	const ALLOWED_CODES = new Set([
+		'required',
+		'tooLong',
+		'invalidDateFormat',
+		'invalidColorFormat',
+		'endBeforeStart'
+	]);
+
+	function collect(schema: { safeParse: (v: unknown) => { success: boolean; error?: { issues: { message: string }[] } } }, input: unknown): string[] {
+		const r = schema.safeParse(input);
+		if (r.success || !r.error) return [];
+		return r.error.issues.map((i) => i.message);
+	}
+
+	it('resourceCreateSchema: empty name → "required"', () => {
+		expect(collect(resourceCreateSchema, { name: '' })).toContain('required');
+	});
+
+	it('resourceCreateSchema: too long name → "tooLong"', () => {
+		expect(collect(resourceCreateSchema, { name: 'a'.repeat(101) })).toContain('tooLong');
+	});
+
+	it('projectCreateSchema: bad color → "invalidColorFormat"', () => {
+		expect(collect(projectCreateSchema, { name: 'P', color: 'red' })).toContain(
+			'invalidColorFormat'
+		);
+	});
+
+	it('assignmentCreateSchema: bad date → "invalidDateFormat"', () => {
+		expect(
+			collect(assignmentCreateSchema, {
+				resourceId: 'r',
+				projectId: 'p',
+				startDate: '2026/05/01',
+				endDate: '2026-05-02'
+			})
+		).toContain('invalidDateFormat');
+	});
+
+	it('assignmentCreateSchema: endDate < startDate → "endBeforeStart"', () => {
+		expect(
+			collect(assignmentCreateSchema, {
+				resourceId: 'r',
+				projectId: 'p',
+				startDate: '2026-05-10',
+				endDate: '2026-05-01'
+			})
+		).toContain('endBeforeStart');
+	});
+
+	it('全 message は ALLOWED_CODES に含まれる (日本語 hardcode 検知)', () => {
+		const samples = [
+			collect(resourceCreateSchema, { name: '' }),
+			collect(resourceCreateSchema, { name: 'a'.repeat(101) }),
+			collect(projectCreateSchema, { name: '', color: 'red' }),
+			collect(assignmentCreateSchema, {
+				resourceId: '',
+				projectId: '',
+				startDate: 'bad',
+				endDate: 'bad'
+			}),
+			collect(assignmentCreateSchema, {
+				resourceId: 'r',
+				projectId: 'p',
+				startDate: '2026-05-10',
+				endDate: '2026-05-01'
+			})
+		].flat();
+		for (const msg of samples) {
+			expect(ALLOWED_CODES, `unexpected message: ${JSON.stringify(msg)}`).toContain(msg);
+		}
+	});
+});
+
 describe('assignmentApiUpdateSchema', () => {
 	const valid = {
 		prevStartDate: '2026-05-01',

@@ -138,5 +138,23 @@
 		"step1": "Add a person",
 		"step2": "Add a project",
 		"step3": "Create an assignment"
+	},
+	"errors": {
+		"generic": "Input error",
+		"required": "{field} is required",
+		"tooLong": "{field} must be at most {max} characters",
+		"invalidDateFormat": "{field} must be in YYYY-MM-DD format",
+		"invalidColorFormat": "Color must be in #RRGGBB format",
+		"endBeforeStart": "End date must be on or after the start date"
+	},
+	"fields": {
+		"id": "id",
+		"name": "Name",
+		"color": "Color",
+		"startDate": "Start date",
+		"endDate": "End date",
+		"prevStartDate": "Previous start date",
+		"resourceId": "Person",
+		"projectId": "Project"
 	}
 }
