@@ -1,14 +1,20 @@
 import { expect, test } from '@playwright/test';
 
 /**
- * 最小 smoke spec。Phase 3 (Auth.js + Magic Link) 完了後に sign-in / CRUD spec を追加する前の土台。
+ * 最小 smoke spec (#112)。未認証で `/` にアクセスすると `/sign-in` にリダイレクトされることを
+ * 検証する。Auth.js + DDB が初期化済、redirect logic が正常動作している、の 2 点を CI で守る。
  *
- * 本テストは未認証アクセスの想定挙動 (sign-in リダイレクト or 認証画面表示) を確認するのみ。
- * 認証 fixture が必要な spec は PR-A3 以降で追加。
+ * Magic Link 経由の sign-in fixture / 認証済 spec は #113 で別途追加。
  */
-test('home page responds (any 2xx/3xx) — minimal smoke', async ({ page }) => {
+test('unauthenticated access to / redirects to /sign-in', async ({ page }) => {
 	const response = await page.goto('/');
 	expect(response).not.toBeNull();
-	const status = response!.status();
-	expect(status).toBeLessThan(400);
+	expect(response!.status()).toBeLessThan(400);
+	await expect(page).toHaveURL(/\/sign-in($|\?)/);
+});
+
+test('/sign-in renders the email sign-in form', async ({ page }) => {
+	await page.goto('/sign-in');
+	await expect(page.locator('input[name="email"]')).toBeVisible();
+	await expect(page.locator('button[type="submit"]')).toBeVisible();
 });
