@@ -40,8 +40,8 @@
 				type="email"
 				required
 				autocomplete="email"
-				disabled={submitting}
-				class="w-full rounded border border-input bg-background px-3 py-2 disabled:opacity-60"
+				readonly={submitting}
+				class="w-full rounded border border-input bg-background px-3 py-2 read-only:opacity-60"
 				placeholder={t('signin.emailPlaceholder')}
 			/>
 		</div>
