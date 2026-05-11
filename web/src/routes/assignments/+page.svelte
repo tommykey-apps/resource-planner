@@ -5,7 +5,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import * as Table from '$lib/components/ui/table';
 	import { addDays } from '$lib/date';
-	import { createSubmitState } from '$lib/forms/submit-state.svelte';
+	import { confirmDialog } from '$lib/forms/confirm-dialog';
 	import { t } from '$lib/i18n/index.svelte';
 	import AssignmentEditor from '$lib/components/AssignmentEditor.svelte';
 	import {
@@ -76,8 +76,18 @@
 		editOpen = true;
 	}
 
-	const deleteState = createSubmitState();
-	const deleteSubmit: SubmitFunction = deleteState.wrap();
+	/** #132: assignment の delete 確認 dialog (window.confirm 代替)。 */
+	function makeDeleteSubmit(args: { label: string }): SubmitFunction {
+		return async ({ cancel }) => {
+			const ok = await confirmDialog({
+				title: t('common.confirm'),
+				message: t('assignments.confirmDelete', { label: args.label }),
+				confirmLabel: t('common.delete'),
+				destructive: true
+			});
+			if (!ok) cancel();
+		};
+	}
 
 	function clearFilters() {
 		filters = { q: '', resourceId: '', projectId: '', from: '', to: '' };
@@ -189,22 +199,13 @@
 									<form
 										method="POST"
 										action="/?/deleteAssignment"
-										use:enhance={deleteSubmit}
-										onsubmit={(e) => {
-											const label = `${resource?.name ?? '?'} × ${project?.name ?? '?'} (${a.startDate} 〜 ${displayEndDate(a)})`;
-											if (!confirm(t('assignments.confirmDelete', { label }))) {
-												e.preventDefault();
-											}
-										}}
+										use:enhance={makeDeleteSubmit({
+											label: `${resource?.name ?? '?'} × ${project?.name ?? '?'} (${a.startDate} 〜 ${displayEndDate(a)})`
+										})}
 									>
 										<input type="hidden" name="id" value={a.id} />
 										<input type="hidden" name="startDate" value={a.startDate} />
-										<Button
-											size="xs"
-											variant="destructive"
-											type="submit"
-											disabled={deleteState.submitting}
-										>
+										<Button size="xs" variant="destructive" type="submit">
 											{t('common.delete')}
 										</Button>
 									</form>

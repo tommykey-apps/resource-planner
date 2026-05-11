@@ -4,6 +4,7 @@
 	import { Button } from './ui/button';
 	import Dialog from './Dialog.svelte';
 	import { createSubmitState } from '$lib/forms/submit-state.svelte';
+	import { confirmDialog } from '$lib/forms/confirm-dialog';
 	import { t } from '$lib/i18n/index.svelte';
 	import type { Resource, Assignment } from '$lib/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
@@ -38,9 +39,8 @@
 	let formName = $state('');
 	let formError = $state<string | null>(null);
 
-	// 連打抑制 + submitting state (#94)。create / update form と delete form でそれぞれ独立に管理。
+	// 連打抑制 + submitting state (#94)。create / update form 用 (delete は #132 で confirm dialog が modal ブロックするため不要)。
 	const formSubmitState = createSubmitState();
-	const deleteSubmitState = createSubmitState();
 
 	function startCreate() {
 		editing = null;
@@ -100,7 +100,27 @@
 		};
 	});
 
-	const deleteSubmit: SubmitFunction = deleteSubmitState.wrap();
+	/**
+	 * #132: delete 押下時に confirmDialog (= bits-ui AlertDialog、i18n 完全対応) を await し、
+	 * cancel 押下なら enhance の cancel() で form action 自体を抑止する。
+	 * window.confirm の OS-native ボタンが locale に乗らない問題の代替。連打抑制は dialog が
+	 * modal で UI ブロックするので submit-state wrap 不要。
+	 */
+	function makeDeleteSubmit(args: { name: string; count: number }): SubmitFunction {
+		return async ({ cancel }) => {
+			const msg =
+				args.count > 0
+					? t('resources.confirmDeleteWithAssignments', { name: args.name, count: args.count })
+					: t('resources.confirmDelete', { name: args.name });
+			const ok = await confirmDialog({
+				title: t('common.confirm'),
+				message: msg,
+				confirmLabel: t('common.delete'),
+				destructive: true
+			});
+			if (!ok) cancel();
+		};
+	}
 </script>
 
 <Button variant="outline" onclick={() => (listOpen = true)}>
@@ -136,24 +156,13 @@
 							<form
 								method="POST"
 								action="?/deleteResource"
-								use:enhance={deleteSubmit}
-								onsubmit={(e) => {
-									const msg =
-										count > 0
-											? t('resources.confirmDeleteWithAssignments', { name: r.name, count })
-											: t('resources.confirmDelete', { name: r.name });
-									if (!confirm(msg)) {
-										e.preventDefault();
-									}
-								}}
+								use:enhance={makeDeleteSubmit({
+									name: r.name,
+									count
+								})}
 							>
 								<input type="hidden" name="id" value={r.id} />
-								<Button
-									size="xs"
-									variant="destructive"
-									type="submit"
-									disabled={deleteSubmitState.submitting}
-								>
+								<Button size="xs" variant="destructive" type="submit">
 									{t('common.delete')}
 								</Button>
 							</form>
