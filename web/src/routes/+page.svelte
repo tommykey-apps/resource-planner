@@ -13,7 +13,8 @@
 	import ResourceManager from '$lib/components/ResourceManager.svelte';
 	import ProjectManager from '$lib/components/ProjectManager.svelte';
 	import AssignmentCreator from '$lib/components/AssignmentCreator.svelte';
-	import AssignmentManager from '$lib/components/AssignmentManager.svelte';
+	import { Button } from '$lib/components/ui/button';
+	import ListChecks from 'phosphor-svelte/lib/ListChecks';
 	import EmptyStateGuide from '$lib/components/EmptyStateGuide.svelte';
 	import AvatarDropdown from '$lib/components/AvatarDropdown.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
@@ -104,7 +105,12 @@
 			<ResourceManager {resources} assignments={dbAssignments} />
 			<ProjectManager {projects} assignments={dbAssignments} />
 			<AssignmentCreator {resources} {projects} />
-			<AssignmentManager assignments={dbAssignments} {resources} {projects} />
+			<Button variant="outline" href="/assignments">
+				<ListChecks size={18} weight="regular" aria-hidden="true" />
+				<span class="hidden sm:ml-1 sm:inline"
+					>{t('assignments.listWithCount', { count: dbAssignments.length })}</span
+				>
+			</Button>
 			<LocaleSwitcher />
 			<ThemeToggle />
 			<AvatarDropdown email={data.user?.email ?? ''} />

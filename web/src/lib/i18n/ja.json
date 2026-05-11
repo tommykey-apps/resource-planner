@@ -77,7 +77,14 @@
 		"requirePeopleAndProjects": "人と案件を 1 件以上登録してから作成できます",
 		"updateError": "アサインの更新に失敗しました",
 		"networkError": "通信エラー",
-		"confirmDelete": "このアサインを削除しますか?\n{label}"
+		"confirmDelete": "このアサインを削除しますか?\n{label}",
+		"searchPlaceholder": "人 / 案件で検索",
+		"allResources": "すべての人",
+		"allProjects": "すべての案件",
+		"matchCount": "{count} 件",
+		"clearFilters": "フィルタをクリア",
+		"noMatches": "条件に一致するアサインはありません",
+		"durationDays": "日数"
 	},
 	"signin": {
 		"title": "サインイン",
