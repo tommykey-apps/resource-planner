@@ -110,3 +110,91 @@ test('home: hover で bar の tooltip が常時表示される (ui-components 0.
 	const tooltip = page.locator('.ui-bar-tooltip').first();
 	await expect(tooltip).toBeVisible({ timeout: 1000 });
 });
+
+/**
+ * ui-components 0.9.1 (#42): hover tooltip を **カーソル位置に追従** させる修正。 旧 (0.8.0)
+ * では bar 全体が anchor で、 wide bar の場合 tooltip が画面端に貼り付く問題があった。
+ *
+ * 検証ポイント:
+ *   - bits-ui の floating-ui wrapper が出力する \`--bits-floating-anchor-width\` が **0px**
+ *     (= virtual element pattern、 bar 全体 anchor なら bar の width が入る)
+ *   - tooltip の center 座標が cursor 位置 ± offset の範囲内
+ */
+test('home: tooltip がカーソルに追従する (ui-components 0.9.1 #42)', async ({ page }) => {
+	await signIn(page);
+	await bootstrap1Assignment(page, `tooltip-follow-${Date.now()}`);
+	await page.goto('/?d=2026-05-12&z=day');
+
+	const firstBar = page.locator('div.bar, [class~="bar"]').first();
+	await expect(firstBar).toBeVisible();
+	await firstBar.hover();
+
+	const tooltip = page.locator('.ui-bar-tooltip').first();
+	await expect(tooltip).toBeVisible({ timeout: 1500 });
+
+	// 主検証: floating-ui wrapper の \`--bits-floating-anchor-width\` で anchor 種別判定。
+	//   - 旧 (0.8.0 以前): bar 全体が anchor → anchor-width = bar.width (数百 px)
+	//   - 新 (0.9.0 #42):  virtual element (cursor point) → anchor-width = 0px
+	const wrapper = page.locator('[data-bits-floating-content-wrapper]').first();
+	const anchorWidth = await wrapper.evaluate(
+		(el) => getComputedStyle(el).getPropertyValue('--bits-floating-anchor-width').trim()
+	);
+	expect(
+		anchorWidth,
+		`--bits-floating-anchor-width=${anchorWidth} ですが virtual element pattern なら "0px" のはず`
+	).toBe('0px');
+});
+
+/**
+ * ui-components 0.9.1 (#43): resourceColWidth='auto' で rail を最長名 + padding に fit させる
+ * 機能。 過去 (#34, PR #161) は CSS Grid \`minmax(min, fit-content(max))\` で実装したが本番事故
+ * (#162) になったため rollback (PR #163)。 今回は Canvas measureText で再実装 (#47)。
+ */
+test('home: resource rail が最長名に auto-fit する (ui-components 0.9.1 #43)', async ({
+	page
+}) => {
+	await signIn(page);
+	// 短名と長名を混ぜて auto-fit が効くか確認
+	const suffix = `autofit-${Date.now()}`;
+	await page.getByRole('button', { name: /Manage people/ }).click();
+	await page.getByRole('button', { name: /\+ Add person/ }).click();
+	await page.locator('input[name="name"]').fill('短');
+	await page.getByRole('button', { name: /^Create$/ }).click();
+	await expect(page.locator('li', { hasText: '短' }).first()).toBeVisible();
+	await page.getByRole('button', { name: /\+ Add person/ }).click();
+	const longName = `長い名前テスト ${suffix}`;
+	await page.locator('input[name="name"]').fill(longName);
+	await page.getByRole('button', { name: /^Create$/ }).click();
+	await expect(page.locator('li', { hasText: longName })).toBeVisible();
+	await page.keyboard.press('Escape');
+
+	await page.goto('/?d=2026-05-12&z=day');
+
+	const rail = page.locator('aside.resources, [class~="resources"]').first();
+	await expect(rail).toBeVisible();
+
+	// 長名を含む resource-row が rail 内に存在
+	const longRow = rail.locator('.resource-row', { hasText: longName });
+	await expect(longRow).toBeVisible();
+
+	// rail width が最長名の表示に必要な幅を満たしている (= ellipsis されてない)
+	const longRowMeasure = await longRow.evaluate((el) => ({
+		clientWidth: el.clientWidth,
+		scrollWidth: el.scrollWidth
+	}));
+	expect(
+		longRowMeasure.scrollWidth,
+		`最長名 row が ellipsis 切れしている (clientWidth=${longRowMeasure.clientWidth}, scrollWidth=${longRowMeasure.scrollWidth})`
+	).toBeLessThanOrEqual(longRowMeasure.clientWidth);
+
+	// rail width は固定 200px ではなく、 auto-fit で広がっている (長名 + padding > 200px のはず)
+	const railBox = await rail.boundingBox();
+	expect(railBox).not.toBeNull();
+	expect(
+		railBox!.width,
+		`rail.width=${railBox!.width}px (auto-fit なら長名+padding で 200px 超えてるはず)`
+	).toBeGreaterThan(200);
+
+	// max=400px 上限内
+	expect(railBox!.width).toBeLessThanOrEqual(420);
+});

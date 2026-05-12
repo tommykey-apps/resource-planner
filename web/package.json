@@ -61,7 +61,7 @@
 		"@aws-sdk/client-sesv2": "^3.1045.0",
 		"@aws-sdk/client-ssm": "^3.1045.0",
 		"@aws-sdk/lib-dynamodb": "^3.1045.0",
-		"@tommykey-apps/ui-components": "^0.8.0",
+		"@tommykey-apps/ui-components": "^0.9.1",
 		"bits-ui": "^2.18.0",
 		"clsx": "^2.1.1",
 		"mode-watcher": "^1.1.0",
