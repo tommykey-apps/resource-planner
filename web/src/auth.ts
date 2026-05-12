@@ -1,8 +1,6 @@
 /**
  * Auth.js 設定の入り口 (#65 / #79 / #81 / #83 / #85)。
- *
- * PR-A4 (本 PR) で **production infra** (SSM AUTH_SECRET + SES SDK 経由送信) を実装。
- * Clerk と並行稼働中、Clerk 撤去は PR-A5。
+ * 認証は Email Magic Link 単体 (ADR 0008 で Clerk から移行済)。
  *
  * - dev / test: env から AUTH_SECRET 直接 / sendVerificationRequest を console.log
  * - production (Lambda): env.AUTH_SECRET 未設定 + env.AUTH_SECRET_PARAM 設定

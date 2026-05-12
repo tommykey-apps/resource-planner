@@ -4,8 +4,6 @@
  * Auth.js (`@auth/sveltekit`) が `event.locals.auth` を async session getter として
  * 注入するため、本関数は **async** で session を await して `AppSession` 形に整形する。
  *
- * Clerk fallback (PR-A1〜A4 で同居していた経路) は PR-A5 で削除。
- *
  * - `teamId`: 現状は `'team_default'` 固定 (PR-A2 で auto-join 済)。将来 multi-team
  *   対応では last-used team を session に保存する別 PR で。
  */

@@ -12,7 +12,7 @@
 | UI | Svelte | 5.55+ |
 | Bundler | Vite | 8 |
 | Styling | Tailwind CSS | 4 |
-| Component Library | `@tommykey-apps/ui-components` | (private) |
+| Component Library | [`@tommykey-apps/ui-components`](https://github.com/tommykey-apps/ui-components) (private) | 0.9.x |
 | Adapter | `@sveltejs/adapter-node` | 5 |
 | Auth | Auth.js + Email Magic Link | `@auth/sveltekit` 1.11+ |
 | DB | DynamoDB (Single Table Design) | — |
@@ -87,6 +87,18 @@ pnpm test
 
 CI では `.github/workflows/ci.yaml` の `test` job が `services.dynamodb` で起動して unit + integration を一括実行する。
 詳細方針は [ADR 0007](docs/adr/0007-tdd-with-vitest-and-playwright.md) 参照。
+
+## UI 構成
+
+主要画面 (home `/` / assignments `/assignments`) は [`@tommykey-apps/ui-components`](https://github.com/tommykey-apps/ui-components) の `ResourceTimeline` + `TimelineToolbar` を組み合わせて構成する。 直近の version で取り込んだ機能:
+
+| 機能 | 採用箇所 | 関連 ui-components issue |
+|---|---|---|
+| Cursor follow hover tooltip (旧: bar 中央 anchor で wide bar 時画面端に貼り付き) | `web/src/routes/+page.svelte` | #42 / #48 / #50 |
+| Resource rail auto-fit (最長名 + chrome を Canvas measureText で実測、 `resourceColWidth="auto"`) | 同上 | #43 / #47 / #51 / #53 |
+| i18n labels prop | 全 ResourceTimeline 利用箇所 | #33 |
+
+ui-components 側の挙動と props 一覧は [tommykey-apps/ui-components README](https://github.com/tommykey-apps/ui-components#available-components) 参照。
 
 ## アーキテクチャ
 
