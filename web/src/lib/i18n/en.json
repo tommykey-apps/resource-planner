@@ -23,7 +23,16 @@
 		"zoomDay": "Day",
 		"zoomWeek": "Week",
 		"zoomMonth": "Month",
-		"zoomYear": "Year"
+		"zoomYear": "Year",
+		"barResizeStart": "Resize start date",
+		"barResizeEnd": "Resize end date",
+		"canvasRegion": "Timeline canvas",
+		"statusMoved": "Moved: {range}",
+		"statusResizeStart": "Start date changed: {range}",
+		"statusResizeEnd": "End date changed: {range}",
+		"statusKeyMoved": "Moved by keyboard: {range}",
+		"statusKeyResizeStart": "Start date changed by keyboard: {range}",
+		"statusKeyResizeEnd": "End date changed by keyboard: {range}"
 	},
 	"resources": {
 		"manage": "Manage people",

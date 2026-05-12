@@ -23,7 +23,16 @@
 		"zoomDay": "日",
 		"zoomWeek": "週",
 		"zoomMonth": "月",
-		"zoomYear": "年"
+		"zoomYear": "年",
+		"barResizeStart": "開始日リサイズ",
+		"barResizeEnd": "終了日リサイズ",
+		"canvasRegion": "タイムライン",
+		"statusMoved": "移動: {range}",
+		"statusResizeStart": "開始日変更: {range}",
+		"statusResizeEnd": "終了日変更: {range}",
+		"statusKeyMoved": "キー移動: {range}",
+		"statusKeyResizeStart": "キー開始日変更: {range}",
+		"statusKeyResizeEnd": "キー終了日変更: {range}"
 	},
 	"resources": {
 		"manage": "人を管理",
