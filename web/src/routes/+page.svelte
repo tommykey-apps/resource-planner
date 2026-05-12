@@ -150,6 +150,22 @@
 			assignments={timelineAssignments}
 			bind:viewportStart
 			{zoom}
+			resourceColWidth="auto"
+			labels={{
+				bar: {
+					resizeStart: t('timeline.barResizeStart'),
+					resizeEnd: t('timeline.barResizeEnd')
+				},
+				canvas: { region: t('timeline.canvasRegion') },
+				status: {
+					move: (range) => t('timeline.statusMoved', { range }),
+					resizeStart: (range) => t('timeline.statusResizeStart', { range }),
+					resizeEnd: (range) => t('timeline.statusResizeEnd', { range }),
+					keyMove: (range) => t('timeline.statusKeyMoved', { range }),
+					keyResizeStart: (range) => t('timeline.statusKeyResizeStart', { range }),
+					keyResizeEnd: (range) => t('timeline.statusKeyResizeEnd', { range })
+				}
+			}}
 			onMove={handleUpdate}
 			onResize={handleUpdate}
 		/>
