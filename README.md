@@ -71,6 +71,10 @@ pnpm test:watch            # Vitest watch mode
 pnpm test:coverage         # Vitest + v8 coverage
 ```
 
+### コード品質 audit
+
+Claude Code セッションで `web/src/` を編集すると、 ターン終了時に `/audit` skill 実行が自動推奨される (`.claude/hooks/stop-audit-gate.sh` 経由)。 audit は `pnpm check` / `pnpm test` / `knip` (unused exports) / `jscpd` (重複コード) / `madge` (循環依存) を順次実行し、 大規模変更時は `code-reviewer` subagent も spawn する。 ローカルバイパス防止のため PR 時に CI でも同 audit を走らせる (`.github/workflows/audit.yaml`、 `continue-on-error` で warning レベル)。 詳細は [CLAUDE.md](CLAUDE.md#コード品質-audit-自動化-188) 参照。
+
 ### 統合テストの実行
 
 `web/src/lib/repository/integration.test.ts` は `AWS_ENDPOINT_URL` が設定されている時のみ実行

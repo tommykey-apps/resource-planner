@@ -124,6 +124,18 @@ Claude Code session 内で本 repo を編集する際は **必ず先にテスト
 - staged されていなければ `permissionDecision: "ask"` で確認 prompt (deny ではなく ask、iterative work を阻害しない)
 - AI / 人間共通の discipline。RED → GREEN → REFACTOR で進める
 
+## コード品質 audit 自動化 (#188)
+
+コーディング後に静的解析 + code review が自動推奨される仕組みを Claude Code hooks + CI で組んでいる。
+
+- **PostToolUse hook** (`Edit|Write`): 編集ファイルを `.claude/state/dirty-files.log` に記録 + `dirty.flag` touch (`.claude/hooks/post-edit-touch.sh`)
+- **Stop hook**: dirty なら次ターンの additionalContext に「`/audit` 推奨」を soft 通知 (強制 block ではない)。 `.claude/state/dirty.flag` を `rm` で skip 可能
+- **`/audit` skill** (user-level): `pnpm check` / `pnpm test` / `knip` (unused) / `jscpd` (重複) / `madge` (循環) → 大規模変更時は `code-reviewer` agent spawn → dirty クリア
+- **`code-reviewer` agent** (user-level): SvelteKit 2 / Svelte 5 / TS / Auth.js / DynamoDB / Zod / Terraform の公式 docs 準拠を厳しく見る、 「`unknown` キャスト / マジック数値 / 公式 docs 省略」 等の手癖を重点検出
+- **CI audit workflow** (`.github/workflows/audit.yaml`): ローカルバイパスされても PR で同 audit を実行 (`continue-on-error` で main CI と分離)
+
+audit 系コマンドは未 install でも `pnpm dlx` で動的取得。 速度重視なら devDeps 化。
+
 ## 関連リポジトリ
 
 - [tommykey-apps/ui-components](https://github.com/tommykey-apps/ui-components) — ResourceTimeline コンポーネント
