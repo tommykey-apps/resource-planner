@@ -4,7 +4,7 @@
 	import { page } from '$app/state';
 	import { Button } from '$lib/components/ui/button';
 	import * as Table from '$lib/components/ui/table';
-	import { addDays } from '$lib/date';
+	import { addDays, parseLocalDate } from '$lib/date';
 	import { confirmDialog } from '$lib/forms/confirm-dialog';
 	import { t } from '$lib/i18n/index.svelte';
 	import AppHeader from '$lib/components/AppHeader.svelte';
@@ -45,9 +45,11 @@
 	}
 
 	function duration(a: Assignment): number {
-		// inclusive 日数 = endDateExclusive - startDate (in days)
-		const start = new Date(a.startDate).getTime();
-		const end = new Date(a.endDateExclusive).getTime();
+		// inclusive 日数 = endDateExclusive - startDate (in days)。
+		// ADR 0004 の精神 (localDate 解釈を散らさない) に従い `parseLocalDate` 経由で host TZ
+		// 暦日として解釈、 UTC parse による日跨ぎズレを防ぐ。
+		const start = parseLocalDate(a.startDate).getTime();
+		const end = parseLocalDate(a.endDateExclusive).getTime();
 		return Math.max(1, Math.round((end - start) / 86_400_000));
 	}
 

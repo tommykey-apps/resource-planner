@@ -12,17 +12,10 @@
  * 規約が一致しているため `±1 day` 変換は **不要**。
  */
 
-/** YYYY-MM-DD。Asia/Tokyo の暦日 (TZ なし floating)。 */
+/** YYYY-MM-DD。 host TZ の暦日として解釈・format する floating string (UTC ではない)。 */
 export type DateString = string;
 
-/** 認証ユーザー (Auth.js / Clerk のいずれか経由で識別される) */
-export interface User {
-	id: string;
-	email: string;
-	name?: string;
-}
-
-/** チーム (旧 Clerk Org の置き換え。社内 1 チーム想定、将来 multi-team)。 */
+/** チーム = multi-tenant 単位 (社内 1 チーム想定、 将来 multi-team は ADR 0009 参照)。 */
 export interface Team {
 	id: string;
 	name: string;
