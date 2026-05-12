@@ -112,7 +112,7 @@ test('home: hover で bar の tooltip が常時表示される (ui-components 0.
 });
 
 /**
- * ui-components 0.9.1 (#42): hover tooltip を **カーソル位置に追従** させる修正。 旧 (0.8.0)
+ * ui-components 0.9.2 (#42): hover tooltip を **カーソル位置に追従** させる修正。 旧 (0.8.0)
  * では bar 全体が anchor で、 wide bar の場合 tooltip が画面端に貼り付く問題があった。
  *
  * 検証ポイント:
@@ -120,7 +120,7 @@ test('home: hover で bar の tooltip が常時表示される (ui-components 0.
  *     (= virtual element pattern、 bar 全体 anchor なら bar の width が入る)
  *   - tooltip の center 座標が cursor 位置 ± offset の範囲内
  */
-test('home: tooltip がカーソルに追従する (ui-components 0.9.1 #42)', async ({ page }) => {
+test('home: tooltip がカーソルに追従する (ui-components 0.9.2 #42)', async ({ page }) => {
 	await signIn(page);
 	await bootstrap1Assignment(page, `tooltip-follow-${Date.now()}`);
 	await page.goto('/?d=2026-05-12&z=day');
@@ -146,11 +146,11 @@ test('home: tooltip がカーソルに追従する (ui-components 0.9.1 #42)', a
 });
 
 /**
- * ui-components 0.9.1 (#43): resourceColWidth='auto' で rail を最長名 + padding に fit させる
+ * ui-components 0.9.2 (#43): resourceColWidth='auto' で rail を最長名 + padding に fit させる
  * 機能。 過去 (#34, PR #161) は CSS Grid \`minmax(min, fit-content(max))\` で実装したが本番事故
  * (#162) になったため rollback (PR #163)。 今回は Canvas measureText で再実装 (#47)。
  */
-test('home: resource rail が最長名に auto-fit する (ui-components 0.9.1 #43)', async ({
+test('home: resource rail が最長名に auto-fit する (ui-components 0.9.2 #43)', async ({
 	page
 }) => {
 	await signIn(page);
