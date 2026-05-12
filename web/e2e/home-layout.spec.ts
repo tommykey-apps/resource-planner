@@ -90,3 +90,23 @@ test('home: ResourceTimeline の rail が collapse せず、 bar も visible', a
 			'rail と canvas (headers) が重なっている = column 1 が collapse'
 	).toBeGreaterThanOrEqual(railBox!.x + railBox!.width - 5);
 });
+
+/**
+ * ui-components 0.8.0 で #32 sticky label が revert され、 hover tooltip が常時 enabled に
+ * なった (#39)。 旧仕様 (ellipsis 切れ時のみ tooltip) からの behavior change を CI で守る。
+ */
+test('home: hover で bar の tooltip が常時表示される (ui-components 0.8.0 #39)', async ({
+	page
+}) => {
+	await signIn(page);
+	await bootstrap1Assignment(page, `tooltip-${Date.now()}`);
+	await page.goto('/?d=2026-05-12&z=day');
+
+	const firstBar = page.locator('div.bar, [class~="bar"]').first();
+	await expect(firstBar).toBeVisible();
+	await firstBar.hover();
+
+	// bits-ui floating-ui の wrapper + .ui-bar-tooltip を await
+	const tooltip = page.locator('.ui-bar-tooltip').first();
+	await expect(tooltip).toBeVisible({ timeout: 1000 });
+});
