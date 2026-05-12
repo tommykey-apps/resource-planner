@@ -145,12 +145,18 @@
 			ariaLabels={{ prev: t('timeline.prevAria'), next: t('timeline.nextAria') }}
 		/>
 
+		<!--
+			#34 (resourceColWidth="auto") は本番で resource rail を 1px に潰し、 bar が rail
+			領域に侵食する重大な layout bug を発生させた (sticky element + CSS Grid `minmax +
+			fit-content` の interaction で min track が効かない)。 ui-components 側で改修される
+			まで固定幅に戻す。 home-layout.spec.ts が regression を守る。
+		-->
 		<ResourceTimeline
 			{resources}
 			assignments={timelineAssignments}
 			bind:viewportStart
 			{zoom}
-			resourceColWidth="auto"
+			resourceColWidth={200}
 			labels={{
 				bar: {
 					resizeStart: t('timeline.barResizeStart'),
