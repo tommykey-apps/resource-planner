@@ -1,0 +1,45 @@
+name: Audit
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# ローカルの `/audit` 推奨をバイパスされても CI で同じ品質ゲートを通す。
+# 失敗しても merge ブロックはしない (warning レベル、 別の job で main CI を維持)。
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pnpm install --frozen-lockfile
+
+      - name: knip (unused exports / files / dependencies)
+        run: pnpm dlx knip --no-config-hints --reporter symbols
+        continue-on-error: true
+
+      - name: jscpd (duplicate code detection)
+        run: pnpm dlx jscpd src --min-tokens 50 --reporters consoleSummary
+        continue-on-error: true
+
+      - name: madge (circular dependencies)
+        run: pnpm dlx madge --circular --extensions ts,svelte,js src
+        continue-on-error: true
