@@ -146,17 +146,18 @@
 		/>
 
 		<!--
-			#34 (resourceColWidth="auto") は本番で resource rail を 1px に潰し、 bar が rail
-			領域に侵食する重大な layout bug を発生させた (sticky element + CSS Grid `minmax +
-			fit-content` の interaction で min track が効かない)。 ui-components 側で改修される
-			まで固定幅に戻す。 home-layout.spec.ts が regression を守る。
+			ui-components 0.9.3 で resourceColWidth='auto' が **Canvas measureText** で
+			再実装され、 sticky 衝突問題 (旧 #34 / 本番事故 #162) を解消。 長名 resource は
+			ellipsis 切れせず最大 400px まで rail が自動拡張する。 同 release で hover
+			tooltip もカーソル追従に修正済 (#42)。 home-layout.spec.ts の auto-fit /
+			cursor-anchor assertion が regression を守る。
 		-->
 		<ResourceTimeline
 			{resources}
 			assignments={timelineAssignments}
 			bind:viewportStart
 			{zoom}
-			resourceColWidth={200}
+			resourceColWidth="auto"
 			labels={{
 				bar: {
 					resizeStart: t('timeline.barResizeStart'),

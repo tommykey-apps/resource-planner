@@ -27,8 +27,8 @@ importers:
         specifier: ^3.1045.0
         version: 3.1045.0(@aws-sdk/client-dynamodb@3.1045.0)
       '@tommykey-apps/ui-components':
-        specifier: ^0.8.0
-        version: 0.8.0(bits-ui@2.18.0(@internationalized/date@3.12.1)(@sveltejs/kit@2.59.0(@sveltejs/vite-plugin-svelte@7.0.0(svelte@5.55.5(@typescript-eslint/types@8.59.1))(vite@8.0.10(@types/node@22.19.17)(esbuild@0.28.0)(jiti@2.6.1)))(svelte@5.55.5(@typescript-eslint/types@8.59.1))(typescript@6.0.3)(vite@8.0.10(@types/node@22.19.17)(esbuild@0.28.0)(jiti@2.6.1)))(svelte@5.55.5(@typescript-eslint/types@8.59.1)))(svelte@5.55.5(@typescript-eslint/types@8.59.1))
+        specifier: ^0.9.3
+        version: 0.9.3(bits-ui@2.18.0(@internationalized/date@3.12.1)(@sveltejs/kit@2.59.0(@sveltejs/vite-plugin-svelte@7.0.0(svelte@5.55.5(@typescript-eslint/types@8.59.1))(vite@8.0.10(@types/node@22.19.17)(esbuild@0.28.0)(jiti@2.6.1)))(svelte@5.55.5(@typescript-eslint/types@8.59.1))(typescript@6.0.3)(vite@8.0.10(@types/node@22.19.17)(esbuild@0.28.0)(jiti@2.6.1)))(svelte@5.55.5(@typescript-eslint/types@8.59.1)))(svelte@5.55.5(@typescript-eslint/types@8.59.1))
       bits-ui:
         specifier: ^2.18.0
         version: 2.18.0(@internationalized/date@3.12.1)(@sveltejs/kit@2.59.0(@sveltejs/vite-plugin-svelte@7.0.0(svelte@5.55.5(@typescript-eslint/types@8.59.1))(vite@8.0.10(@types/node@22.19.17)(esbuild@0.28.0)(jiti@2.6.1)))(svelte@5.55.5(@typescript-eslint/types@8.59.1))(typescript@6.0.3)(vite@8.0.10(@types/node@22.19.17)(esbuild@0.28.0)(jiti@2.6.1)))(svelte@5.55.5(@typescript-eslint/types@8.59.1))
@@ -1328,8 +1328,8 @@ packages:
       vitest:
         optional: true
 
-  '@tommykey-apps/ui-components@0.8.0':
-    resolution: {integrity: sha512-DB60bZ/ZU4k3Yt2HyjXVcNxjJ8oFXGd/Z+KhCOs5Yp2h8TSpZgFjpIYPx94jWCM+R9H1t5YoXMjF9zwr7Qgp8w==, tarball: https://npm.pkg.github.com/download/@tommykey-apps/ui-components/0.8.0/57f5c5ea786241c6917823cb0735d073d1e06101}
+  '@tommykey-apps/ui-components@0.9.3':
+    resolution: {integrity: sha512-r20AZBaGiX6qfBFzeH06xqqH5TAQU6lHUCMpvPXy/Eqx9+KDaoO2A0mVp4a7dXYaCry4aid5V+XocNgxW8QkZA==, tarball: https://npm.pkg.github.com/download/@tommykey-apps/ui-components/0.9.3/a00d303c4c6c1baba819f05fc6b95281eb00b64a}
     peerDependencies:
       bits-ui: ^2.18.0
       svelte: ^5.0.0
@@ -4078,7 +4078,7 @@ snapshots:
       vite: 8.0.10(@types/node@22.19.17)(esbuild@0.28.0)(jiti@2.6.1)
       vitest: 4.1.5(@types/node@22.19.17)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.1)(vite@8.0.10(@types/node@22.19.17)(esbuild@0.28.0)(jiti@2.6.1))
 
-  '@tommykey-apps/ui-components@0.8.0(bits-ui@2.18.0(@internationalized/date@3.12.1)(@sveltejs/kit@2.59.0(@sveltejs/vite-plugin-svelte@7.0.0(svelte@5.55.5(@typescript-eslint/types@8.59.1))(vite@8.0.10(@types/node@22.19.17)(esbuild@0.28.0)(jiti@2.6.1)))(svelte@5.55.5(@typescript-eslint/types@8.59.1))(typescript@6.0.3)(vite@8.0.10(@types/node@22.19.17)(esbuild@0.28.0)(jiti@2.6.1)))(svelte@5.55.5(@typescript-eslint/types@8.59.1)))(svelte@5.55.5(@typescript-eslint/types@8.59.1))':
+  '@tommykey-apps/ui-components@0.9.3(bits-ui@2.18.0(@internationalized/date@3.12.1)(@sveltejs/kit@2.59.0(@sveltejs/vite-plugin-svelte@7.0.0(svelte@5.55.5(@typescript-eslint/types@8.59.1))(vite@8.0.10(@types/node@22.19.17)(esbuild@0.28.0)(jiti@2.6.1)))(svelte@5.55.5(@typescript-eslint/types@8.59.1))(typescript@6.0.3)(vite@8.0.10(@types/node@22.19.17)(esbuild@0.28.0)(jiti@2.6.1)))(svelte@5.55.5(@typescript-eslint/types@8.59.1)))(svelte@5.55.5(@typescript-eslint/types@8.59.1))':
     dependencies:
       bits-ui: 2.18.0(@internationalized/date@3.12.1)(@sveltejs/kit@2.59.0(@sveltejs/vite-plugin-svelte@7.0.0(svelte@5.55.5(@typescript-eslint/types@8.59.1))(vite@8.0.10(@types/node@22.19.17)(esbuild@0.28.0)(jiti@2.6.1)))(svelte@5.55.5(@typescript-eslint/types@8.59.1))(typescript@6.0.3)(vite@8.0.10(@types/node@22.19.17)(esbuild@0.28.0)(jiti@2.6.1)))(svelte@5.55.5(@typescript-eslint/types@8.59.1))
       date-fns: 4.1.0
