@@ -114,29 +114,3 @@ export async function getUserTeamIds(userId: string): Promise<string[]> {
 	} while (lastKey);
 	return teamIds;
 }
-
-/** Team のメンバー一覧 (team-centric)。 */
-export async function getTeamMembers(teamId: string): Promise<TeamMembership[]> {
-	const members: TeamMembership[] = [];
-	let lastKey: QueryCommandInput['ExclusiveStartKey'];
-	do {
-		const out = await ddb.send(
-			new QueryCommand({
-				TableName: TABLE,
-				KeyConditionExpression: 'pk = :pk AND begins_with(sk, :m)',
-				ExpressionAttributeValues: { ':pk': pk(teamId), ':m': 'MEMBER#' },
-				ExclusiveStartKey: lastKey
-			})
-		);
-		for (const item of out.Items ?? []) {
-			members.push({
-				teamId: item.teamId,
-				userId: item.userId,
-				role: item.role,
-				joinedAt: item.joinedAt
-			});
-		}
-		lastKey = out.LastEvaluatedKey;
-	} while (lastKey);
-	return members;
-}

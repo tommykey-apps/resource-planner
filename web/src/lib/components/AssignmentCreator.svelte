@@ -3,7 +3,7 @@
 	import Plus from 'phosphor-svelte/lib/Plus';
 	import { Button } from './ui/button';
 	import Dialog from './Dialog.svelte';
-	import { formatLocalDate } from '$lib/timeline-adapter';
+	import { formatLocalDate } from '$lib/date';
 	import { createSubmitState } from '$lib/forms/submit-state.svelte';
 	import { translateServerError, type ServerErrors } from '$lib/forms/server-error';
 	import { t } from '$lib/i18n/index.svelte';

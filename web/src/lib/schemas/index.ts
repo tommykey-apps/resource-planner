@@ -123,10 +123,6 @@ export const assignmentFormUpdateSchema = z
 		}
 	}));
 
-/** フォーム生 shape (UX inclusive)。`+page.svelte` のフォームバインディングで使う。 */
-export type AssignmentCreateInput = z.input<typeof assignmentCreateSchema>;
-export type AssignmentUpdateInput = z.input<typeof assignmentUpdateSchema>;
-
 /** Post-transform shape (storage)。repository が受け取る型。 */
 export type AssignmentCreatePayload = z.output<typeof assignmentCreateSchema>;
 export type AssignmentUpdatePayload = z.output<typeof assignmentUpdateSchema>;
@@ -153,4 +149,3 @@ export const assignmentApiUpdateSchema = z
 		path: ['endDateExclusive']
 	});
 
-export type AssignmentApiUpdateInput = z.infer<typeof assignmentApiUpdateSchema>;

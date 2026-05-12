@@ -65,14 +65,6 @@ class LocaleState {
 
 export const localeState = new LocaleState();
 
-export function getLocale(): Locale {
-	return localeState.current;
-}
-
-export function setLocale(next: Locale): void {
-	localeState.set(next);
-}
-
 export function initLocale(serverLocale?: Locale | null): void {
 	localeState.init(serverLocale);
 }
