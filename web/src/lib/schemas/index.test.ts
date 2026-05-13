@@ -70,6 +70,118 @@ describe('projectUpdateSchema', () => {
 	});
 });
 
+describe('projectCreateSchema — detail fields (#187)', () => {
+	const base = { name: 'P1', color: '#abcdef' };
+
+	it('defaults description to undefined, tags/links to [] when omitted', () => {
+		const r = projectCreateSchema.safeParse(base);
+		expect(r.success).toBe(true);
+		if (!r.success) return;
+		expect(r.data).toEqual({
+			name: 'P1',
+			color: '#abcdef',
+			description: undefined,
+			tags: [],
+			links: []
+		});
+	});
+
+	it('normalizes empty/whitespace description to undefined', () => {
+		const r = projectCreateSchema.safeParse({ ...base, description: '   ' });
+		expect(r.success).toBe(true);
+		if (!r.success) return;
+		expect(r.data.description).toBeUndefined();
+	});
+
+	it('accepts description up to 10,000 chars', () => {
+		expect(
+			projectCreateSchema.safeParse({ ...base, description: 'a'.repeat(10_000) }).success
+		).toBe(true);
+		expect(
+			projectCreateSchema.safeParse({ ...base, description: 'a'.repeat(10_001) }).success
+		).toBe(false);
+	});
+
+	it('parses tags CSV with trim + NFC normalize + dedup', () => {
+		const r = projectCreateSchema.safeParse({ ...base, tags: ' TypeScript ,  AWS,TypeScript ,, ' });
+		expect(r.success).toBe(true);
+		if (!r.success) return;
+		expect(r.data.tags).toEqual(['TypeScript', 'AWS']);
+	});
+
+	it('rejects more than 20 tags (tooMany)', () => {
+		const tags = Array.from({ length: 21 }, (_, i) => `t${i}`).join(',');
+		expect(projectCreateSchema.safeParse({ ...base, tags }).success).toBe(false);
+	});
+
+	it('rejects a single tag longer than 30 chars (tooLong)', () => {
+		expect(projectCreateSchema.safeParse({ ...base, tags: 'a'.repeat(31) }).success).toBe(false);
+	});
+
+	it('parses linksJson and rejects javascript: URL (invalidUrl)', () => {
+		const ok = projectCreateSchema.safeParse({
+			...base,
+			linksJson: JSON.stringify([{ label: 'Wiki', url: 'https://example.com/wiki' }])
+		});
+		expect(ok.success).toBe(true);
+		if (!ok.success) return;
+		expect(ok.data.links).toEqual([{ label: 'Wiki', url: 'https://example.com/wiki' }]);
+
+		const bad = projectCreateSchema.safeParse({
+			...base,
+			linksJson: JSON.stringify([{ url: 'javascript:alert(1)' }])
+		});
+		expect(bad.success).toBe(false);
+	});
+
+	it('rejects more than 10 links (tooMany)', () => {
+		const links = Array.from({ length: 11 }, (_, i) => ({ url: `https://example.com/${i}` }));
+		const r = projectCreateSchema.safeParse({ ...base, linksJson: JSON.stringify(links) });
+		expect(r.success).toBe(false);
+	});
+
+	it('normalizes invalid linksJson string to [] (parse fallback then validation)', () => {
+		const r = projectCreateSchema.safeParse({ ...base, linksJson: '{not json' });
+		expect(r.success).toBe(true);
+		if (!r.success) return;
+		expect(r.data.links).toEqual([]);
+	});
+
+	it('renames linksJson → links in output (transform)', () => {
+		const r = projectCreateSchema.safeParse({
+			...base,
+			linksJson: JSON.stringify([{ url: 'https://example.com' }])
+		});
+		expect(r.success).toBe(true);
+		if (!r.success) return;
+		expect(r.data).not.toHaveProperty('linksJson');
+		expect(r.data.links).toBeDefined();
+	});
+});
+
+describe('projectUpdateSchema — detail fields (#187)', () => {
+	it('carries id alongside detail fields', () => {
+		const r = projectUpdateSchema.safeParse({
+			id: 'p1',
+			name: 'P1',
+			color: '#abcdef',
+			description: 'desc',
+			tags: 'a,b',
+			linksJson: JSON.stringify([{ url: 'https://example.com' }])
+		});
+		expect(r.success).toBe(true);
+		if (!r.success) return;
+		expect(r.data).toEqual({
+			id: 'p1',
+			name: 'P1',
+			color: '#abcdef',
+			description: 'desc',
+			tags: ['a', 'b'],
+			links: [{ label: undefined, url: 'https://example.com' }]
+		});
+	});
+});
+
 describe('assignmentCreateSchema', () => {
 	const valid = {
 		resourceId: 'r1',
@@ -216,8 +328,10 @@ describe('error message contract — i18n codes (#139)', () => {
 	const ALLOWED_CODES = new Set([
 		'required',
 		'tooLong',
+		'tooMany',
 		'invalidDateFormat',
 		'invalidColorFormat',
+		'invalidUrl',
 		'endBeforeStart'
 	]);
 
@@ -263,11 +377,41 @@ describe('error message contract — i18n codes (#139)', () => {
 		).toContain('endBeforeStart');
 	});
 
+	it('projectCreateSchema: too many tags → "tooMany" (#187)', () => {
+		const tags = Array.from({ length: 21 }, (_, i) => `t${i}`).join(',');
+		expect(collect(projectCreateSchema, { name: 'P', color: '#abcdef', tags })).toContain('tooMany');
+	});
+
+	it('projectCreateSchema: bad link url → "invalidUrl" (#187)', () => {
+		expect(
+			collect(projectCreateSchema, {
+				name: 'P',
+				color: '#abcdef',
+				linksJson: JSON.stringify([{ url: 'javascript:alert(1)' }])
+			})
+		).toContain('invalidUrl');
+	});
+
 	it('全 message は ALLOWED_CODES に含まれる (日本語 hardcode 検知)', () => {
 		const samples = [
 			collect(resourceCreateSchema, { name: '' }),
 			collect(resourceCreateSchema, { name: 'a'.repeat(101) }),
 			collect(projectCreateSchema, { name: '', color: 'red' }),
+			collect(projectCreateSchema, {
+				name: 'P',
+				color: '#abcdef',
+				description: 'a'.repeat(10_001)
+			}),
+			collect(projectCreateSchema, {
+				name: 'P',
+				color: '#abcdef',
+				tags: Array.from({ length: 21 }, (_, i) => `t${i}`).join(',')
+			}),
+			collect(projectCreateSchema, {
+				name: 'P',
+				color: '#abcdef',
+				linksJson: JSON.stringify([{ url: 'javascript:alert(1)' }])
+			}),
 			collect(assignmentCreateSchema, {
 				resourceId: '',
 				projectId: '',

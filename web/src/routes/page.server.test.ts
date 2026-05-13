@@ -309,11 +309,16 @@ describe('?/deleteResource action (cascade は repository 側、 ここでは引
 describe('?/createProject action', () => {
 	beforeEach(resetAllMocks);
 
-	it('calls createProject(teamId, { name, color }) on valid input', async () => {
+	it('calls createProject(teamId, { name, color, ...empty detail }) on valid input', async () => {
 		await actions.createProject!(makeEvent({ name: 'Alpha', color: '#0EA5E9' }));
+		// #187: schema 拡張で description/tags/links が transform output に含まれる
+		// (form omit 時は undefined / [])。 repository 側で空判定して REMOVE / 除外。
 		expect(createProjectMock).toHaveBeenCalledWith('team_default', {
 			name: 'Alpha',
-			color: '#0EA5E9'
+			color: '#0EA5E9',
+			description: undefined,
+			tags: [],
+			links: []
 		});
 	});
 
@@ -330,14 +335,18 @@ describe('?/createProject action', () => {
 describe('?/updateProject action', () => {
 	beforeEach(resetAllMocks);
 
-	it('calls updateProject(teamId, { id, name, color })', async () => {
+	it('calls updateProject(teamId, { id, name, color, ...empty detail })', async () => {
 		await actions.updateProject!(
 			makeEvent({ id: 'p1', name: 'Beta', color: '#10B981' })
 		);
+		// #187: schema 拡張で description/tags/links が transform output に含まれる。
 		expect(updateProjectMock).toHaveBeenCalledWith('team_default', {
 			id: 'p1',
 			name: 'Beta',
-			color: '#10B981'
+			color: '#10B981',
+			description: undefined,
+			tags: [],
+			links: []
 		});
 	});
 

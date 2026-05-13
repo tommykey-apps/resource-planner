@@ -82,8 +82,30 @@ DynamoDB シングルテーブル `resource-planner` には 3 種類のエンテ
 | `id` | str (UUID 想定) | project の主キー |
 | `name` | str | プロジェクト名 |
 | `color` | str (`#RRGGBB`) | タイムラインでの表示色 |
+| `description` | str (optional) | 案件説明 markdown raw (最大 10,000 文字、 ADR 0010)。 未設定なら attribute なし |
+| `tags` | list of str (optional) | 使用技術タグ (最大 20 件 / 各 30 文字、 NFC normalize + dedup、 ADR 0010)。 未設定なら attribute なし |
+| `links` | list of map (optional) | 関連リンク (最大 10 件、 http(s) のみ)。 各要素 `{ label?: str, url: str }` (ADR 0010)。 未設定なら attribute なし |
 
-サンプルアイテム:
+> **REMOVE semantics**: description 空文字 / tags 空配列 / links 空配列 は repository 層で 「未設定」 に正規化し、 attribute ごと REMOVE する。 「保存されているけど空」 状態は意図的に作らない (ADR 0010)。
+
+サンプルアイテム (詳細あり):
+```json
+{
+  "pk": "TEAM#team_default",
+  "sk": "PRJ#01HABC...",
+  "id": "01HABC...",
+  "name": "Acme 移行案件",
+  "color": "#4D72F3",
+  "description": "## 概要\n基幹システム刷新。\n\n## 使用技術\n- TypeScript\n- AWS Lambda",
+  "tags": ["TypeScript", "AWS Lambda", "DynamoDB"],
+  "links": [
+    { "label": "案件 Wiki", "url": "https://wiki.example.com/acme" },
+    { "url": "https://example.com/spec.pdf" }
+  ]
+}
+```
+
+サンプルアイテム (詳細なし、 後方互換):
 ```json
 {
   "pk": "TEAM#team_default",
