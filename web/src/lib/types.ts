@@ -39,6 +39,19 @@ export interface Project {
 	id: string;
 	name: string;
 	color: string; // #RRGGBB
+	/** markdown 本文 (1 万字以内、 cure53 DOMPurify で sanitize、 ADR 0010)。 */
+	description?: string;
+	/** 使用技術タグ (各 30 字以内 / 20 件以内、 NFC normalize + dedup、 ADR 0010)。 */
+	tags?: string[];
+	/** 関連リンク (http(s) のみ / 10 件以内、 ADR 0010)。 */
+	links?: ProjectLink[];
+}
+
+export interface ProjectLink {
+	/** 表示ラベル (50 字以内、 省略時は url を表示)。 */
+	label?: string;
+	/** http(s) URL。 */
+	url: string;
 }
 
 export interface Assignment {
