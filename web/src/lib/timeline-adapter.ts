@@ -40,6 +40,3 @@ export function fromTimelineAssignment(t: TimelineAssignment, prev: DbAssignment
 		endDateExclusive: formatLocalDate(t.endDate)
 	};
 }
-
-// 後方互換: AssignmentCreator など既存コードが直接 import している。`lib/date.ts` から re-export。
-export { parseLocalDate, formatLocalDate } from './date';
