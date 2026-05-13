@@ -1,6 +1,7 @@
 import { ulid } from 'ulid';
 import { describe, expect, it } from 'vitest';
 import { createAssignment } from './assignment';
+import { createProject, deleteProject, updateProject } from './project';
 import { createResource, deleteResource, updateResource } from './resource';
 import { queryAllByTeam } from './index';
 import { addMembership, getOrCreateDefaultTeam, getTeam, getUserTeamIds } from './team';
@@ -104,6 +105,69 @@ describe.runIf(process.env.AWS_ENDPOINT_URL)('repository integration (DDB Local)
 		// user-centric (GSI1): user の所属 team 一覧
 		const teams = await getUserTeamIds(userId);
 		expect(teams).toContain(teamId);
+	});
+
+	it('Project optional fields round-trip: create(full) → query → update(REMOVE) → query (refs #196)', async () => {
+		const teamId = `test-${ulid()}`;
+		const p = await createProject(teamId, {
+			name: 'P with detail',
+			color: '#0000ff',
+			description: 'markdown body',
+			tags: ['ts', 'aws'],
+			links: [{ url: 'https://example.com', label: 'Wiki' }]
+		});
+
+		// queryAllByTeam should return all optional fields preserved
+		let data = await queryAllByTeam(teamId);
+		expect(data.projects).toHaveLength(1);
+		expect(data.projects[0]).toEqual({
+			id: p.id,
+			name: 'P with detail',
+			color: '#0000ff',
+			description: 'markdown body',
+			tags: ['ts', 'aws'],
+			links: [{ url: 'https://example.com', label: 'Wiki' }]
+		});
+
+		// update with empty detail → REMOVE semantics
+		await updateProject(teamId, {
+			id: p.id,
+			name: 'P with detail',
+			color: '#0000ff',
+			description: undefined,
+			tags: [],
+			links: []
+		});
+
+		data = await queryAllByTeam(teamId);
+		expect(data.projects[0]).toEqual({
+			id: p.id,
+			name: 'P with detail',
+			color: '#0000ff'
+		});
+		expect(data.projects[0]).not.toHaveProperty('description');
+		expect(data.projects[0]).not.toHaveProperty('tags');
+		expect(data.projects[0]).not.toHaveProperty('links');
+
+		// cleanup
+		await deleteProject(teamId, p.id);
+	});
+
+	it('Project create with empty detail omits attributes from item (refs #196)', async () => {
+		const teamId = `test-${ulid()}`;
+		const p = await createProject(teamId, {
+			name: 'P minimal',
+			color: '#abcdef',
+			description: undefined,
+			tags: [],
+			links: []
+		});
+
+		const data = await queryAllByTeam(teamId);
+		expect(data.projects[0]).toEqual({ id: p.id, name: 'P minimal', color: '#abcdef' });
+
+		// cleanup
+		await deleteProject(teamId, p.id);
 	});
 
 	it('getOrCreateDefaultTeam is idempotent', async () => {

@@ -92,4 +92,94 @@ describe('queryAllByTeam', () => {
 		expect(data.projects).toHaveLength(0);
 		expect(data.assignments).toHaveLength(0);
 	});
+
+	// Project optional fields (description / tags / links) round-trip (refs #196)
+	it('returns project with description/tags/links when DDB item has them', async () => {
+		ddbMock.on(QueryCommand).resolves({
+			Items: [
+				{
+					sk: 'PRJ#p1',
+					id: 'p1',
+					name: 'Project A',
+					color: '#ff0000',
+					description: 'Test description',
+					tags: ['ts', 'aws'],
+					links: [{ url: 'https://example.com', label: 'Wiki' }]
+				}
+			]
+		});
+
+		const data = await queryAllByTeam(TEAM);
+
+		expect(data.projects).toHaveLength(1);
+		expect(data.projects[0]).toEqual({
+			id: 'p1',
+			name: 'Project A',
+			color: '#ff0000',
+			description: 'Test description',
+			tags: ['ts', 'aws'],
+			links: [{ url: 'https://example.com', label: 'Wiki' }]
+		});
+	});
+
+	it('omits optional fields for legacy item (back-compat: id/name/color only)', async () => {
+		ddbMock.on(QueryCommand).resolves({
+			Items: [{ sk: 'PRJ#p1', id: 'p1', name: 'Legacy Project', color: '#00ff00' }]
+		});
+
+		const data = await queryAllByTeam(TEAM);
+
+		expect(data.projects[0]).toEqual({ id: 'p1', name: 'Legacy Project', color: '#00ff00' });
+		expect(data.projects[0]).not.toHaveProperty('description');
+		expect(data.projects[0]).not.toHaveProperty('tags');
+		expect(data.projects[0]).not.toHaveProperty('links');
+	});
+
+	it('skips empty list attributes from result (defense: write-side uses REMOVE)', async () => {
+		// 万が一 write が REMOVE せず empty list `[]` を保存していても、 read 側で取り除く
+		ddbMock.on(QueryCommand).resolves({
+			Items: [
+				{
+					sk: 'PRJ#p1',
+					id: 'p1',
+					name: 'Project A',
+					color: '#ff0000',
+					tags: [],
+					links: []
+				}
+			]
+		});
+
+		const data = await queryAllByTeam(TEAM);
+
+		expect(data.projects[0]).toEqual({ id: 'p1', name: 'Project A', color: '#ff0000' });
+		expect(data.projects[0]).not.toHaveProperty('tags');
+		expect(data.projects[0]).not.toHaveProperty('links');
+	});
+
+	it('returns partial optional fields when only some are present', async () => {
+		ddbMock.on(QueryCommand).resolves({
+			Items: [
+				{
+					sk: 'PRJ#p1',
+					id: 'p1',
+					name: 'Project A',
+					color: '#ff0000',
+					description: 'desc only'
+					// tags / links absent
+				}
+			]
+		});
+
+		const data = await queryAllByTeam(TEAM);
+
+		expect(data.projects[0]).toEqual({
+			id: 'p1',
+			name: 'Project A',
+			color: '#ff0000',
+			description: 'desc only'
+		});
+		expect(data.projects[0]).not.toHaveProperty('tags');
+		expect(data.projects[0]).not.toHaveProperty('links');
+	});
 });
