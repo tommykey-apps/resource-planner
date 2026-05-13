@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import Plus from 'phosphor-svelte/lib/Plus';
 	import { Button } from './ui/button';
+	import { Input } from './ui/input';
 	import Dialog from './Dialog.svelte';
 	import { formatLocalDate } from '$lib/date';
 	import { createSubmitState } from '$lib/forms/submit-state.svelte';
@@ -126,14 +127,7 @@
 		<div class="grid grid-cols-2 gap-3">
 			<label class="flex flex-col gap-1 text-sm">
 				<span>{t('assignments.startDate')}</span>
-				<input
-					name="startDate"
-					type="date"
-					bind:value={startDate}
-					required
-					class="h-9 border border-input bg-background px-2 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-					style="border-radius: calc(var(--radius) * 0.6)"
-				/>
+				<Input name="startDate" type="date" bind:value={startDate} required />
 				{#if formError?.startDate}
 					<span class="text-xs text-destructive">{formError.startDate}</span>
 				{/if}
@@ -141,15 +135,7 @@
 
 			<label class="flex flex-col gap-1 text-sm">
 				<span>{t('assignments.endDate')}</span>
-				<input
-					name="endDate"
-					type="date"
-					bind:value={endDate}
-					required
-					min={startDate}
-					class="h-9 border border-input bg-background px-2 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-					style="border-radius: calc(var(--radius) * 0.6)"
-				/>
+				<Input name="endDate" type="date" bind:value={endDate} required min={startDate} />
 				{#if formError?.endDate}
 					<span class="text-xs text-destructive">{formError.endDate}</span>
 				{/if}
