@@ -39,6 +39,7 @@ export type ResourceUpdateInput = z.infer<typeof resourceUpdateSchema>;
  * Project 詳細フィールドの上限 (ADR 0010)。 UI (HTML input maxlength 等) と schema 双方で
  * 同 source を参照するため export して共有する (ADR 0001 型駆動、 マジック数値禁止)。
  */
+export const PROJECT_NAME_MAX_LENGTH = 100;
 export const PROJECT_DESCRIPTION_MAX_LENGTH = 10_000;
 export const PROJECT_TAG_MAX_LENGTH = 30;
 export const PROJECT_TAG_MAX_COUNT = 20;
@@ -46,6 +47,9 @@ export const PROJECT_TAG_MAX_COUNT = 20;
 export const PROJECT_TAGS_CSV_MAX_LENGTH = 700;
 export const PROJECT_LINK_LABEL_MAX_LENGTH = 50;
 export const PROJECT_LINK_MAX_COUNT = 10;
+// URL 上限: RFC 上の明示的な上限はないが、 各 browser / proxy が ~2048 / ~8192 で truncate
+// する事例があるため defensive に 2048 を採用 (IE 互換目安、 modern browser でも安全圏)。
+export const PROJECT_LINK_URL_MAX_LENGTH = 2048;
 
 /**
  * description: 空文字 → undefined に正規化して max(10_000) で長さ制限 (ADR 0010)。
@@ -96,7 +100,10 @@ const linkObjectSchema = z.object({
 	),
 	url: z.preprocess(
 		(v) => (typeof v === 'string' ? v.trim() : v),
-		z.url('invalidUrl').refine((u) => /^https?:\/\//.test(u), 'invalidUrl')
+		z
+			.url('invalidUrl')
+			.max(PROJECT_LINK_URL_MAX_LENGTH, 'tooLong')
+			.refine((u) => /^https?:\/\//.test(u), 'invalidUrl')
 	)
 });
 
@@ -124,7 +131,7 @@ const linksJsonSchema = z
  * base object を const 化して両 schema で再利用する。
  */
 const projectBaseShape = {
-	name: z.string().min(1, 'required').max(100, 'tooLong'),
+	name: z.string().min(1, 'required').max(PROJECT_NAME_MAX_LENGTH, 'tooLong'),
 	color: colorString,
 	description: descriptionSchema,
 	tags: tagsCsvSchema,

@@ -14,6 +14,8 @@
 		PROJECT_DESCRIPTION_MAX_LENGTH,
 		PROJECT_LINK_LABEL_MAX_LENGTH,
 		PROJECT_LINK_MAX_COUNT,
+		PROJECT_LINK_URL_MAX_LENGTH,
+		PROJECT_NAME_MAX_LENGTH,
 		PROJECT_TAGS_CSV_MAX_LENGTH
 	} from '$lib/schemas';
 	import type { SubmitFunction } from '@sveltejs/kit';
@@ -215,7 +217,7 @@
 				type="text"
 				bind:value={formName}
 				required
-				maxlength={100}
+				maxlength={PROJECT_NAME_MAX_LENGTH}
 				autocomplete="off"
 			/>
 			{#if formError?.name}
@@ -298,12 +300,14 @@
 								aria-label={`${t('projects.linkUrl')} ${i + 1}`}
 								placeholder={t('projects.linkUrl')}
 								bind:value={link.url}
+								maxlength={PROJECT_LINK_URL_MAX_LENGTH}
 								class="flex-1"
 							/>
 							<Button
 								size="xs"
 								variant="ghost"
 								type="button"
+								aria-label={`${t('projects.removeLink')} ${i + 1}`}
 								onclick={() => removeLink(i)}
 							>
 								{t('projects.removeLink')}
