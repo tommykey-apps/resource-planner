@@ -12,7 +12,8 @@
 		"close": "Close",
 		"confirm": "Confirm",
 		"requiredError": "Required",
-		"maxLengthError": "{n} characters max"
+		"maxLengthError": "{n} characters max",
+		"opensInNewTab": "opens in new tab"
 	},
 	"timeline": {
 		"today": "Today",
@@ -73,7 +74,9 @@
 		"linkLabel": "Label (optional)",
 		"linkUrl": "URL",
 		"addLink": "+ Add link",
-		"removeLink": "Remove"
+		"removeLink": "Remove",
+		"viewDetail": "View detail",
+		"detailTitle": "{name} detail"
 	},
 	"assignments": {
 		"add": "Add assignment",

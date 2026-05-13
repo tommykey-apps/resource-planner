@@ -12,7 +12,8 @@
 		"close": "閉じる",
 		"confirm": "確認",
 		"requiredError": "必須",
-		"maxLengthError": "{n} 文字以内"
+		"maxLengthError": "{n} 文字以内",
+		"opensInNewTab": "新規 tab で開く"
 	},
 	"timeline": {
 		"today": "今日",
@@ -73,7 +74,9 @@
 		"linkLabel": "ラベル (任意)",
 		"linkUrl": "URL",
 		"addLink": "+ リンクを追加",
-		"removeLink": "削除"
+		"removeLink": "削除",
+		"viewDetail": "詳細を表示",
+		"detailTitle": "{name} の詳細"
 	},
 	"assignments": {
 		"add": "アサインを追加",

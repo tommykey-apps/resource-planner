@@ -9,12 +9,13 @@
 	import { t } from '$lib/i18n/index.svelte';
 	import AppHeader from '$lib/components/AppHeader.svelte';
 	import AssignmentEditor from '$lib/components/AssignmentEditor.svelte';
+	import ProjectDetailView from '$lib/components/ProjectDetailView.svelte';
 	import {
 		applyAssignmentParams,
 		parseAssignmentParams,
 		type AssignmentFilters
 	} from '$lib/assignments-url-state';
-	import type { Assignment } from '$lib/types';
+	import type { Assignment, ProjectWithRenderedDescription } from '$lib/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import type { PageData } from './$types';
 
@@ -94,6 +95,15 @@
 
 	function clearFilters() {
 		filters = { q: '', resourceId: '', projectId: '', from: '', to: '' };
+	}
+
+	// PR-N4: project 名 button click で詳細 modal を開く。
+	let detailOpen = $state(false);
+	let detailProject = $state<ProjectWithRenderedDescription | null>(null);
+
+	function openDetail(p: ProjectWithRenderedDescription) {
+		detailProject = p;
+		detailOpen = true;
 	}
 </script>
 
@@ -193,14 +203,31 @@
 							<span class="truncate text-sm font-semibold">
 								{resource?.name ?? t('assignments.deletedResource')}
 							</span>
-							<span class="inline-flex items-center gap-2 text-xs">
-								<span
-									class="inline-block h-3 w-3 shrink-0 rounded-sm border border-black/10"
-									style="background-color: {project?.color ?? '#999'}"
-									aria-hidden="true"
-								></span>
-								<span class="truncate">{project?.name ?? t('assignments.deletedProject')}</span>
-							</span>
+							{#if project}
+								<!-- WCAG 2.5.3 (Label in Name): visible text を accessible name に含める
+								     ため aria-label は付けない (上書きで project 名が読み上げされなくなる)。 -->
+								<button
+									type="button"
+									class="inline-flex items-center gap-2 text-left text-xs hover:underline focus-visible:underline focus-visible:outline-none"
+									onclick={() => openDetail(project)}
+								>
+									<span
+										class="inline-block h-3 w-3 shrink-0 rounded-sm border border-black/10"
+										style="background-color: {project.color}"
+										aria-hidden="true"
+									></span>
+									<span class="truncate">{project.name}</span>
+								</button>
+							{:else}
+								<span class="inline-flex items-center gap-2 text-xs">
+									<span
+										class="inline-block h-3 w-3 shrink-0 rounded-sm border border-black/10"
+										style="background-color: #999"
+										aria-hidden="true"
+									></span>
+									<span class="truncate">{t('assignments.deletedProject')}</span>
+								</span>
+							{/if}
 						</div>
 						{@render rowActions(a, resource, project)}
 					</div>
@@ -235,14 +262,30 @@
 						<Table.Row>
 							<Table.Cell>{resource?.name ?? t('assignments.deletedResource')}</Table.Cell>
 							<Table.Cell>
-								<span class="inline-flex items-center gap-2">
-									<span
-										class="inline-block h-3 w-3 shrink-0 rounded-sm border border-black/10"
-										style="background-color: {project?.color ?? '#999'}"
-										aria-hidden="true"
-									></span>
-									{project?.name ?? t('assignments.deletedProject')}
-								</span>
+								{#if project}
+									<!-- WCAG 2.5.3 (Label in Name): visible text のみで accessible name 構成。 -->
+									<button
+										type="button"
+										class="inline-flex items-center gap-2 text-left hover:underline focus-visible:underline focus-visible:outline-none"
+										onclick={() => openDetail(project)}
+									>
+										<span
+											class="inline-block h-3 w-3 shrink-0 rounded-sm border border-black/10"
+											style="background-color: {project.color}"
+											aria-hidden="true"
+										></span>
+										{project.name}
+									</button>
+								{:else}
+									<span class="inline-flex items-center gap-2 text-muted-foreground">
+										<span
+											class="inline-block h-3 w-3 shrink-0 rounded-sm border border-black/10"
+											style="background-color: #999"
+											aria-hidden="true"
+										></span>
+										{t('assignments.deletedProject')}
+									</span>
+								{/if}
 							</Table.Cell>
 							<Table.Cell class="font-mono text-xs">{a.startDate}</Table.Cell>
 							<Table.Cell class="font-mono text-xs">{displayEndDate(a)}</Table.Cell>
@@ -257,3 +300,7 @@
 </main>
 
 <AssignmentEditor bind:open={editOpen} assignment={editing} {resources} {projects} />
+
+{#if detailProject}
+	<ProjectDetailView bind:open={detailOpen} project={detailProject} />
+{/if}
