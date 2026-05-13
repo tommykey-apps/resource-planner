@@ -155,7 +155,9 @@
 		"tooLong": "{field} must be at most {max} characters",
 		"invalidDateFormat": "{field} must be in YYYY-MM-DD format",
 		"invalidColorFormat": "Color must be in #RRGGBB format",
-		"endBeforeStart": "End date must be on or after the start date"
+		"endBeforeStart": "End date must be on or after the start date",
+		"tooMany": "{field} must have at most {max} entries",
+		"invalidUrl": "{field} must be an http or https URL"
 	},
 	"fields": {
 		"id": "id",
