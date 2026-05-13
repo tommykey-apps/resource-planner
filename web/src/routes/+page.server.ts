@@ -74,9 +74,14 @@ export const actions: Actions = {
 	createProject: async (event) => {
 		const session = await requireSession(event);
 		const data = await event.request.formData();
+		// FormData.get は missing field で `null` を返すが、 schema (z.string().optional()) は
+		// `null` を受け付けず `undefined` を期待するため `?? undefined` で正規化する。
 		const parsed = projectCreateSchema.safeParse({
 			name: data.get('name'),
-			color: data.get('color')
+			color: data.get('color'),
+			description: data.get('description') ?? undefined,
+			tags: data.get('tags') ?? undefined,
+			linksJson: data.get('linksJson') ?? undefined
 		});
 		if (!parsed.success) {
 			return fail(400, {
@@ -94,7 +99,10 @@ export const actions: Actions = {
 		const parsed = projectUpdateSchema.safeParse({
 			id: data.get('id'),
 			name: data.get('name'),
-			color: data.get('color')
+			color: data.get('color'),
+			description: data.get('description') ?? undefined,
+			tags: data.get('tags') ?? undefined,
+			linksJson: data.get('linksJson') ?? undefined
 		});
 		if (!parsed.success) {
 			return fail(400, {

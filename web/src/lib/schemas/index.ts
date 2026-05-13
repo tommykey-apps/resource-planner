@@ -36,13 +36,25 @@ export type ResourceUpdateInput = z.infer<typeof resourceUpdateSchema>;
 // ── Project ─────────────────────────────────────────────────────────
 
 /**
+ * Project 詳細フィールドの上限 (ADR 0010)。 UI (HTML input maxlength 等) と schema 双方で
+ * 同 source を参照するため export して共有する (ADR 0001 型駆動、 マジック数値禁止)。
+ */
+export const PROJECT_DESCRIPTION_MAX_LENGTH = 10_000;
+export const PROJECT_TAG_MAX_LENGTH = 30;
+export const PROJECT_TAG_MAX_COUNT = 20;
+// tags CSV の worst-case: 20 tags × (30 chars + 2 chars for ', ') = 640。 余裕を持って 700。
+export const PROJECT_TAGS_CSV_MAX_LENGTH = 700;
+export const PROJECT_LINK_LABEL_MAX_LENGTH = 50;
+export const PROJECT_LINK_MAX_COUNT = 10;
+
+/**
  * description: 空文字 → undefined に正規化して max(10_000) で長さ制限 (ADR 0010)。
  * `<textarea>` は空でも空文字を返すので preprocess で undefined に揃え、 repository 側で
  * 「未設定 = attribute REMOVE」 を一貫させる (Zod v4 preprocess pattern)。
  */
 const descriptionSchema = z.preprocess(
 	(v) => (typeof v === 'string' && v.trim() === '' ? undefined : v),
-	z.string().max(10_000, 'tooLong').optional()
+	z.string().max(PROJECT_DESCRIPTION_MAX_LENGTH, 'tooLong').optional()
 );
 
 /**
@@ -67,7 +79,11 @@ const tagsCsvSchema = z
 		}
 		return result;
 	})
-	.pipe(z.array(z.string().min(1, 'required').max(30, 'tooLong')).max(20, 'tooMany'));
+	.pipe(
+		z
+			.array(z.string().min(1, 'required').max(PROJECT_TAG_MAX_LENGTH, 'tooLong'))
+			.max(PROJECT_TAG_MAX_COUNT, 'tooMany')
+	);
 
 /**
  * link 1 件: label は省略可 (空文字なら undefined)、 url は http(s) のみ許可 (ADR 0010)。
@@ -76,7 +92,7 @@ const tagsCsvSchema = z
 const linkObjectSchema = z.object({
 	label: z.preprocess(
 		(v) => (typeof v === 'string' && v.trim() === '' ? undefined : v),
-		z.string().max(50, 'tooLong').optional()
+		z.string().max(PROJECT_LINK_LABEL_MAX_LENGTH, 'tooLong').optional()
 	),
 	url: z.preprocess(
 		(v) => (typeof v === 'string' ? v.trim() : v),
@@ -101,7 +117,7 @@ const linksJsonSchema = z
 			return [];
 		}
 	})
-	.pipe(z.array(linkObjectSchema).max(10, 'tooMany'));
+	.pipe(z.array(linkObjectSchema).max(PROJECT_LINK_MAX_COUNT, 'tooMany'));
 
 /**
  * create / update 共通 shape。 Zod v4 では `.transform()` 後に `.extend()` できないため、

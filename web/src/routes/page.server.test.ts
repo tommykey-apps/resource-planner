@@ -330,6 +330,39 @@ describe('?/createProject action', () => {
 		expect(r.data.errors.color).toBeTruthy();
 		expect(createProjectMock).not.toHaveBeenCalled();
 	});
+
+	it('passes description / tags / linksJson from form (PR-N3, refs #187)', async () => {
+		await actions.createProject!(
+			makeEvent({
+				name: 'Alpha',
+				color: '#0EA5E9',
+				description: 'detail body markdown',
+				tags: 'TypeScript, AWS',
+				linksJson: JSON.stringify([{ url: 'https://example.com', label: 'Wiki' }])
+			})
+		);
+		expect(createProjectMock).toHaveBeenCalledWith('team_default', {
+			name: 'Alpha',
+			color: '#0EA5E9',
+			description: 'detail body markdown',
+			tags: ['TypeScript', 'AWS'],
+			links: [{ url: 'https://example.com', label: 'Wiki' }]
+		});
+	});
+
+	it('treats empty-string description as undefined (preprocess + ADR 0010 REMOVE semantics)', async () => {
+		await actions.createProject!(
+			makeEvent({ name: 'X', color: '#0EA5E9', description: '', tags: '', linksJson: '[]' })
+		);
+		expect(createProjectMock).toHaveBeenCalledWith(
+			'team_default',
+			expect.objectContaining({
+				description: undefined,
+				tags: [],
+				links: []
+			})
+		);
+	});
 });
 
 describe('?/updateProject action', () => {
@@ -356,6 +389,27 @@ describe('?/updateProject action', () => {
 		)) as { status: number; data: { errors: Record<string, ServerError> } };
 		expect(r.status).toBe(400);
 		expect(r.data.errors.name).toBeTruthy();
+	});
+
+	it('passes description / tags / linksJson from form (PR-N3, refs #187)', async () => {
+		await actions.updateProject!(
+			makeEvent({
+				id: 'p1',
+				name: 'Beta',
+				color: '#10B981',
+				description: 'updated body',
+				tags: 'rust, k8s',
+				linksJson: JSON.stringify([{ url: 'https://example.com/spec', label: 'Spec' }])
+			})
+		);
+		expect(updateProjectMock).toHaveBeenCalledWith('team_default', {
+			id: 'p1',
+			name: 'Beta',
+			color: '#10B981',
+			description: 'updated body',
+			tags: ['rust', 'k8s'],
+			links: [{ url: 'https://example.com/spec', label: 'Spec' }]
+		});
 	});
 });
 
