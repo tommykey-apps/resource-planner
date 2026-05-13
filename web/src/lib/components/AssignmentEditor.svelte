@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { Button } from './ui/button';
+	import { Input } from './ui/input';
 	import Dialog from './Dialog.svelte';
 	import { addDays } from '$lib/date';
 	import { createSubmitState } from '$lib/forms/submit-state.svelte';
@@ -76,12 +77,7 @@
 </script>
 
 <Dialog bind:open title={t('assignments.editTitle')} description={t('assignments.description')}>
-	<form
-		method="POST"
-		action="/?/updateAssignment"
-		use:enhance={submit}
-		class="flex flex-col gap-3"
-	>
+	<form method="POST" action="/?/updateAssignment" use:enhance={submit} class="flex flex-col gap-3">
 		{#if assignment}
 			<input type="hidden" name="id" value={assignment.id} />
 			<input type="hidden" name="prevStartDate" value={assignment.startDate} />
@@ -128,14 +124,7 @@
 		<div class="grid grid-cols-2 gap-3">
 			<label class="flex flex-col gap-1 text-sm">
 				<span>{t('assignments.startDate')}</span>
-				<input
-					name="startDate"
-					type="date"
-					bind:value={formStartDate}
-					required
-					class="h-9 border border-input bg-background px-2 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-					style="border-radius: calc(var(--radius) * 0.6)"
-				/>
+				<Input name="startDate" type="date" bind:value={formStartDate} required />
 				{#if formError?.startDate}
 					<span class="text-xs text-destructive">{formError.startDate}</span>
 				{/if}
@@ -143,15 +132,7 @@
 
 			<label class="flex flex-col gap-1 text-sm">
 				<span>{t('assignments.endDate')}</span>
-				<input
-					name="endDate"
-					type="date"
-					bind:value={formEndDate}
-					required
-					min={formStartDate}
-					class="h-9 border border-input bg-background px-2 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-					style="border-radius: calc(var(--radius) * 0.6)"
-				/>
+				<Input name="endDate" type="date" bind:value={formEndDate} required min={formStartDate} />
 				{#if formError?.endDate}
 					<span class="text-xs text-destructive">{formError.endDate}</span>
 				{/if}

@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import Users from 'phosphor-svelte/lib/Users';
 	import { Button } from './ui/button';
+	import { Input } from './ui/input';
 	import Dialog from './Dialog.svelte';
 	import { createSubmitState } from '$lib/forms/submit-state.svelte';
 	import { confirmDialog } from '$lib/forms/confirm-dialog';
@@ -92,7 +93,8 @@
 					if (onRollbackCreate) onRollbackCreate(tempSnapshot);
 					const recovered = rollbackRecoverState({
 						temp: tempSnapshot,
-						failureData: result.type === 'failure' ? (result.data as { errors?: ServerErrors }) : undefined,
+						failureData:
+							result.type === 'failure' ? (result.data as { errors?: ServerErrors }) : undefined,
 						translate: translateServerError,
 						fallback: t('errors.generic'),
 						field: 'name'
@@ -201,15 +203,13 @@
 		{/if}
 		<label class="flex flex-col gap-1 text-sm">
 			<span>{t('resources.name')}</span>
-			<input
+			<Input
 				name="name"
 				type="text"
 				bind:value={formName}
 				required
-				maxlength="100"
+				maxlength={100}
 				autocomplete="off"
-				class="h-9 border border-input bg-background px-2 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-				style="border-radius: calc(var(--radius) * 0.6)"
 			/>
 		</label>
 		{#if formError}

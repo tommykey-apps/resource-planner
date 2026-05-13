@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import Folder from 'phosphor-svelte/lib/Folder';
 	import { Button } from './ui/button';
+	import { Input } from './ui/input';
 	import Dialog from './Dialog.svelte';
 	import { createSubmitState } from '$lib/forms/submit-state.svelte';
 	import { confirmDialog } from '$lib/forms/confirm-dialog';
@@ -154,15 +155,13 @@
 
 		<label class="flex flex-col gap-1 text-sm">
 			<span>{t('projects.name')}</span>
-			<input
+			<Input
 				name="name"
 				type="text"
 				bind:value={formName}
 				required
-				maxlength="100"
+				maxlength={100}
 				autocomplete="off"
-				class="h-9 border border-input bg-background px-2 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-				style="border-radius: calc(var(--radius) * 0.6)"
 			/>
 			{#if formError?.name}
 				<span class="text-xs text-destructive">{formError.name}</span>
