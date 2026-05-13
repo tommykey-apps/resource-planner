@@ -63,7 +63,17 @@
 		"color": "表示色",
 		"assignmentCount": "({count} 件のアサイン)",
 		"confirmDelete": "「{name}」を削除しますか?",
-		"confirmDeleteWithAssignments": "「{name}」と関連 {count} 件のアサインを削除しますか?\n(取り消しできません)"
+		"confirmDeleteWithAssignments": "「{name}」と関連 {count} 件のアサインを削除しますか?\n(取り消しできません)",
+		"editDetail": "詳細を編集",
+		"descriptionLabel": "説明",
+		"descriptionHint": "markdown 記法が使えます",
+		"tagsLabel": "使用技術",
+		"tagsHint": "カンマで区切る (例: TypeScript, Svelte, AWS)",
+		"linksLabel": "関連リンク",
+		"linkLabel": "ラベル (任意)",
+		"linkUrl": "URL",
+		"addLink": "+ リンクを追加",
+		"removeLink": "削除"
 	},
 	"assignments": {
 		"add": "アサインを追加",

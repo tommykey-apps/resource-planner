@@ -3,13 +3,39 @@
 	import Folder from 'phosphor-svelte/lib/Folder';
 	import { Button } from './ui/button';
 	import { Input } from './ui/input';
+	import { Textarea } from './ui/textarea';
 	import Dialog from './Dialog.svelte';
 	import { createSubmitState } from '$lib/forms/submit-state.svelte';
 	import { confirmDialog } from '$lib/forms/confirm-dialog';
 	import { translateServerError, type ServerErrors } from '$lib/forms/server-error';
 	import { t } from '$lib/i18n/index.svelte';
-	import type { Project, Assignment } from '$lib/types';
+	import type { Project, ProjectLink, Assignment } from '$lib/types';
+	import {
+		PROJECT_DESCRIPTION_MAX_LENGTH,
+		PROJECT_LINK_LABEL_MAX_LENGTH,
+		PROJECT_LINK_MAX_COUNT,
+		PROJECT_LINK_URL_MAX_LENGTH,
+		PROJECT_NAME_MAX_LENGTH,
+		PROJECT_TAGS_CSV_MAX_LENGTH
+	} from '$lib/schemas';
 	import type { SubmitFunction } from '@sveltejs/kit';
+
+	/**
+	 * リンクの編集 UI で使う internal 型。 `_key` は `{#each}` の stable key として使う
+	 * (index key は削除 / 並び替え時に DOM 破壊するため non-recommended)。
+	 * server 送信時 (`linksJson`) は `_key` を除外して JSON.stringify する。
+	 */
+	interface EditableProjectLink extends ProjectLink {
+		_key: string;
+	}
+
+	function withKey(link: ProjectLink): EditableProjectLink {
+		return { ...link, _key: crypto.randomUUID() };
+	}
+
+	function stripKey({ _key: _, ...rest }: EditableProjectLink): ProjectLink {
+		return rest;
+	}
 
 	let {
 		projects,
@@ -35,12 +61,29 @@
 	let editing = $state<Project | null>(null);
 	let formName = $state('');
 	let formColor = $state(DEFAULT_COLOR);
-	let formError = $state<{ name?: string; color?: string } | null>(null);
+	let formDescription = $state('');
+	let formTagsRaw = $state('');
+	let formLinks = $state<EditableProjectLink[]>([]);
+	let formError = $state<{
+		name?: string;
+		color?: string;
+		description?: string;
+		tags?: string;
+		linksJson?: string;
+	} | null>(null);
+
+	// BP B7 / APG Disclosure: 既存値ありなら details default open。 新規作成時は閉じる。
+	const hasDetail = $derived(
+		formDescription.length > 0 || formTagsRaw.trim().length > 0 || formLinks.length > 0
+	);
 
 	function startCreate() {
 		editing = null;
 		formName = '';
 		formColor = DEFAULT_COLOR;
+		formDescription = '';
+		formTagsRaw = '';
+		formLinks = [];
 		formError = null;
 		formOpen = true;
 	}
@@ -49,8 +92,19 @@
 		editing = p;
 		formName = p.name;
 		formColor = p.color;
+		formDescription = p.description ?? '';
+		formTagsRaw = (p.tags ?? []).join(', ');
+		formLinks = (p.links ?? []).map(withKey);
 		formError = null;
 		formOpen = true;
+	}
+
+	function addLink() {
+		formLinks = [...formLinks, withKey({ label: '', url: '' })];
+	}
+
+	function removeLink(index: number) {
+		formLinks = formLinks.filter((_, i) => i !== index);
 	}
 
 	// 連打抑制 + submitting state (#94)。delete は #132 で confirm dialog が modal ブロックする。
@@ -66,7 +120,10 @@
 				const errs = (result.data as { errors?: ServerErrors })?.errors;
 				formError = {
 					name: errs?.name ? translateServerError(errs.name) : undefined,
-					color: errs?.color ? translateServerError(errs.color) : undefined
+					color: errs?.color ? translateServerError(errs.color) : undefined,
+					description: errs?.description ? translateServerError(errs.description) : undefined,
+					tags: errs?.tags ? translateServerError(errs.tags) : undefined,
+					linksJson: errs?.linksJson ? translateServerError(errs.linksJson) : undefined
 				};
 			}
 			await update();
@@ -160,7 +217,7 @@
 				type="text"
 				bind:value={formName}
 				required
-				maxlength={100}
+				maxlength={PROJECT_NAME_MAX_LENGTH}
 				autocomplete="off"
 			/>
 			{#if formError?.name}
@@ -184,6 +241,105 @@
 				<span class="text-xs text-destructive">{formError.color}</span>
 			{/if}
 		</label>
+
+		<!-- BP B7 (APG Disclosure): 既存値ありなら default open、 なければ closed。 -->
+		<details open={hasDetail} class="mt-2">
+			<summary class="cursor-pointer select-none text-sm font-medium">
+				{t('projects.editDetail')}
+			</summary>
+			<div class="mt-2 flex flex-col gap-3">
+				<label class="flex flex-col gap-1 text-sm">
+					<span>
+						{t('projects.descriptionLabel')}
+						<small class="text-muted-foreground text-xs">{t('projects.descriptionHint')}</small>
+					</span>
+					<Textarea
+						name="description"
+						bind:value={formDescription}
+						rows={6}
+						maxlength={PROJECT_DESCRIPTION_MAX_LENGTH}
+					/>
+					{#if formError?.description}
+						<span class="text-xs text-destructive">{formError.description}</span>
+					{/if}
+				</label>
+
+				<label class="flex flex-col gap-1 text-sm">
+					<span>{t('projects.tagsLabel')}</span>
+					<Input
+						id="project-tags-input"
+						name="tags"
+						bind:value={formTagsRaw}
+						aria-describedby="project-tags-hint"
+						maxlength={PROJECT_TAGS_CSV_MAX_LENGTH}
+					/>
+					<!-- BP B7: aria-describedby で AT に comma 区切り意図を伝える。 -->
+					<p id="project-tags-hint" class="text-xs text-muted-foreground">
+						{t('projects.tagsHint')}
+					</p>
+					{#if formError?.tags}
+						<span class="text-xs text-destructive">{formError.tags}</span>
+					{/if}
+				</label>
+
+				<fieldset class="flex flex-col gap-2">
+					<legend class="text-sm">{t('projects.linksLabel')}</legend>
+					{#each formLinks as link, i (link._key)}
+						<div class="flex items-start gap-2">
+							<!-- BP B7 a11y: 各 input に aria-label を付け、 行番号を伝える
+							     (placeholder は accessible name の代替不可、 WAI-ARIA APG)。 -->
+							<Input
+								aria-label={`${t('projects.linkLabel')} ${i + 1}`}
+								placeholder={t('projects.linkLabel')}
+								bind:value={link.label}
+								maxlength={PROJECT_LINK_LABEL_MAX_LENGTH}
+								class="flex-1"
+							/>
+							<Input
+								type="url"
+								aria-label={`${t('projects.linkUrl')} ${i + 1}`}
+								placeholder={t('projects.linkUrl')}
+								bind:value={link.url}
+								maxlength={PROJECT_LINK_URL_MAX_LENGTH}
+								class="flex-1"
+							/>
+							<Button
+								size="xs"
+								variant="ghost"
+								type="button"
+								aria-label={`${t('projects.removeLink')} ${i + 1}`}
+								onclick={() => removeLink(i)}
+							>
+								{t('projects.removeLink')}
+							</Button>
+						</div>
+					{/each}
+					{#if formLinks.length < PROJECT_LINK_MAX_COUNT}
+						<Button
+							size="xs"
+							variant="outline"
+							type="button"
+							onclick={addLink}
+							class="self-start"
+						>
+							{t('projects.addLink')}
+						</Button>
+					{/if}
+					{#if formError?.linksJson}
+						<span class="text-xs text-destructive">{formError.linksJson}</span>
+					{/if}
+				</fieldset>
+
+				<!--
+					BP B8 (SvelteKit form action + nested data): 純粋 FormData では
+					`name="links[0].url"` は spec 外。 hidden input に JSON.stringify した文字列で送り、
+					server 側で JSON.parse → zod validate する pattern を採用 (ADR 0010、 progressive
+					enhancement を捨てる trade-off を明記)。
+					`_key` は UI 専用 (each key) なので stripKey で除外してから serialize する。
+				-->
+				<input type="hidden" name="linksJson" value={JSON.stringify(formLinks.map(stripKey))} />
+			</div>
+		</details>
 
 		<div class="mt-2 flex justify-end gap-2">
 			<Button

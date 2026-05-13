@@ -63,7 +63,17 @@
 		"color": "Display color",
 		"assignmentCount": "({count} assignments)",
 		"confirmDelete": "Delete \"{name}\"?",
-		"confirmDeleteWithAssignments": "Delete \"{name}\" and {count} related assignments?\n(Cannot be undone)"
+		"confirmDeleteWithAssignments": "Delete \"{name}\" and {count} related assignments?\n(Cannot be undone)",
+		"editDetail": "Edit detail",
+		"descriptionLabel": "Description",
+		"descriptionHint": "Markdown is supported",
+		"tagsLabel": "Tags",
+		"tagsHint": "Comma-separated (e.g. TypeScript, Svelte, AWS)",
+		"linksLabel": "Related links",
+		"linkLabel": "Label (optional)",
+		"linkUrl": "URL",
+		"addLink": "+ Add link",
+		"removeLink": "Remove"
 	},
 	"assignments": {
 		"add": "Add assignment",
