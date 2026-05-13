@@ -164,6 +164,50 @@ rel="noopener noreferrer">` で開く。
   undefined / [] に正規化され、 repository が REMOVE を発行するが、 旧 item に該当 attribute が
   存在しないため no-op で済む (DDB REMOVE idempotent on non-existing)
 
+### DDB read path 規約: `as <Entity>` 全体キャスト禁止 (#196 で確定)
+
+`queryAllByTeam` 等の read path で DDB Item から domain object を組み立てるとき、 **`as <Entity>` の
+全体キャストは禁止**。 個別 field の `as string` / `as string[]` 等に **localize** すること。
+
+```ts
+// ❌ 駄目: optional フィールド追加時に型 error で気づけない (#194 で発生)
+data.projects.push({ id: item.id, name: item.name, color: item.color } as Project);
+
+// ✅ 良い: 個別 cast + optional は spread + 条件分岐
+const project: Project = {
+  id: item.id as string,
+  name: item.name as string,
+  color: item.color as string,
+  ...(typeof item.description === 'string' && item.description.length > 0
+    ? { description: item.description }
+    : {}),
+  ...(Array.isArray(item.tags) && item.tags.length > 0 ? { tags: item.tags as string[] } : {}),
+  ...(Array.isArray(item.links) && item.links.length > 0
+    ? { links: item.links as ProjectLink[] }
+    : {})
+};
+```
+
+理由:
+
+- 全体キャストは TypeScript の missing-property 検出を握り潰す。 PR-N1 (#194) で `Project` に
+  optional 追加した際、 read path の `as Project` cast が「description / tags / links 読み忘れ」 を
+  hide してしまい、 「保存されるが load 時に常に undefined」 という Critical bug を生んだ (#196)
+- 個別 cast + spread に localize すれば、 将来 optional 追加時に **TS error で即座に気づける** ように
+  なる (個別 field を増やし忘れたら型 が `Project` に narrow できない)
+- spread 条件分岐は write 側の REMOVE semantics と整合: write で REMOVE → DDB に attribute key なし
+  → read で spread が key 自体を出さない (round-trip 一貫)
+
+この規約は Resource / Assignment の将来 optional 追加にも適用する。 また同 PR (#196 fix) で
+`web/src/lib/repository/index.test.ts` に「optional あり / 全 absent / empty list / partial」 の
+4 ケースを追加し、 `integration.test.ts` で DDB Local round-trip も検証。 同 pattern を新 entity 追加時にも踏むこと。
+
+注: write 側 (`createProject` の `input.description ? ... : ...`) は schema 層で空文字を `undefined`
+に正規化するため truthy チェック 1 つで十分。 read 側で `typeof === 'string' && length > 0` の
+二重 guard を入れているのは、 migration ツールや管理コンソールで DDB に直接空文字が書き込まれた
+場合の defense in depth であり、 通常 flow では `length > 0` 部分は到達しない (write/read で
+条件が非対称に見えるのはこの理由)。
+
 ## References
 
 - [DynamoDB Update Expressions (SET / REMOVE)](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.UpdateExpressions.html)
