@@ -64,6 +64,8 @@
 		"@tommykey-apps/ui-components": "^0.9.3",
 		"bits-ui": "^2.18.0",
 		"clsx": "^2.1.1",
+		"isomorphic-dompurify": "^2.36.0",
+		"marked": "^18.0.3",
 		"mode-watcher": "^1.1.0",
 		"nodemailer": "^7.0.13",
 		"svelte-sonner": "^1.1.1",
