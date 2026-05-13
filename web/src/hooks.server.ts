@@ -37,4 +37,35 @@ const themeHandle: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
-export const handle: Handle = sequence(authjsHandle, localeHandle, themeHandle);
+/**
+ * security header (PR-N0)。 OWASP 推奨の baseline を付与。
+ *
+ * CSP は `svelte.config.js` の `kit.csp` 一本化のため本 hook では touch しない
+ * (hook で set すると kit.csp と上書き衝突)。 本 hook で扱うのは CSP 以外の
+ * security header のみ:
+ *
+ * - X-Content-Type-Options: MIME type sniffing 抑止
+ * - Referrer-Policy: cross-origin Referer 抑制
+ * - Permissions-Policy: camera/microphone/geolocation 等 API を完全 block
+ *
+ * 注: HSTS (Strict-Transport-Security) は CloudFront 側で設定する想定 (別 issue)、
+ * 本 hook では set しない (重複避け)。
+ *
+ * Refs:
+ * - https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html
+ * - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Permissions-Policy
+ */
+const securityHeadersHandle: Handle = async ({ event, resolve }) => {
+	const response = await resolve(event);
+	response.headers.set('X-Content-Type-Options', 'nosniff');
+	response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+	response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+	return response;
+};
+
+export const handle: Handle = sequence(
+	authjsHandle,
+	localeHandle,
+	themeHandle,
+	securityHeadersHandle
+);
