@@ -12,7 +12,8 @@
 	],
 	"ignoreDependencies": [
 		"@fontsource-variable/jetbrains-mono",
-		"tw-animate-css"
+		"tw-animate-css",
+		"@tailwindcss/typography"
 	],
 	"ignoreExportsUsedInFile": true
 }
