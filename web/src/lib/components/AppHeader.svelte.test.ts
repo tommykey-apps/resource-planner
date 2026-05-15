@@ -24,7 +24,7 @@ const SAMPLE_ASSIGNMENTS: Assignment[] = [
 	}
 ];
 
-type StubOverrides = { isAssignmentsActive?: boolean; email?: string };
+type StubOverrides = { isAssignmentsActive?: boolean; email?: string; csrfToken?: string };
 
 const stubProps = (overrides: StubOverrides = {}) => ({
 	props: {
@@ -32,7 +32,8 @@ const stubProps = (overrides: StubOverrides = {}) => ({
 		projects: SAMPLE_PROJECTS,
 		assignments: SAMPLE_ASSIGNMENTS,
 		user: { email: overrides.email ?? 'alice@example.com' },
-		isAssignmentsActive: overrides.isAssignmentsActive ?? false
+		isAssignmentsActive: overrides.isAssignmentsActive ?? false,
+		csrfToken: overrides.csrfToken ?? 'test-csrf-token'
 	}
 });
 
@@ -90,4 +91,9 @@ describe('AppHeader — child component composition (#136)', () => {
 		const headers = container.querySelectorAll('header');
 		expect(headers.length).toBe(1);
 	});
+
+	// #166 csrfToken pass-through の assert は AvatarDropdown / SignOutForm 層へ委譲。
+	// bits-ui DropdownMenu.Portal は trigger click 前に Content を render しないため
+	// AppHeader 単体テストでは hidden input を直接 DOM から拾えない。 SignOutForm.test
+	// が hidden csrfToken の存在 / 値を guard、 E2E spec が flow 全体を guard する。
 });
