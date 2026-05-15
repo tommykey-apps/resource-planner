@@ -13,7 +13,7 @@ import AvatarDropdown from './AvatarDropdown.svelte';
 describe('AvatarDropdown (smoke)', () => {
 	it('renders trigger with email initial when user.email is provided', () => {
 		const { getByRole } = render(AvatarDropdown, {
-			props: { email: 'alice@example.com' }
+			props: { email: 'alice@example.com', csrfToken: 'tok' }
 		});
 		const trigger = getByRole('button', { name: /ユーザーメニュー|account|menu/i });
 		expect(trigger).toBeInTheDocument();
@@ -23,7 +23,7 @@ describe('AvatarDropdown (smoke)', () => {
 
 	it('uses aria-label that mentions the email for screen readers', () => {
 		const { getByRole } = render(AvatarDropdown, {
-			props: { email: 'bob@example.com' }
+			props: { email: 'bob@example.com', csrfToken: 'tok' }
 		});
 		const trigger = getByRole('button');
 		const label = trigger.getAttribute('aria-label') ?? '';
@@ -32,7 +32,7 @@ describe('AvatarDropdown (smoke)', () => {
 
 	it('falls back to "?" initial when email is empty/undefined', () => {
 		const { getByRole } = render(AvatarDropdown, {
-			props: { email: '' }
+			props: { email: '', csrfToken: 'tok' }
 		});
 		const trigger = getByRole('button');
 		expect(trigger.textContent).toMatch(/\?/);
