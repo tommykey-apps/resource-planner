@@ -24,7 +24,7 @@
  */
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
-import { suppressionMetaSk, suppressionPk } from '$lib/repository/keys';
+import { buildSuppressionItem, type SuppressionInput } from '$lib/repository/suppression-item';
 
 type SnsEventRecord = {
 	Sns: {
@@ -70,14 +70,8 @@ type ComplaintNotification = {
 
 export type SesNotification = BounceNotification | ComplaintNotification;
 
-export type SuppressionPutInput = {
-	email: string;
-	reason: 'bounce' | 'complaint';
-	bounceType?: 'Permanent' | 'Transient' | 'Undetermined';
-	bounceSubType?: string;
-	complaintFeedbackType?: string;
-	timestamp: string;
-};
+// #181: 旧 SuppressionPutInput 型は SuppressionInput と完全同型のため統合 (alias で後方互換)。
+export type SuppressionPutInput = SuppressionInput;
 
 /**
  * 1 件の SES notification を処理して suppression list に書き込むべきアドレスを返す。
@@ -115,16 +109,7 @@ export async function putSuppression(input: SuppressionPutInput): Promise<void> 
 	await ddbClient.send(
 		new PutCommand({
 			TableName: TABLE,
-			Item: {
-				pk: suppressionPk(input.email),
-				sk: suppressionMetaSk(),
-				email: input.email,
-				reason: input.reason,
-				bounceType: input.bounceType,
-				bounceSubType: input.bounceSubType,
-				complaintFeedbackType: input.complaintFeedbackType,
-				timestamp: input.timestamp
-			}
+			Item: buildSuppressionItem(input)
 		})
 	);
 }

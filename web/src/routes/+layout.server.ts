@@ -1,5 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import { queryAllByTeam } from '$lib/repository';
+import { DEFAULT_TEAM_ID } from '$lib/repository/team';
 import { renderMarkdown } from '$lib/markdown';
 import type { ProjectWithRenderedDescription } from '$lib/types';
 import type { LayoutServerLoad } from './$types';
@@ -32,9 +33,8 @@ export const load: LayoutServerLoad = async (event) => {
 		csrfToken = '';
 	}
 
-	// teamId は requireSession() と同じ default。multi-team 化までは hardcode。
-	const teamId = 'team_default';
-	const data = await queryAllByTeam(teamId);
+	// teamId は requireSession() と同じ default。multi-team 化までは固定。
+	const data = await queryAllByTeam(DEFAULT_TEAM_ID);
 
 	// ADR 0010 / PR-N4: SSR で markdown を sanitize 済 HTML に変換。 description なしの
 	// project には empty string を渡し、 client が `{@html descriptionHtml}` で安全に

@@ -8,6 +8,7 @@
  *   対応では last-used team を session に保存する別 PR で。
  */
 import { error, type RequestEvent } from '@sveltejs/kit';
+import { DEFAULT_TEAM_ID } from '$lib/repository/team';
 
 export interface AppSession {
 	userId: string;
@@ -15,8 +16,6 @@ export interface AppSession {
 	name?: string;
 	teamId: string;
 }
-
-const DEFAULT_TEAM_ID = 'team_default';
 
 interface AuthJsLocals {
 	auth?: () => Promise<{
@@ -31,12 +30,12 @@ interface AuthJsLocals {
 export async function requireSession(event: RequestEvent): Promise<AppSession> {
 	const locals = event.locals as AuthJsLocals;
 	if (typeof locals.auth !== 'function') {
-		error(401, '認証が必要です');
+		error(401, { message: 'Authentication required', code: 'authRequired' });
 	}
 
 	const session = await locals.auth();
 	if (!session?.user?.id || !session.user.email) {
-		error(401, '認証が必要です');
+		error(401, { message: 'Authentication required', code: 'authRequired' });
 	}
 
 	return {
