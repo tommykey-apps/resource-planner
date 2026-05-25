@@ -7,7 +7,7 @@
 	import Dialog from './Dialog.svelte';
 	import { createSubmitState } from '$lib/forms/submit-state.svelte';
 	import { confirmDialog } from '$lib/forms/confirm-dialog';
-	import { translateServerError, type ServerErrors } from '$lib/forms/server-error';
+	import { mapServerErrors, type ServerErrors } from '$lib/forms/server-error';
 	import { t } from '$lib/i18n/index.svelte';
 	import type { Project, ProjectLink, Assignment } from '$lib/types';
 	import {
@@ -110,6 +110,8 @@
 	// 連打抑制 + submitting state (#94)。delete は #132 で confirm dialog が modal ブロックする。
 	const formSubmitState = createSubmitState();
 
+	const PROJECT_FORM_FIELDS = ['name', 'color', 'description', 'tags', 'linksJson'] as const;
+
 	const formSubmit: SubmitFunction = formSubmitState.wrap(() => {
 		formError = null;
 		return async ({ result, update }) => {
@@ -118,13 +120,7 @@
 				editing = null;
 			} else if (result.type === 'failure') {
 				const errs = (result.data as { errors?: ServerErrors })?.errors;
-				formError = {
-					name: errs?.name ? translateServerError(errs.name) : undefined,
-					color: errs?.color ? translateServerError(errs.color) : undefined,
-					description: errs?.description ? translateServerError(errs.description) : undefined,
-					tags: errs?.tags ? translateServerError(errs.tags) : undefined,
-					linksJson: errs?.linksJson ? translateServerError(errs.linksJson) : undefined
-				};
+				formError = mapServerErrors(errs, PROJECT_FORM_FIELDS);
 			}
 			await update();
 		};

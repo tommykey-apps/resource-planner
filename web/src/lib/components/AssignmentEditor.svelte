@@ -5,7 +5,7 @@
 	import Dialog from './Dialog.svelte';
 	import { addDays } from '$lib/date';
 	import { createSubmitState } from '$lib/forms/submit-state.svelte';
-	import { translateServerError, type ServerErrors } from '$lib/forms/server-error';
+	import { mapServerErrors, type ServerErrors } from '$lib/forms/server-error';
 	import { t } from '$lib/i18n/index.svelte';
 	import type { Assignment, Resource, Project } from '$lib/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
@@ -55,6 +55,8 @@
 		}
 	});
 
+	const ASSIGNMENT_FORM_FIELDS = ['resourceId', 'projectId', 'startDate', 'endDate'] as const;
+
 	const submitState = createSubmitState();
 	const submit: SubmitFunction = submitState.wrap(() => {
 		formError = null;
@@ -64,12 +66,7 @@
 				onSuccess?.();
 			} else if (result.type === 'failure') {
 				const errs = (result.data as { errors?: ServerErrors })?.errors;
-				formError = {
-					resourceId: errs?.resourceId ? translateServerError(errs.resourceId) : undefined,
-					projectId: errs?.projectId ? translateServerError(errs.projectId) : undefined,
-					startDate: errs?.startDate ? translateServerError(errs.startDate) : undefined,
-					endDate: errs?.endDate ? translateServerError(errs.endDate) : undefined
-				};
+				formError = mapServerErrors(errs, ASSIGNMENT_FORM_FIELDS);
 			}
 			await update();
 		};

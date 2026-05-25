@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { formatZodErrors, translateServerError } from './server-error';
+import { formatZodErrors, mapServerErrors, translateServerError } from './server-error';
+import type { ServerErrors } from './server-error';
 import { localeState } from '$lib/i18n/index.svelte';
 
 /**
@@ -83,5 +84,59 @@ describe('translateServerError (#139)', () => {
 		expect(translateServerError({ code: 'noSuchCode', field: 'name' })).toBe('入力エラー');
 		localeState.current = 'en';
 		expect(translateServerError({ code: 'noSuchCode', field: 'name' })).toBe('Input error');
+	});
+});
+
+/**
+ * #170: form action result.type === 'failure' の per-field translateServerError mapping を
+ * 4 component で同じ pattern が重複していたのを 1 helper に集約。
+ *
+ * - 第二引数の field 名 list 分だけ entry を返す (errors に該当 field が無くても undefined)
+ * - errors が undefined / null なら全 field が undefined の object を返す (UI 側の null check 省略)
+ */
+describe('mapServerErrors (#170)', () => {
+	it('field list 分のキーを返し、 該当 field のみ翻訳結果が入る (他は undefined)', () => {
+		localeState.current = 'en';
+		const errors: ServerErrors = {
+			name: { code: 'required', field: 'name' }
+		};
+		const r = mapServerErrors(errors, ['name', 'color']);
+		expect(r).toEqual({
+			name: 'Name is required',
+			color: undefined
+		});
+	});
+
+	it('errors が undefined なら全 field が undefined', () => {
+		const r = mapServerErrors(undefined, ['name', 'color']);
+		expect(r).toEqual({ name: undefined, color: undefined });
+	});
+
+	it('errors が空 object なら全 field が undefined', () => {
+		const r = mapServerErrors({}, ['name', 'color']);
+		expect(r).toEqual({ name: undefined, color: undefined });
+	});
+
+	it('全 field hit: 4 field を一括翻訳', () => {
+		localeState.current = 'en';
+		const errors: ServerErrors = {
+			resourceId: { code: 'required', field: 'resourceId' },
+			projectId: { code: 'required', field: 'projectId' },
+			startDate: { code: 'invalidDateFormat', field: 'startDate' },
+			endDate: { code: 'endBeforeStart', field: 'endDate' }
+		};
+		const r = mapServerErrors(errors, ['resourceId', 'projectId', 'startDate', 'endDate']);
+		expect(r.resourceId).toBe('Person is required');
+		expect(r.projectId).toBe('Project is required');
+		expect(r.startDate).toMatch(/YYYY-MM-DD/);
+		expect(r.endDate).toMatch(/start date/i);
+	});
+
+	it('field 名の typo 等で errors に存在しない key は無視 (型安全に undefined)', () => {
+		const errors: ServerErrors = {
+			name: { code: 'required', field: 'name' }
+		};
+		const r = mapServerErrors(errors, ['nonexistent']);
+		expect(r.nonexistent).toBeUndefined();
 	});
 });
