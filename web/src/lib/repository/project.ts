@@ -1,12 +1,8 @@
-import {
-	PutCommand,
-	UpdateCommand,
-	QueryCommand,
-	TransactWriteCommand
-} from '@aws-sdk/lib-dynamodb';
+import { PutCommand, UpdateCommand, TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
 import { ddb, TABLE } from '$lib/db/client';
 import { newId } from '$lib/id';
-import { pk, projectSk, SK_PREFIX } from './keys';
+import { pk, projectSk } from './keys';
+import { queryRelatedAssignmentSk } from './assignment';
 import type { Project } from '$lib/types';
 import type { ProjectCreateInput, ProjectUpdateInput } from '$lib/schemas';
 
@@ -93,7 +89,7 @@ export async function updateProject(teamId: string, input: ProjectUpdateInput): 
  */
 export async function deleteProject(teamId: string, id: string): Promise<void> {
 	const teamPk = pk(teamId);
-	const related = await queryRelatedAssignmentSkByProject(teamId, id);
+	const related = await queryRelatedAssignmentSk(teamId, 'projectId', id);
 
 	const totalItems = related.length + 1;
 	if (totalItems > TRANSACT_MAX_ITEMS) {
@@ -112,33 +108,4 @@ export async function deleteProject(teamId: string, id: string): Promise<void> {
 			]
 		})
 	);
-}
-
-async function queryRelatedAssignmentSkByProject(
-	teamId: string,
-	projectId: string
-): Promise<string[]> {
-	const skList: string[] = [];
-	let lastKey: Record<string, unknown> | undefined;
-	do {
-		const out = await ddb.send(
-			new QueryCommand({
-				TableName: TABLE,
-				KeyConditionExpression: 'pk = :pk AND begins_with(sk, :asn)',
-				FilterExpression: 'projectId = :pid',
-				ExpressionAttributeValues: {
-					':pk': pk(teamId),
-					':asn': SK_PREFIX.assignment,
-					':pid': projectId
-				},
-				ProjectionExpression: 'sk',
-				ExclusiveStartKey: lastKey
-			})
-		);
-		for (const item of out.Items ?? []) {
-			if (typeof item.sk === 'string') skList.push(item.sk);
-		}
-		lastKey = out.LastEvaluatedKey;
-	} while (lastKey);
-	return skList;
 }

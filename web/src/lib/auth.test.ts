@@ -59,10 +59,10 @@ describe('requireSession (Auth.js)', () => {
 		expect(session.name).toBeUndefined();
 	});
 
-	it('throws 401 with code=authRequired when locals.auth is not a function', async () => {
-		const event = { locals: {} } as unknown as RequestEvent;
-		await expectHttpError(() => requireSession(event), 401, 'authRequired');
-	});
+	// #183: 旧実装の defensive `typeof locals.auth !== 'function'` 早期 throw は撤去。
+	// @auth/sveltekit が ambient `App.Locals.auth(): Promise<Session | null>` を declare
+	// global で注入するため、 SvelteKit + Auth.js runtime では locals.auth は常に function。
+	// そのため「locals.auth is not a function」 case 自体が realistic でなくなった (テスト削除)。
 
 	it('throws 401 with code=authRequired when session is null (signed out)', async () => {
 		const event = mockEvent(async () => null);

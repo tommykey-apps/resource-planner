@@ -185,11 +185,12 @@ describe('deleteProject (cascade)', () => {
 		await deleteProject(TEAM, 'prj-1');
 
 		const qInput = ddbMock.commandCalls(QueryCommand)[0].args[0].input;
-		expect(qInput.FilterExpression).toBe('projectId = :pid');
+		// #172: queryRelatedAssignmentSk に統合、 placeholder は generic な :v
+		expect(qInput.FilterExpression).toBe('projectId = :v');
 		expect(qInput.ExpressionAttributeValues).toMatchObject({
 			':pk': `TEAM#${TEAM}`,
 			':asn': 'ASN#',
-			':pid': 'prj-1'
+			':v': 'prj-1'
 		});
 
 		const txInput = ddbMock.commandCalls(TransactWriteCommand)[0].args[0].input;

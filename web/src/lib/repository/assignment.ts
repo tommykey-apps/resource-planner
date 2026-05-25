@@ -1,7 +1,12 @@
-import { PutCommand, DeleteCommand, TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
+import {
+	PutCommand,
+	DeleteCommand,
+	QueryCommand,
+	TransactWriteCommand
+} from '@aws-sdk/lib-dynamodb';
 import { ddb, TABLE } from '$lib/db/client';
 import { newId } from '$lib/id';
-import { pk, assignmentSk } from './keys';
+import { pk, assignmentSk, SK_PREFIX } from './keys';
 import type { Assignment } from '$lib/types';
 import type {
 	AssignmentCreatePayload,
@@ -92,4 +97,43 @@ export async function deleteAssignment(
 			Key: { pk: pk(teamId), sk: assignmentSk(startDate, id) }
 		})
 	);
+}
+
+/**
+ * #172: `pk = TEAM#X AND begins_with(sk, "ASN#")` を Query して、 指定 attr (`resourceId`
+ * or `projectId`) が一致する Assignment の SK 一覧を返す。 pagination (`LastEvaluatedKey`)
+ * 対応。 cascade delete (`resource.ts.deleteResource` / `project.ts.deleteProject`) で
+ * 関連 assignment の SK を取り出すのに使う。
+ *
+ * 旧実装は `queryRelatedAssignmentSkBy{Resource,Project}` で 2 関数完全コピペだったので
+ * `attrName` 引数で 1 つに集約 (literal union で誤用防止)。
+ */
+export async function queryRelatedAssignmentSk(
+	teamId: string,
+	attrName: 'resourceId' | 'projectId',
+	attrValue: string
+): Promise<string[]> {
+	const skList: string[] = [];
+	let lastKey: Record<string, unknown> | undefined;
+	do {
+		const out = await ddb.send(
+			new QueryCommand({
+				TableName: TABLE,
+				KeyConditionExpression: 'pk = :pk AND begins_with(sk, :asn)',
+				FilterExpression: `${attrName} = :v`,
+				ExpressionAttributeValues: {
+					':pk': pk(teamId),
+					':asn': SK_PREFIX.assignment,
+					':v': attrValue
+				},
+				ProjectionExpression: 'sk',
+				ExclusiveStartKey: lastKey
+			})
+		);
+		for (const item of out.Items ?? []) {
+			if (typeof item.sk === 'string') skList.push(item.sk);
+		}
+		lastKey = out.LastEvaluatedKey;
+	} while (lastKey);
+	return skList;
 }

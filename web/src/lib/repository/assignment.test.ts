@@ -2,12 +2,18 @@ import {
 	DeleteCommand,
 	DynamoDBDocumentClient,
 	PutCommand,
+	QueryCommand,
 	TransactWriteCommand
 } from '@aws-sdk/lib-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 import 'aws-sdk-client-mock-vitest';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createAssignment, deleteAssignment, updateAssignment } from './assignment';
+import {
+	createAssignment,
+	deleteAssignment,
+	queryRelatedAssignmentSk,
+	updateAssignment
+} from './assignment';
 
 const ddbMock = mockClient(DynamoDBDocumentClient);
 const TEAM = 'team-test';
@@ -121,5 +127,64 @@ describe('deleteAssignment', () => {
 
 		const input = ddbMock.commandCalls(DeleteCommand)[0].args[0].input;
 		expect(input.Key).toEqual({ pk: `TEAM#${TEAM}`, sk: 'ASN#2026-05-01#a1' });
+	});
+});
+
+/**
+ * #172: resource.ts / project.ts で重複していた `queryRelatedAssignmentSkBy{Resource,Project}` を
+ * 統合した generic helper。 attrName を 'resourceId' | 'projectId' で受け取り、
+ * filter expression を組み立てる。
+ */
+describe('queryRelatedAssignmentSk (#172)', () => {
+	it('resourceId filter: FilterExpression + ExpressionAttributeValues を組む', async () => {
+		ddbMock.on(QueryCommand).resolves({
+			Items: [{ sk: 'ASN#2026-05-01#a1' }, { sk: 'ASN#2026-05-15#a2' }]
+		});
+
+		const result = await queryRelatedAssignmentSk(TEAM, 'resourceId', 'r1');
+		expect(result).toEqual(['ASN#2026-05-01#a1', 'ASN#2026-05-15#a2']);
+
+		const input = ddbMock.commandCalls(QueryCommand)[0].args[0].input;
+		expect(input.KeyConditionExpression).toBe('pk = :pk AND begins_with(sk, :asn)');
+		expect(input.FilterExpression).toBe('resourceId = :v');
+		expect(input.ExpressionAttributeValues).toEqual({
+			':pk': `TEAM#${TEAM}`,
+			':asn': 'ASN#',
+			':v': 'r1'
+		});
+		expect(input.ProjectionExpression).toBe('sk');
+	});
+
+	it('projectId filter: FilterExpression が projectId に切り替わる', async () => {
+		ddbMock.on(QueryCommand).resolves({ Items: [{ sk: 'ASN#2026-05-01#a1' }] });
+
+		const result = await queryRelatedAssignmentSk(TEAM, 'projectId', 'p1');
+		expect(result).toEqual(['ASN#2026-05-01#a1']);
+
+		const input = ddbMock.commandCalls(QueryCommand)[0].args[0].input;
+		expect(input.FilterExpression).toBe('projectId = :v');
+		expect(input.ExpressionAttributeValues?.[':v']).toBe('p1');
+	});
+
+	it('pagination: LastEvaluatedKey で複数 page を辿る', async () => {
+		ddbMock
+			.on(QueryCommand)
+			.resolvesOnce({
+				Items: [{ sk: 'ASN#2026-05-01#a1' }],
+				LastEvaluatedKey: { pk: 'x', sk: 'ASN#2026-05-01#a1' }
+			})
+			.resolvesOnce({
+				Items: [{ sk: 'ASN#2026-05-15#a2' }]
+			});
+
+		const result = await queryRelatedAssignmentSk(TEAM, 'resourceId', 'r1');
+		expect(result).toEqual(['ASN#2026-05-01#a1', 'ASN#2026-05-15#a2']);
+		expect(ddbMock.commandCalls(QueryCommand)).toHaveLength(2);
+	});
+
+	it('結果が空ならば [] を返す', async () => {
+		ddbMock.on(QueryCommand).resolves({ Items: [] });
+		const result = await queryRelatedAssignmentSk(TEAM, 'resourceId', 'r1');
+		expect(result).toEqual([]);
 	});
 });

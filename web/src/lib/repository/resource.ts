@@ -1,12 +1,8 @@
-import {
-	PutCommand,
-	UpdateCommand,
-	QueryCommand,
-	TransactWriteCommand
-} from '@aws-sdk/lib-dynamodb';
+import { PutCommand, UpdateCommand, TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
 import { ddb, TABLE } from '$lib/db/client';
 import { newId } from '$lib/id';
-import { pk, resourceSk, SK_PREFIX } from './keys';
+import { pk, resourceSk } from './keys';
+import { queryRelatedAssignmentSk } from './assignment';
 import type { Resource } from '$lib/types';
 import type { ResourceCreateInput, ResourceUpdateInput } from '$lib/schemas';
 
@@ -52,7 +48,7 @@ export async function updateResource(teamId: string, input: ResourceUpdateInput)
  */
 export async function deleteResource(teamId: string, id: string): Promise<void> {
 	const teamPk = pk(teamId);
-	const related = await queryRelatedAssignmentSkByResource(teamId, id);
+	const related = await queryRelatedAssignmentSk(teamId, 'resourceId', id);
 
 	const totalItems = related.length + 1;
 	if (totalItems > TRANSACT_MAX_ITEMS) {
@@ -71,37 +67,4 @@ export async function deleteResource(teamId: string, id: string): Promise<void> 
 			]
 		})
 	);
-}
-
-/**
- * `pk = TEAM#X AND begins_with(sk, "ASN#")` を Query して、`resourceId === id` の SK 一覧を返す。
- * pagination (`LastEvaluatedKey`) 対応。
- */
-async function queryRelatedAssignmentSkByResource(
-	teamId: string,
-	resourceId: string
-): Promise<string[]> {
-	const skList: string[] = [];
-	let lastKey: Record<string, unknown> | undefined;
-	do {
-		const out = await ddb.send(
-			new QueryCommand({
-				TableName: TABLE,
-				KeyConditionExpression: 'pk = :pk AND begins_with(sk, :asn)',
-				FilterExpression: 'resourceId = :rid',
-				ExpressionAttributeValues: {
-					':pk': pk(teamId),
-					':asn': SK_PREFIX.assignment,
-					':rid': resourceId
-				},
-				ProjectionExpression: 'sk',
-				ExclusiveStartKey: lastKey
-			})
-		);
-		for (const item of out.Items ?? []) {
-			if (typeof item.sk === 'string') skList.push(item.sk);
-		}
-		lastKey = out.LastEvaluatedKey;
-	} while (lastKey);
-	return skList;
 }
