@@ -129,7 +129,7 @@ Claude Code session 内で本 repo を編集する際は **必ず先にテスト
 コーディング後に静的解析 + code review が自動推奨される仕組みを Claude Code hooks + CI で組んでいる。
 
 - **PostToolUse hook** (`Edit|Write`): 編集ファイルを `.claude/state/dirty-files.log` に記録 + `dirty.flag` touch (`.claude/hooks/post-edit-touch.sh`)
-- **Stop hook**: dirty なら次ターンの additionalContext に「`/audit` 推奨」を soft 通知 (強制 block ではない)。 `.claude/state/dirty.flag` を `rm` で skip 可能
+- **UserPromptSubmit hook**: dirty なら次ターン頭で `/audit` 推奨を additionalContext に soft 注入 (`.claude/hooks/audit-reminder.sh`、 plain stdout 経由)。 強制 block ではない。 `.claude/state/dirty.flag` を `rm` で skip 可能。 (旧 Stop hook 実装は `additionalContext` を公式仕様で受け付けないため UserPromptSubmit に移行)
 - **`/audit` skill** (user-level): `pnpm check` / `pnpm test` / `knip` (unused) / `jscpd` (重複) / `madge` (循環) → 大規模変更時は `code-reviewer` agent spawn → dirty クリア
 - **`code-reviewer` agent** (user-level): SvelteKit 2 / Svelte 5 / TS / Auth.js / DynamoDB / Zod / Terraform の公式 docs 準拠を厳しく見る、 「`unknown` キャスト / マジック数値 / 公式 docs 省略」 等の手癖を重点検出
 - **CI audit workflow** (`.github/workflows/audit.yaml`): ローカルバイパスされても PR で同 audit を実行 (`continue-on-error` で main CI と分離)

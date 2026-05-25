@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { DropdownMenu } from 'bits-ui';
 	import { t } from '$lib/i18n/index.svelte';
+	import SignOutForm from './SignOutForm.svelte';
 
-	let { email = '' }: { email?: string } = $props();
+	let { email = '', csrfToken }: { email?: string; csrfToken: string } = $props();
 
 	const initial = $derived(email.length > 0 ? email[0].toUpperCase() : '?');
 	const ariaLabel = $derived(
@@ -33,13 +34,9 @@
 				</DropdownMenu.Item>
 				<DropdownMenu.Separator class="my-1 h-px bg-border" />
 			{/if}
-			<form method="POST" action="/auth/signout">
-				<DropdownMenu.Item
-					class="flex w-full cursor-pointer items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent"
-				>
-					<button type="submit" class="flex-1 text-left">{t('avatar.signout')}</button>
-				</DropdownMenu.Item>
-			</form>
+			<DropdownMenu.Item class="p-0">
+				<SignOutForm {csrfToken} label={t('avatar.signout')} />
+			</DropdownMenu.Item>
 		</DropdownMenu.Content>
 	</DropdownMenu.Portal>
 </DropdownMenu.Root>

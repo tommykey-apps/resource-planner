@@ -113,6 +113,7 @@
 	{projects}
 	assignments={dbAssignments}
 	user={data.user}
+	csrfToken={data.csrfToken}
 	onOptimisticCreateResource={optimisticAddResource}
 	onConfirmCreateResource={confirmResourceCreate}
 	onRollbackCreateResource={rollbackResourceCreate}

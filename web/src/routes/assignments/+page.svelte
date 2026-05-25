@@ -111,7 +111,14 @@
 	<title>{t('assignments.listTitle')} — {t('app.title')}</title>
 </svelte:head>
 
-<AppHeader {resources} {projects} {assignments} user={data.user} isAssignmentsActive />
+<AppHeader
+	{resources}
+	{projects}
+	{assignments}
+	user={data.user}
+	csrfToken={data.csrfToken}
+	isAssignmentsActive
+/>
 
 <main class="mx-auto max-w-[1200px] px-4 py-6">
 	<h1 class="mb-4 text-xl font-semibold">{t('assignments.listTitle')}</h1>

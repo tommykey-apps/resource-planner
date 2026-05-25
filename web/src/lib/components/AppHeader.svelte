@@ -25,6 +25,7 @@
 		projects,
 		assignments,
 		user,
+		csrfToken,
 		isAssignmentsActive = false,
 		onOptimisticCreateResource,
 		onConfirmCreateResource,
@@ -34,6 +35,7 @@
 		projects: Project[];
 		assignments: Assignment[];
 		user: { email?: string | null | undefined } | undefined;
+		csrfToken: string;
 		isAssignmentsActive?: boolean;
 		onOptimisticCreateResource?: (temp: Resource) => void;
 		onConfirmCreateResource?: (temp: Resource, real: Resource) => void;
@@ -69,7 +71,7 @@
 			</Button>
 			<LocaleSwitcher />
 			<ThemeToggle />
-			<AvatarDropdown email={user?.email ?? ''} />
+			<AvatarDropdown email={user?.email ?? ''} {csrfToken} />
 		</div>
 	</div>
 </header>

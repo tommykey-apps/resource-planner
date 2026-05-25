@@ -13,9 +13,23 @@ export const load: LayoutServerLoad = async (event) => {
 	// /sign-in 系ページ自体は authenticated でも accessible (Auth.js 側で適切にハンドル)。
 	if (!session?.user?.id) {
 		if (event.url.pathname.startsWith('/sign-in') || event.url.pathname.startsWith('/auth')) {
-			return { locale, theme, resources: [], projects: [], assignments: [] };
+			// csrfToken は未認証時 AppHeader を mount しないので空文字で OK (型整合用)。
+			return { locale, theme, csrfToken: '', resources: [], projects: [], assignments: [] };
 		}
 		redirect(303, '/sign-in');
+	}
+
+	// #166: sign-out form の double-submit CSRF 用 token を SSR fetch して全 authenticated
+	// page に流す。 sign-in 側 +page.server.ts と同じ pattern。 fail-soft (失敗時は空文字)。
+	let csrfToken = '';
+	try {
+		const res = await event.fetch('/auth/csrf');
+		if (res.ok) {
+			const json = (await res.json()) as { csrfToken?: string };
+			csrfToken = json.csrfToken ?? '';
+		}
+	} catch {
+		csrfToken = '';
 	}
 
 	// teamId は requireSession() と同じ default。multi-team 化までは hardcode。
@@ -34,6 +48,7 @@ export const load: LayoutServerLoad = async (event) => {
 	return {
 		locale,
 		theme,
+		csrfToken,
 		user: { id: session.user.id, email: session.user.email, name: session.user.name },
 		resources: data.resources,
 		projects,
