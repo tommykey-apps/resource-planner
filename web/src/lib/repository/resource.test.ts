@@ -78,11 +78,12 @@ describe('deleteResource (cascade)', () => {
 		expect(queryCalls).toHaveLength(1);
 		const qInput = queryCalls[0].args[0].input;
 		expect(qInput.KeyConditionExpression).toBe('pk = :pk AND begins_with(sk, :asn)');
-		expect(qInput.FilterExpression).toBe('resourceId = :rid');
+		// #172: queryRelatedAssignmentSk に統合、 placeholder は generic な :v
+		expect(qInput.FilterExpression).toBe('resourceId = :v');
 		expect(qInput.ExpressionAttributeValues).toMatchObject({
 			':pk': `TEAM#${TEAM}`,
 			':asn': 'ASN#',
-			':rid': 'res-1'
+			':v': 'res-1'
 		});
 
 		const txCalls = ddbMock.commandCalls(TransactWriteCommand);
