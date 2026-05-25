@@ -3,6 +3,7 @@
 - **Status**: Accepted
 - **Date**: 2026-05-09
 - **Deciders**: tommykey0925
+- **後続検討**: [ADR 0011](0011-defer-better-auth-migration.md) — 2025-09 の Auth.js → Better Auth 統合アナウンスを受けた移行検討、 据え置き決定 (DynamoDB primary 不適合のため)
 
 ## Context
 

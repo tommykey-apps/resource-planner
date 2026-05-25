@@ -17,6 +17,7 @@ resource-planner の設計判断を Michael Nygard 形式で記録する。
 | [0008](0008-auth-migration-clerk-to-authjs.md) | 認証を Clerk → Auth.js + Email Magic Link に移行する | Accepted | 2026-05-09 |
 | [0009](0009-org-to-team-redesign.md) | マルチテナント単位を Clerk Org → 自前 Team モデルに再設計する | Accepted | 2026-05-09 |
 | [0010](0010-project-metadata.md) | Project に詳細情報 (description / tags / links) を同 item 内 attribute で追加する | Accepted | 2026-05-13 |
+| [0011](0011-defer-better-auth-migration.md) | Better Auth への移行は当面据え置く (DynamoDB primary 不適合) | Accepted | 2026-05-26 |
 
 ## テンプレ
 
