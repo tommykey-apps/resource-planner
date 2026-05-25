@@ -23,12 +23,12 @@
 				]
 			}
 		],
-		"Stop": [
+		"UserPromptSubmit": [
 			{
 				"hooks": [
 					{
 						"type": "command",
-						"command": ".claude/hooks/stop-audit-gate.sh"
+						"command": ".claude/hooks/audit-reminder.sh"
 					}
 				]
 			}
