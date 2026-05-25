@@ -56,3 +56,25 @@ export function translateServerError(err: ServerError | null | undefined): strin
 	if (translated === `errors.${err.code}`) return t('errors.generic');
 	return translated;
 }
+
+/**
+ * #170: form action result.type === 'failure' で受け取った `ServerErrors` を、
+ * 指定 field 名 list 分の `Record<F, string | undefined>` に一括翻訳する。
+ *
+ * 4 form CRUD component で `errs?.foo ? translateServerError(errs.foo) : undefined` を
+ * field 数 × 行で並べていたボイラープレートを 1 呼び出しに集約する。
+ *
+ * @param errors form action の failure response から取り出した ServerErrors (undefined 可)
+ * @param fields 翻訳対象の field 名 list (form schema の field 名と一致させる)
+ */
+export function mapServerErrors<F extends string>(
+	errors: ServerErrors | undefined | null,
+	fields: readonly F[]
+): Record<F, string | undefined> {
+	const result = {} as Record<F, string | undefined>;
+	for (const field of fields) {
+		const err = errors?.[field];
+		result[field] = err ? translateServerError(err) : undefined;
+	}
+	return result;
+}

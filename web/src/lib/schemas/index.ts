@@ -181,45 +181,44 @@ export type ProjectUpdateInput = z.infer<typeof projectUpdateSchema>;
  *
  * - `z.input<typeof schema>`: フォーム生 shape (`endDate` inclusive)
  * - `z.output<typeof schema>` (= `z.infer`): post-transform shape (`endDateExclusive`)
+ *
+ * #173: 3 schema (create / update / formUpdate) で `refine(start<=end) + transform(addDays)` が
+ * 重複していたため、 base shape + factory に集約。 Zod v4 公式 (spread syntax 推奨) に準拠。
+ * `projectBaseShape` と同パターン。
  */
 
+/** create / update / formUpdate で共通の入力 fields。 */
+const assignmentBaseShape = {
+	resourceId: z.string().min(1, 'required'),
+	projectId: z.string().min(1, 'required'),
+	startDate: dateString,
+	endDate: dateString
+} as const;
+
+/** start <= end の refine。 全 assignment schema で共通。 */
+const refineEndAfterStart = <T extends { startDate: string; endDate: string }>(v: T): boolean =>
+	v.startDate <= v.endDate;
+
+// Zod の refine `params` の `path` は mutable `PropertyKey[]` を要求するので as const は付けない。
+const refineOpts = { message: 'endBeforeStart', path: ['endDate'] };
+
+/** endDate (inclusive) を endDateExclusive (半開区間) に変換する共通ロジック (ADR 0004)。 */
+function toExclusivePayload<T extends { startDate: string; endDate: string }>(
+	input: T
+): Omit<T, 'endDate'> & { endDateExclusive: string } {
+	const { endDate, ...rest } = input;
+	return { ...rest, endDateExclusive: addDays(endDate, 1) };
+}
+
 export const assignmentCreateSchema = z
-	.object({
-		resourceId: z.string().min(1, 'required'),
-		projectId: z.string().min(1, 'required'),
-		startDate: dateString,
-		endDate: dateString
-	})
-	.refine((v) => v.startDate <= v.endDate, {
-		message: 'endBeforeStart',
-		path: ['endDate']
-	})
-	.transform((input) => ({
-		resourceId: input.resourceId,
-		projectId: input.projectId,
-		startDate: input.startDate,
-		endDateExclusive: addDays(input.endDate, 1)
-	}));
+	.object(assignmentBaseShape)
+	.refine(refineEndAfterStart, refineOpts)
+	.transform(toExclusivePayload);
 
 export const assignmentUpdateSchema = z
-	.object({
-		id: z.string().min(1, 'required'),
-		resourceId: z.string().min(1, 'required'),
-		projectId: z.string().min(1, 'required'),
-		startDate: dateString,
-		endDate: dateString
-	})
-	.refine((v) => v.startDate <= v.endDate, {
-		message: 'endBeforeStart',
-		path: ['endDate']
-	})
-	.transform((input) => ({
-		id: input.id,
-		resourceId: input.resourceId,
-		projectId: input.projectId,
-		startDate: input.startDate,
-		endDateExclusive: addDays(input.endDate, 1)
-	}));
+	.object({ id: z.string().min(1, 'required'), ...assignmentBaseShape })
+	.refine(refineEndAfterStart, refineOpts)
+	.transform(toExclusivePayload);
 
 /**
  * 編集フォーム送信用 schema (#99 item 1)。`prevStartDate` を含めて受け取り、
@@ -230,26 +229,14 @@ export const assignmentUpdateSchema = z
 export const assignmentFormUpdateSchema = z
 	.object({
 		id: z.string().min(1, 'required'),
-		resourceId: z.string().min(1, 'required'),
-		projectId: z.string().min(1, 'required'),
 		prevStartDate: dateString,
-		startDate: dateString,
-		endDate: dateString
+		...assignmentBaseShape
 	})
-	.refine((v) => v.startDate <= v.endDate, {
-		message: 'endBeforeStart',
-		path: ['endDate']
-	})
-	.transform((input) => ({
-		prevStartDate: input.prevStartDate,
-		payload: {
-			id: input.id,
-			resourceId: input.resourceId,
-			projectId: input.projectId,
-			startDate: input.startDate,
-			endDateExclusive: addDays(input.endDate, 1)
-		}
-	}));
+	.refine(refineEndAfterStart, refineOpts)
+	.transform((input) => {
+		const { prevStartDate, ...rest } = input;
+		return { prevStartDate, payload: toExclusivePayload(rest) };
+	});
 
 /** Post-transform shape (storage)。repository が受け取る型。 */
 export type AssignmentCreatePayload = z.output<typeof assignmentCreateSchema>;
