@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { Button } from '$lib/components/ui/button';
 	import * as Table from '$lib/components/ui/table';
@@ -15,6 +14,7 @@
 		parseAssignmentParams,
 		type AssignmentFilters
 	} from '$lib/assignments-url-state';
+	import { syncStateToUrl } from '$lib/state/url-state.svelte';
 	import type { Assignment, ProjectWithRenderedDescription } from '$lib/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import type { PageData } from './$types';
@@ -28,18 +28,10 @@
 	const resourceMap = $derived(new Map(resources.map((r) => [r.id, r])));
 	const projectMap = $derived(new Map(projects.map((p) => [p.id, p])));
 
-	// URL → filter state (初期化 + reactive 更新)
+	// URL → filter state (初期化 + reactive 更新)。 sync は `syncStateToUrl` helper で集約 (#174)。
 	const initial = parseAssignmentParams(page.url.searchParams);
 	let filters = $state<AssignmentFilters>(initial);
-
-	// filter → URL (replaceState で history を汚さない)
-	$effect(() => {
-		if (typeof window === 'undefined') return;
-		const next = applyAssignmentParams(new URL(window.location.href), filters);
-		if (next.toString() !== window.location.href) {
-			goto(next, { replaceState: true, noScroll: true, keepFocus: true });
-		}
-	});
+	syncStateToUrl(() => filters, applyAssignmentParams);
 
 	function displayEndDate(a: Assignment): string {
 		return addDays(a.endDateExclusive, -1);

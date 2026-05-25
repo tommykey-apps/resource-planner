@@ -4,7 +4,9 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
  * PATCH /api/assignments/[id] の input → repository 引数 mapping、 zod 検証、 認証 / id missing
  * の error path をカバー (#155 で可視化した P0 coverage の埋め直し)。
  *
- * `error()` は throw する SvelteKit ユーティリティなので、 失敗 path は throw を assert で受ける。
+ * #179: validation error 系は `error(400, ...)` (throw) ではなく `json({ errors }, { status: 400 })`
+ * (Response return) に統一 (SvelteKit 公式: API endpoint で validation error は json() 推奨)。
+ * 認証エラー (`requireSession` 由来) は引き続き throw。
  */
 
 const requireSessionMock = vi.fn();
@@ -51,6 +53,19 @@ beforeEach(() => {
 	updateAssignmentMock.mockReset().mockResolvedValue(undefined);
 });
 
+async function expectErrorResponse(
+	res: Response,
+	status: number,
+	predicate: (body: { errors: Record<string, { code: string; field: string; max?: number }> }) => void
+): Promise<void> {
+	expect(res.status).toBe(status);
+	const body = (await res.json()) as {
+		errors: Record<string, { code: string; field: string; max?: number }>;
+	};
+	expect(body).toHaveProperty('errors');
+	predicate(body);
+}
+
 describe('PATCH /api/assignments/[id]', () => {
 	it('calls updateAssignment(teamId, prevStartDate, payload) on valid body', async () => {
 		const res = (await PATCH(makeEvent({ id: 'asn-1', body: VALID_BODY }))) as Response;
@@ -65,38 +80,50 @@ describe('PATCH /api/assignments/[id]', () => {
 		expect(await res.json()).toEqual({ success: true });
 	});
 
-	it('throws 400 when id param is missing', async () => {
-		await expect(PATCH(makeEvent({ id: '', body: VALID_BODY }))).rejects.toThrow();
+	it('returns 400 with errors.id when id param is missing (#179)', async () => {
+		const res = (await PATCH(makeEvent({ id: '', body: VALID_BODY }))) as Response;
+		await expectErrorResponse(res, 400, (body) => {
+			expect(body.errors.id).toEqual({ code: 'required', field: 'id' });
+		});
 		expect(updateAssignmentMock).not.toHaveBeenCalled();
 	});
 
-	it('throws 400 when JSON body is malformed', async () => {
-		await expect(PATCH(makeEvent({ bodyParseError: true }))).rejects.toThrow();
+	it('returns 400 with errors.body when JSON body is malformed (#179)', async () => {
+		const res = (await PATCH(makeEvent({ bodyParseError: true }))) as Response;
+		await expectErrorResponse(res, 400, (body) => {
+			expect(body.errors.body).toEqual({ code: 'invalidJson', field: 'body' });
+		});
 		expect(updateAssignmentMock).not.toHaveBeenCalled();
 	});
 
-	it('throws 400 when startDate >= endDateExclusive (refine, ADR 0004 半開区間が崩れる)', async () => {
-		await expect(
-			PATCH(
-				makeEvent({
-					body: { ...VALID_BODY, startDate: '2026-05-10', endDateExclusive: '2026-05-10' }
-				})
-			)
-		).rejects.toThrow();
+	it('returns 400 with formatted zod errors when startDate >= endDateExclusive (#179)', async () => {
+		const res = (await PATCH(
+			makeEvent({
+				body: { ...VALID_BODY, startDate: '2026-05-10', endDateExclusive: '2026-05-10' }
+			})
+		)) as Response;
+		await expectErrorResponse(res, 400, (body) => {
+			expect(body.errors.endDateExclusive?.code).toBe('endBeforeStart');
+		});
 		expect(updateAssignmentMock).not.toHaveBeenCalled();
 	});
 
-	it('throws 400 for non-ISO date strings (zod regex)', async () => {
-		await expect(
-			PATCH(makeEvent({ body: { ...VALID_BODY, prevStartDate: '2026/05/01' } }))
-		).rejects.toThrow();
+	it('returns 400 with formatted zod errors for non-ISO date strings (#179)', async () => {
+		const res = (await PATCH(
+			makeEvent({ body: { ...VALID_BODY, prevStartDate: '2026/05/01' } })
+		)) as Response;
+		await expectErrorResponse(res, 400, (body) => {
+			expect(body.errors.prevStartDate?.code).toBe('invalidDateFormat');
+		});
 		expect(updateAssignmentMock).not.toHaveBeenCalled();
 	});
 
-	it('throws 400 for missing required fields', async () => {
-		await expect(
-			PATCH(makeEvent({ body: { prevStartDate: '2026-05-01' } }))
-		).rejects.toThrow();
+	it('returns 400 with formatted zod errors for missing required fields (#179)', async () => {
+		const res = (await PATCH(makeEvent({ body: { prevStartDate: '2026-05-01' } }))) as Response;
+		await expectErrorResponse(res, 400, (body) => {
+			// resourceId / projectId / startDate / endDateExclusive のいずれかが required で出る
+			expect(Object.keys(body.errors).length).toBeGreaterThan(0);
+		});
 		expect(updateAssignmentMock).not.toHaveBeenCalled();
 	});
 
