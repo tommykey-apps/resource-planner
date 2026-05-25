@@ -12,7 +12,15 @@ import type { RequestHandler } from './$types';
  * - ResourceTimeline の onMove / onResize callback から直接呼ぶ
  * - optimistic UI + 失敗時 revert を client side で完結させる
  *
- * 認証: SvelteKit の origin チェック + session (lib/auth.ts) でテナント isolation。
+ * 認証: session (lib/auth.ts) でテナント isolation。
+ *
+ * CSRF 保護 (#169): SvelteKit 組込みの origin check (`csrf.checkOrigin`) は
+ * `application/x-www-form-urlencoded` / `multipart/form-data` / `text/plain` のみが対象で、
+ * 本 endpoint の `application/json` PATCH は **対象外**。 実質防御は SameSite=Lax cookie の
+ * default 挙動 (cross-origin から credentials 付き JSON が飛ばない) + CORS preflight に依存。
+ * 厳密な CSRF が必要なら X-Requested-With header 必須化や独自 token を検討する。
+ * 参考: https://svelte.dev/docs/kit/configuration#csrf
+ *
  * 楽観ロックは未実装 (last-write-wins)。同時編集が問題になったら version 列導入を別 ADR で検討。
  */
 export const PATCH: RequestHandler = async (event) => {

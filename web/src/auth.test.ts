@@ -8,7 +8,8 @@ vi.mock('$lib/repository/suppression', () => ({
 	isSuppressed: (...args: unknown[]) => isSuppressedMock(...args)
 }));
 
-const { isDomainAllowed, sendMagicLinkDev, shouldAllowSignIn } = await import('./auth');
+const { isDomainAllowed, makeAuthSecretResolver, sendMagicLinkDev, shouldAllowSignIn } =
+	await import('./auth');
 
 describe('isDomainAllowed', () => {
 	it('returns true when email ends with @{allowed}', () => {
@@ -136,5 +137,91 @@ describe('shouldAllowSignIn (#134)', () => {
 	it('allowed undefined → false (fail-closed)', async () => {
 		expect(await shouldAllowSignIn('alice@example.com', undefined)).toBe(false);
 		expect(isSuppressedMock).not.toHaveBeenCalled();
+	});
+});
+
+/**
+ * #168: top-level await SSM を撤去し、 lazy memoize に切替えた resolver の単体検証。
+ * - 構築時に副作用 (SSM call) が走らないこと → module load = SSM 障害耐性
+ * - 初回 resolve で fetcher 1 回呼び出し、 2 回目以降は cache hit
+ * - 失敗時は cache が clear されて次回 retry できる (transient SSM 障害からの回復)
+ */
+describe('makeAuthSecretResolver (#168)', () => {
+	it('AUTH_SECRET が set されていれば fetcher を呼ばずに即返す', async () => {
+		const fetcher = vi.fn();
+		const resolve = makeAuthSecretResolver({
+			authSecret: 'env-secret',
+			authSecretParam: undefined,
+			fetcher
+		});
+		expect(await resolve()).toBe('env-secret');
+		expect(fetcher).not.toHaveBeenCalled();
+	});
+
+	it('AUTH_SECRET + AUTH_SECRET_PARAM 両方 set なら env が勝つ', async () => {
+		const fetcher = vi.fn();
+		const resolve = makeAuthSecretResolver({
+			authSecret: 'env-secret',
+			authSecretParam: '/my/param',
+			fetcher
+		});
+		expect(await resolve()).toBe('env-secret');
+		expect(fetcher).not.toHaveBeenCalled();
+	});
+
+	it('AUTH_SECRET なし + AUTH_SECRET_PARAM あり → SSM fetcher 呼び出し', async () => {
+		const fetcher = vi.fn().mockResolvedValue('ssm-secret');
+		const resolve = makeAuthSecretResolver({
+			authSecret: undefined,
+			authSecretParam: '/my/param',
+			fetcher
+		});
+		expect(await resolve()).toBe('ssm-secret');
+		expect(fetcher).toHaveBeenCalledWith('/my/param');
+	});
+
+	it('memoize: 同じ resolver を 2 回呼んでも fetcher 1 回だけ', async () => {
+		const fetcher = vi.fn().mockResolvedValue('ssm-secret');
+		const resolve = makeAuthSecretResolver({
+			authSecret: undefined,
+			authSecretParam: '/my/param',
+			fetcher
+		});
+		await resolve();
+		await resolve();
+		expect(fetcher).toHaveBeenCalledTimes(1);
+	});
+
+	it('fetcher 失敗時は cache を clear して次回 retry できる', async () => {
+		const fetcher = vi
+			.fn()
+			.mockRejectedValueOnce(new Error('SSM blip'))
+			.mockResolvedValueOnce('ssm-secret');
+		const resolve = makeAuthSecretResolver({
+			authSecret: undefined,
+			authSecretParam: '/my/param',
+			fetcher
+		});
+		await expect(resolve()).rejects.toThrow('SSM blip');
+		expect(await resolve()).toBe('ssm-secret');
+		expect(fetcher).toHaveBeenCalledTimes(2);
+	});
+
+	it('AUTH_SECRET も AUTH_SECRET_PARAM も無い場合は resolve 時に throw', async () => {
+		const resolve = makeAuthSecretResolver({
+			authSecret: undefined,
+			authSecretParam: undefined
+		});
+		await expect(resolve()).rejects.toThrow(/Neither AUTH_SECRET nor AUTH_SECRET_PARAM/);
+	});
+
+	it('構築時には fetcher を呼ばない (lazy)', () => {
+		const fetcher = vi.fn();
+		makeAuthSecretResolver({
+			authSecret: undefined,
+			authSecretParam: '/my/param',
+			fetcher
+		});
+		expect(fetcher).not.toHaveBeenCalled();
 	});
 });
