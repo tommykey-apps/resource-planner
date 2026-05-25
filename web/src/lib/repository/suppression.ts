@@ -12,34 +12,18 @@
 import { GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { ddb, TABLE } from '$lib/db/client';
 import { suppressionMetaSk, suppressionPk } from './keys';
+import { buildSuppressionItem, type SuppressionInput } from './suppression-item';
 
 export type SuppressionReason = 'bounce' | 'complaint';
 
-export interface SuppressionRecord {
-	email: string; // 元アドレス (mixed case は保持しつつ pk は lower-case)
-	reason: SuppressionReason;
-	/** SES bounceType: 'Permanent' (hard) のときだけ保存。 'Transient' (soft) は呼び出し側で弾く。 */
-	bounceType?: 'Permanent' | 'Transient' | 'Undetermined';
-	bounceSubType?: string;
-	complaintFeedbackType?: string;
-	/** SES event 発生時刻 (ISO 8601)。 SES の bounce.timestamp を使う。 */
-	timestamp: string;
-}
+// 後方互換 type alias (#181)。 既存呼び出し側との signature 互換を保つため。
+export type SuppressionRecord = SuppressionInput;
 
 export async function putSuppression(record: SuppressionRecord): Promise<void> {
 	await ddb.send(
 		new PutCommand({
 			TableName: TABLE,
-			Item: {
-				pk: suppressionPk(record.email),
-				sk: suppressionMetaSk(),
-				email: record.email,
-				reason: record.reason,
-				bounceType: record.bounceType,
-				bounceSubType: record.bounceSubType,
-				complaintFeedbackType: record.complaintFeedbackType,
-				timestamp: record.timestamp
-			}
+			Item: buildSuppressionItem(record)
 		})
 	);
 }

@@ -4,7 +4,17 @@
 	import { t } from '$lib/i18n/index.svelte';
 
 	const status = $derived(page.status);
-	const message = $derived(page.error?.message ?? t('errorPage.unknownMessage'));
+	// #178: server が App.Error.code (i18n key) を載せていたら user locale で翻訳。
+	// 未知 key (= t() が key 文字列を return) なら raw message に fallback、
+	// それも無ければ unknownMessage。
+	const message = $derived.by(() => {
+		const code = page.error?.code;
+		if (code) {
+			const translated = t(`errors.${code}`);
+			if (translated !== `errors.${code}`) return translated;
+		}
+		return page.error?.message ?? t('errorPage.unknownMessage');
+	});
 </script>
 
 <main>

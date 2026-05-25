@@ -170,7 +170,8 @@
 		"invalidColorFormat": "色は #RRGGBB 形式で入力してください",
 		"endBeforeStart": "終了日は開始日以降にしてください",
 		"tooMany": "{field} は {max} 件以内で入力してください",
-		"invalidUrl": "{field} は http / https の URL を入力してください"
+		"invalidUrl": "{field} は http / https の URL を入力してください",
+		"authRequired": "認証が必要です"
 	},
 	"fields": {
 		"id": "id",

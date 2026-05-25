@@ -170,7 +170,8 @@
 		"invalidColorFormat": "Color must be in #RRGGBB format",
 		"endBeforeStart": "End date must be on or after the start date",
 		"tooMany": "{field} must have at most {max} entries",
-		"invalidUrl": "{field} must be an http or https URL"
+		"invalidUrl": "{field} must be an http or https URL",
+		"authRequired": "Authentication required"
 	},
 	"fields": {
 		"id": "id",
