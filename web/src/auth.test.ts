@@ -8,7 +8,8 @@ vi.mock('$lib/repository/suppression', () => ({
 	isSuppressed: (...args: unknown[]) => isSuppressedMock(...args)
 }));
 
-const { isDomainAllowed, sendMagicLinkDev, shouldAllowSignIn } = await import('./auth');
+const { isDomainAllowed, sendMagicLinkDev, shouldAllowSignIn, fetchAuthSecret } =
+	await import('./auth');
 
 describe('isDomainAllowed', () => {
 	it('returns true when email ends with @{allowed}', () => {
@@ -139,8 +140,117 @@ describe('shouldAllowSignIn (#134)', () => {
 	});
 });
 
-// #168 (regression revert): makeAuthSecretResolver factory + 8 ケース test を撤去。
-// PR #208 で導入した lazy memoize / function-form SvelteKitAuth が production sign-in を壊した
-// (Verification token 検証 fail) ため、 pre-#208 の eager top-level await + object-form に
-// 純 revert する。 関連 issue: #168 (reopen 済)。 真の解は Lambda Parameters and Secrets
-// Extension を別 PR で実装予定。
+/**
+ * #168: Lambda Parameters and Secrets Extension 経由で AUTH_SECRET を取得する pure helper。
+ *
+ * AWS 公式 docs (https://docs.aws.amazon.com/systems-manager/latest/userguide/ps-integration-lambda-extensions.html)
+ * の Recommended Pattern に従う:
+ *   - GET http://localhost:2773/systemsmanager/parameters/get?name={encoded}&withDecryption=true
+ *   - Header: X-Aws-Parameters-Secrets-Token = $AWS_SESSION_TOKEN
+ *   - Response: { Parameter: { Value: "..." } }
+ *
+ * Extension は **INVOKE phase でのみ** 利用可能 (INIT phase では起動していない) ため、
+ * fetcher は handler 内 (= SvelteKitAuth function-form) で呼ぶ前提。
+ */
+describe('fetchAuthSecret (#168 Lambda Extension)', () => {
+	const originalFetch = globalThis.fetch;
+	afterEach(() => {
+		globalThis.fetch = originalFetch;
+	});
+
+	it('returns AUTH_SECRET directly without calling fetch when set', async () => {
+		const fetchSpy = vi.fn();
+		globalThis.fetch = fetchSpy as unknown as typeof fetch;
+		const secret = await fetchAuthSecret({
+			authSecret: 'dev-secret',
+			authSecretParam: '/some/param',
+			sessionToken: 'tok'
+		});
+		expect(secret).toBe('dev-secret');
+		expect(fetchSpy).not.toHaveBeenCalled();
+	});
+
+	it('throws when neither AUTH_SECRET nor AUTH_SECRET_PARAM is set (fail-closed)', async () => {
+		await expect(
+			fetchAuthSecret({
+				authSecret: undefined,
+				authSecretParam: undefined,
+				sessionToken: 'tok'
+			})
+		).rejects.toThrow(/AUTH_SECRET/);
+	});
+
+	it('throws when AUTH_SECRET_PARAM is set but AWS_SESSION_TOKEN is missing', async () => {
+		await expect(
+			fetchAuthSecret({
+				authSecret: undefined,
+				authSecretParam: '/resource-planner/auth-secret',
+				sessionToken: undefined
+			})
+		).rejects.toThrow(/AWS_SESSION_TOKEN/);
+	});
+
+	it('calls localhost:2773 with X-Aws-Parameters-Secrets-Token header and withDecryption=true', async () => {
+		const fetchSpy = vi.fn<typeof fetch>(
+			async () =>
+				new Response(JSON.stringify({ Parameter: { Value: 'real-secret' } }), {
+					status: 200,
+					headers: { 'content-type': 'application/json' }
+				})
+		);
+		globalThis.fetch = fetchSpy;
+		const secret = await fetchAuthSecret({
+			authSecret: undefined,
+			authSecretParam: '/resource-planner/auth-secret',
+			sessionToken: 'session-token-abc'
+		});
+		expect(secret).toBe('real-secret');
+		expect(fetchSpy).toHaveBeenCalledOnce();
+		const [url, init] = fetchSpy.mock.calls[0];
+		expect(String(url)).toBe(
+			'http://localhost:2773/systemsmanager/parameters/get?name=%2Fresource-planner%2Fauth-secret&withDecryption=true'
+		);
+		const headers = (init?.headers ?? {}) as Record<string, string>;
+		expect(headers['X-Aws-Parameters-Secrets-Token']).toBe('session-token-abc');
+	});
+
+	it('URL-encodes parameter names with slashes / special characters', async () => {
+		const fetchSpy = vi.fn<typeof fetch>(
+			async () => new Response(JSON.stringify({ Parameter: { Value: 'x' } }), { status: 200 })
+		);
+		globalThis.fetch = fetchSpy;
+		await fetchAuthSecret({
+			authSecret: undefined,
+			authSecretParam: '/dev/prod/East/Project-ABC/MyParameter',
+			sessionToken: 't'
+		});
+		const [url] = fetchSpy.mock.calls[0];
+		expect(String(url)).toContain(encodeURIComponent('/dev/prod/East/Project-ABC/MyParameter'));
+	});
+
+	it('throws with status on non-2xx response', async () => {
+		const fetchSpy = vi.fn(async () => new Response('forbidden', { status: 403 }));
+		globalThis.fetch = fetchSpy as unknown as typeof fetch;
+		await expect(
+			fetchAuthSecret({
+				authSecret: undefined,
+				authSecretParam: '/p',
+				sessionToken: 't'
+			})
+		).rejects.toThrow(/403/);
+	});
+
+	it('throws when response body lacks Parameter.Value', async () => {
+		const fetchSpy = vi.fn(
+			async () => new Response(JSON.stringify({ Parameter: {} }), { status: 200 })
+		);
+		globalThis.fetch = fetchSpy as unknown as typeof fetch;
+		await expect(
+			fetchAuthSecret({
+				authSecret: undefined,
+				authSecretParam: '/p',
+				sessionToken: 't'
+			})
+		).rejects.toThrow(/Parameter\.Value/);
+	});
+});

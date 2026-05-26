@@ -1,5 +1,13 @@
 data "aws_caller_identity" "current" {}
 
+# #168: AWS Parameters and Secrets Lambda Extension の最新 layer ARN を SSM の public
+# parameter から resolve する (公式 docs 推奨パターン: 手動で version 更新不要)。
+# 参考: https://docs.aws.amazon.com/systems-manager/latest/userguide/ps-integration-lambda-extensions.html#ps-integration-lambda-extensions-programmatically-retrieve
+# Lambda は arm64 (aws_lambda_function.app.architectures) なので arm64 path を引く。
+data "aws_ssm_parameter" "params_secrets_extension" {
+  name = "/aws/service/aws-parameters-and-secrets-lambda-extension/arm64/latest"
+}
+
 # #186: Lambda assume_role policy は本 module 内 (lambda.tf + ses_bounce.tf) で同一のため
 # locals に集約して DRY 化。 jsonencode 単体で十分シンプルなので data "aws_iam_policy_document"
 # は採用しない (HashiCorp 公式: locals は「reused value に名前を付ける」 用途を推奨)。
@@ -116,6 +124,12 @@ resource "aws_lambda_function" "app" {
   architectures = ["arm64"]
   timeout       = 30
   memory_size   = 1024
+
+  # #168: Parameters and Secrets Lambda Extension。 INVOKE phase で
+  # http://localhost:2773/systemsmanager/parameters/get?... に対して GET すると
+  # SSM SecureString を 300s TTL でキャッシュ + decrypt 済の値を返す (SDK 不要)。
+  # 既存 IAM (ssm:GetParameter + kms:Decrypt) はそのまま流用。
+  layers = [data.aws_ssm_parameter.params_secrets_extension.value]
 
   environment {
     variables = {
