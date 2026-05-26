@@ -29,9 +29,12 @@
 	<!--
 		Auth.js が `/auth/signin/nodemailer` を auto-register (hooks.server.ts の handle 経由)。
 		csrfToken は同じ origin で Auth.js が cookie をセット済 (handle が GET 時に注入)。
+		#168: callbackUrl を明示しないと verify 後に signin 元 page (= /sign-in) へ戻り、
+		user は email 入力 form を見て 「失敗?」 と誤認する。 home (/) を hidden で固定。
 	-->
 	<form method="POST" action="/auth/signin/nodemailer" class="space-y-4" onsubmit={onSubmit}>
 		<input type="hidden" name="csrfToken" value={data.csrfToken} />
+		<input type="hidden" name="callbackUrl" value="/" />
 		<div>
 			<label for="email" class="mb-1 block text-sm font-medium">{t('signin.emailLabel')}</label>
 			<input

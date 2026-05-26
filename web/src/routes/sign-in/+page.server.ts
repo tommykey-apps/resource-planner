@@ -1,3 +1,4 @@
+import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
 /**
@@ -14,8 +15,17 @@ import type { PageServerLoad } from './$types';
  * 必要**があり、 結局本 SSR fetch と等価。 さらに本実装は `csrfToken` を component 側で
  * 任意のフォーム配置に hidden input として埋め込めて柔軟性が高い (#166 で sign-out にも
  * 同 token を流用済) ため、 現状の SSR fetch を維持する判定。
+ *
+ * #168 defense in depth: callbackUrl の hidden input (+page.svelte) で verify 後 / へ
+ * 戻す前提だが、 既に sign-in 済 user が直接 /sign-in を navigate した時にも email 入力
+ * form を見せず / へ送る。 callbackUrl が何らかの理由で効かない場合の二重 guard。
  */
-export const load: PageServerLoad = async ({ fetch }) => {
+export const load: PageServerLoad = async ({ fetch, locals }) => {
+	const session = await locals.auth();
+	if (session?.user?.id) {
+		redirect(303, '/');
+	}
+
 	try {
 		const res = await fetch('/auth/csrf');
 		if (!res.ok) return { csrfToken: '' };

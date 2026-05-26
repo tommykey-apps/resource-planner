@@ -84,4 +84,19 @@ describe('sign-in +page.svelte — email input must remain in form data on submi
 		const submitBtn = container.querySelector('button[type="submit"]') as HTMLButtonElement;
 		expect(submitBtn.className).toMatch(/\bcursor-pointer\b/);
 	});
+
+	/**
+	 * #168: callbackUrl が未指定だと Auth.js の default 挙動で signin 元 page (= /sign-in)
+	 * へ戻ってしまい、 user は 「verify 成功 → email 入力 form」 を見て 「失敗」 と誤認する。
+	 * hidden input で home (/) を明示する。
+	 */
+	it('includes hidden callbackUrl="/" input so verified user lands on home (#168)', () => {
+		const { container } = render(SignInPage, { props: { data: stubData() } });
+		const callback = container.querySelector(
+			'input[name="callbackUrl"]'
+		) as HTMLInputElement | null;
+		expect(callback).toBeTruthy();
+		expect(callback!.type).toBe('hidden');
+		expect(callback!.value).toBe('/');
+	});
 });
