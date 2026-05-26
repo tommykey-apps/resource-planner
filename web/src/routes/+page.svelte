@@ -10,6 +10,7 @@
 	import { toTimelineAssignment, fromTimelineAssignment } from '$lib/timeline-adapter';
 	import { applyTimelineParams, parseTimelineParams } from '$lib/timeline-url-state';
 	import AppHeader from '$lib/components/AppHeader.svelte';
+	import AssignmentEditor from '$lib/components/AssignmentEditor.svelte';
 	import EmptyStateGuide from '$lib/components/EmptyStateGuide.svelte';
 	import { t } from '$lib/i18n/index.svelte';
 	import { translateServerError } from '$lib/forms/server-error';
@@ -100,6 +101,21 @@
 			toast.error(t('assignments.updateError'), { description });
 		}
 	}
+
+	/**
+	 * #206: 帯 click (移動量 < 4px、 ui-components#85/#92 で click vs drag 分離済) で
+	 * AssignmentEditor を起動。 keyboard Enter/Space でも同 callback (APG Button pattern)。
+	 * onActivate は TimelineAssignment を渡してくるので id で dbAssignments を lookup する。
+	 */
+	let editing = $state<DbAssignment | null>(null);
+	let editOpen = $state(false);
+
+	function openEditor(activated: TimelineAssignment) {
+		const found = dbAssignments.find((a) => a.id === activated.id);
+		if (!found) return;
+		editing = found;
+		editOpen = true;
+	}
 </script>
 
 <AppHeader
@@ -170,9 +186,12 @@
 			}}
 			onMove={handleUpdate}
 			onResize={handleUpdate}
+			onActivate={openEditor}
 		/>
 	{/if}
 </main>
+
+<AssignmentEditor bind:open={editOpen} assignment={editing} {resources} {projects} />
 
 <style>
 	main {
