@@ -37,19 +37,10 @@ resource "aws_ses_identity_notification_topic" "complaint" {
 }
 
 # ── Lambda IAM ──
+# #186: assume_role policy は lambda.tf の `local.lambda_assume_role_policy` を再利用 (DRY 化)。
 resource "aws_iam_role" "ses_bounce_handler" {
-  name = "${var.project}-ses-bounce-handler-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action    = "sts:AssumeRole"
-        Effect    = "Allow"
-        Principal = { Service = "lambda.amazonaws.com" }
-      }
-    ]
-  })
+  name               = "${var.project}-ses-bounce-handler-role"
+  assume_role_policy = local.lambda_assume_role_policy
 }
 
 resource "aws_iam_role_policy_attachment" "ses_bounce_handler_basic" {

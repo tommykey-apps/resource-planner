@@ -17,10 +17,7 @@ build: ## Build SvelteKit for production
 
 # ── Infrastructure ──
 
-# NOTE: 同じ create-table 定義が以下にもある (GSI1 も含めて全箇所同期):
-#   - .github/workflows/ci.yaml の test ジョブ
-#   - .github/workflows/db-docs.yaml の Create table ステップ
-# いずれかを変更したら必ず全箇所を同期すること。
+# #186: create-table 定義は bin/create-ddb-table.sh に集約 (旧: 4 箇所コピペ)。
 db: ## Start DynamoDB Local + create resource-planner table (with GSI1)
 	docker compose up -d dynamodb-local
 	@for i in $$(seq 1 30); do \
@@ -28,20 +25,7 @@ db: ## Start DynamoDB Local + create resource-planner table (with GSI1)
 		sleep 1; \
 	done
 	@AWS_ACCESS_KEY_ID=local AWS_SECRET_ACCESS_KEY=local AWS_DEFAULT_REGION=ap-northeast-1 \
-		aws dynamodb create-table \
-			--table-name resource-planner \
-			--attribute-definitions \
-				AttributeName=pk,AttributeType=S \
-				AttributeName=sk,AttributeType=S \
-				AttributeName=GSI1PK,AttributeType=S \
-				AttributeName=GSI1SK,AttributeType=S \
-			--key-schema \
-				AttributeName=pk,KeyType=HASH \
-				AttributeName=sk,KeyType=RANGE \
-			--global-secondary-indexes \
-				'IndexName=GSI1,KeySchema=[{AttributeName=GSI1PK,KeyType=HASH},{AttributeName=GSI1SK,KeyType=RANGE}],Projection={ProjectionType=ALL}' \
-			--billing-mode PAY_PER_REQUEST \
-			--endpoint-url http://localhost:8000 > /dev/null 2>&1 || true
+		./bin/create-ddb-table.sh > /dev/null 2>&1 || true
 
 # ── DB Docs ──
 
