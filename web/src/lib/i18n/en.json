@@ -68,6 +68,10 @@
 		"editDetail": "Edit detail",
 		"descriptionLabel": "Description",
 		"descriptionHint": "Markdown is supported",
+		"descriptionTabsLabel": "Description edit mode",
+		"writeTab": "Write",
+		"previewTab": "Preview",
+		"previewEmpty": "Nothing to preview.",
 		"tagsLabel": "Tags",
 		"tagsHint": "Comma-separated (e.g. TypeScript, Svelte, AWS)",
 		"linksLabel": "Related links",
@@ -77,6 +81,9 @@
 		"removeLink": "Remove",
 		"viewDetail": "View detail",
 		"detailTitle": "{name} detail"
+	},
+	"nav": {
+		"timelineLink": "Timeline"
 	},
 	"assignments": {
 		"add": "Add assignment",

@@ -124,6 +124,7 @@
 	assignments={dbAssignments}
 	user={data.user}
 	csrfToken={data.csrfToken}
+	isHomeActive
 	onOptimisticCreateResource={optimisticAddResource}
 	onConfirmCreateResource={confirmResourceCreate}
 	onRollbackCreateResource={rollbackResourceCreate}

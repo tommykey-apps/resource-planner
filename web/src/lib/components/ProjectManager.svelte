@@ -8,6 +8,7 @@
 	import { createSubmitState } from '$lib/forms/submit-state.svelte';
 	import { confirmDialog } from '$lib/forms/confirm-dialog';
 	import { mapServerErrors, type ServerErrors } from '$lib/forms/server-error';
+	import { renderMarkdown } from '$lib/markdown';
 	import { t } from '$lib/i18n/index.svelte';
 	import type { Project, ProjectLink, Assignment } from '$lib/types';
 	import {
@@ -64,6 +65,8 @@
 	let formDescription = $state('');
 	let formTagsRaw = $state('');
 	let formLinks = $state<EditableProjectLink[]>([]);
+	// Markdown editor の Write / Preview tab state。 default は Write (typing 開始のため)。
+	let descTab = $state<'write' | 'preview'>('write');
 	let formError = $state<{
 		name?: string;
 		color?: string;
@@ -105,6 +108,19 @@
 
 	function removeLink(index: number) {
 		formLinks = formLinks.filter((_, i) => i !== index);
+	}
+
+	/**
+	 * WAI-ARIA APG Tabs keyboard pattern: Arrow ← / → で tab を切替、 focus を新 tab に移す。
+	 * 2 tab なので Home / End は省略 (Arrow が両方向 toggle として機能)。
+	 */
+	function handleTabKeydown(e: KeyboardEvent) {
+		if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+		e.preventDefault();
+		descTab = descTab === 'write' ? 'preview' : 'write';
+		queueMicrotask(() => {
+			document.getElementById(`desc-${descTab}-tab`)?.focus();
+		});
 	}
 
 	// 連打抑制 + submitting state (#94)。delete は #132 で confirm dialog が modal ブロックする。
@@ -244,21 +260,78 @@
 				{t('projects.editDetail')}
 			</summary>
 			<div class="mt-2 flex flex-col gap-3">
-				<label class="flex flex-col gap-1 text-sm">
-					<span>
-						{t('projects.descriptionLabel')}
-						<small class="text-muted-foreground text-xs">{t('projects.descriptionHint')}</small>
-					</span>
-					<Textarea
-						name="description"
-						bind:value={formDescription}
-						rows={6}
-						maxlength={PROJECT_DESCRIPTION_MAX_LENGTH}
-					/>
+				<!--
+					Markdown Write/Preview tab UI (WAI-ARIA APG Tabs pattern manual implementation)。
+					- bits-ui Tabs は inactive panel を unmount するため、 form data (description) を
+					  保持する用途に合わない。 panel を常時 mount で hidden 属性切替する自前実装。
+					- keyboard: 2 tab の simple toggle なので Arrow ← / → で切替 (Home/End は省略)。
+					- 公式 docs: https://www.w3.org/WAI/ARIA/apg/patterns/tabs/
+				-->
+				<div class="flex flex-col gap-1 text-sm">
+					<div class="flex items-baseline justify-between gap-2">
+						<span>
+							{t('projects.descriptionLabel')}
+							<small class="text-muted-foreground text-xs">{t('projects.descriptionHint')}</small>
+						</span>
+						<div
+							role="tablist"
+							aria-label={t('projects.descriptionTabsLabel')}
+							class="inline-flex items-center gap-0 rounded border border-border bg-muted/50 p-0.5 text-xs"
+						>
+							{#each [{ id: 'write', label: t('projects.writeTab') }, { id: 'preview', label: t('projects.previewTab') }] as tab (tab.id)}
+								<button
+									type="button"
+									role="tab"
+									id="desc-{tab.id}-tab"
+									aria-selected={descTab === tab.id}
+									aria-controls="desc-{tab.id}-panel"
+									tabindex={descTab === tab.id ? 0 : -1}
+									class="rounded px-2 py-1 transition-colors"
+									class:bg-background={descTab === tab.id}
+									class:font-medium={descTab === tab.id}
+									class:text-muted-foreground={descTab !== tab.id}
+									onclick={() => (descTab = tab.id as 'write' | 'preview')}
+									onkeydown={handleTabKeydown}
+								>
+									{tab.label}
+								</button>
+							{/each}
+						</div>
+					</div>
+
+					<div
+						id="desc-write-panel"
+						role="tabpanel"
+						aria-labelledby="desc-write-tab"
+						hidden={descTab !== 'write'}
+					>
+						<Textarea
+							name="description"
+							bind:value={formDescription}
+							rows={6}
+							maxlength={PROJECT_DESCRIPTION_MAX_LENGTH}
+						/>
+					</div>
+
+					<div
+						id="desc-preview-panel"
+						role="tabpanel"
+						aria-labelledby="desc-preview-tab"
+						hidden={descTab !== 'preview'}
+						class="prose prose-sm dark:prose-invert max-w-none rounded border border-input bg-background px-3 py-2 text-sm min-h-[10rem]"
+					>
+						{#if formDescription.trim()}
+							<!-- markdown.ts: marked + isomorphic-dompurify で sanitize 済 (server / client 共通)。 -->
+							{@html renderMarkdown(formDescription)}
+						{:else}
+							<p class="text-muted-foreground">{t('projects.previewEmpty')}</p>
+						{/if}
+					</div>
+
 					{#if formError?.description}
 						<span class="text-xs text-destructive">{formError.description}</span>
 					{/if}
-				</label>
+				</div>
 
 				<label class="flex flex-col gap-1 text-sm">
 					<span>{t('projects.tagsLabel')}</span>

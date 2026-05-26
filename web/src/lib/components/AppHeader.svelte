@@ -7,6 +7,7 @@
 	import LocaleSwitcher from './LocaleSwitcher.svelte';
 	import { Button } from './ui/button';
 	import ListChecks from 'phosphor-svelte/lib/ListChecks';
+	import Calendar from 'phosphor-svelte/lib/Calendar';
 	import { t } from '$lib/i18n/index.svelte';
 	import type { Resource, Project, Assignment } from '$lib/types';
 
@@ -18,7 +19,9 @@
 	 * - `/` と `/assignments` の両方から mount する (sign-in 系は除外、 layout 共有しない)
 	 * - **optimistic create callbacks** はホーム側だけで渡す (#121)。 /assignments 側は省略すると
 	 *   ResourceManager 内で通常 invalidate path (`update()`) に fallback する
-	 * - `isAssignmentsActive` で /assignments の現在地ハイライト (`aria-current="page"`)
+	 * - `isAssignmentsActive` / `isHomeActive` で各 nav の現在地ハイライト
+	 *   (`aria-current="page"`)。 /assignments から home (timeline / Gantt) への
+	 *   named nav button を /assignments 用と対称に配置 (#nav-symmetry)。
 	 */
 	let {
 		resources,
@@ -27,6 +30,7 @@
 		user,
 		csrfToken,
 		isAssignmentsActive = false,
+		isHomeActive = false,
 		onOptimisticCreateResource,
 		onConfirmCreateResource,
 		onRollbackCreateResource
@@ -37,6 +41,7 @@
 		user: { email?: string | null | undefined } | undefined;
 		csrfToken: string;
 		isAssignmentsActive?: boolean;
+		isHomeActive?: boolean;
 		onOptimisticCreateResource?: (temp: Resource) => void;
 		onConfirmCreateResource?: (temp: Resource, real: Resource) => void;
 		onRollbackCreateResource?: (temp: Resource) => void;
@@ -59,6 +64,15 @@
 			/>
 			<ProjectManager {projects} {assignments} />
 			<AssignmentCreator {resources} {projects} />
+			<!-- Timeline (home / ガント) への named nav button、 /assignments と対称。 -->
+			<Button
+				variant={isHomeActive ? 'default' : 'outline'}
+				href="/"
+				aria-current={isHomeActive ? 'page' : undefined}
+			>
+				<Calendar size={18} weight="regular" aria-hidden="true" />
+				<span class="hidden sm:ml-1 sm:inline">{t('nav.timelineLink')}</span>
+			</Button>
 			<Button
 				variant={isAssignmentsActive ? 'default' : 'outline'}
 				href="/assignments"

@@ -144,3 +144,97 @@ describe('ProjectManager form (PR-N3, refs #187)', () => {
 		expect(details?.hasAttribute('open')).toBe(false);
 	});
 });
+
+/**
+ * 案件 description の Markdown Write/Preview tab UI 契約。
+ * - WAI-ARIA APG Tabs pattern: role=tablist / tab / tabpanel + aria-selected / aria-controls
+ * - Write default、 Preview に切替で renderMarkdown 済 HTML 表示
+ * - 両 tabpanel は常時 mount で form data (description) が switch 中も保持される
+ */
+describe('ProjectManager Markdown Write/Preview tabs', () => {
+	async function openCreateFormDetails() {
+		const utils = render(ProjectManager, { props: { projects: [], assignments: [] } });
+		await fireEvent.click(utils.getByRole('button', { name: /案件を管理/ }));
+		const addBtn = await waitFor(() => {
+			return Array.from(document.querySelectorAll('button')).find((el) =>
+				el.textContent?.includes('案件を追加')
+			) as HTMLButtonElement;
+		});
+		await fireEvent.click(addBtn);
+		const form = await waitFor(() => {
+			const f = document.querySelector('form[action="?/createProject"]') as HTMLFormElement;
+			if (!f) throw new Error('createProject form not rendered');
+			return f;
+		});
+		// 詳細 section を open
+		const details = form.querySelector('details') as HTMLDetailsElement;
+		details.open = true;
+		await waitFor(() => {
+			const tablist = form.querySelector('[role="tablist"]');
+			if (!tablist) throw new Error('tablist not rendered');
+		});
+		return { form };
+	}
+
+	it('tablist + 2 tabs (Write / Preview) が render される (APG required)', async () => {
+		const { form } = await openCreateFormDetails();
+		const tablist = form.querySelector('[role="tablist"]') as HTMLElement;
+		expect(tablist).toBeTruthy();
+		expect(tablist.getAttribute('aria-label')).toBeTruthy();
+
+		const tabs = form.querySelectorAll('[role="tab"]');
+		expect(tabs).toHaveLength(2);
+		expect(tabs[0]?.textContent ?? '').toMatch(/編集/);
+		expect(tabs[1]?.textContent ?? '').toMatch(/プレビュー/);
+	});
+
+	it('default は Write tab (aria-selected=true、 Write panel visible / Preview panel hidden)', async () => {
+		const { form } = await openCreateFormDetails();
+		const tabs = form.querySelectorAll('[role="tab"]');
+		expect(tabs[0]?.getAttribute('aria-selected')).toBe('true');
+		expect(tabs[1]?.getAttribute('aria-selected')).toBe('false');
+		const panels = form.querySelectorAll('[role="tabpanel"]');
+		expect(panels[0]?.hasAttribute('hidden')).toBe(false);
+		expect(panels[1]?.hasAttribute('hidden')).toBe(true);
+	});
+
+	it('Preview tab click で markdown が HTML render される + Write panel は hidden に', async () => {
+		const { form } = await openCreateFormDetails();
+		const textarea = form.querySelector('textarea[name="description"]') as HTMLTextAreaElement;
+		await fireEvent.input(textarea, { target: { value: '**bold** _italic_' } });
+
+		const previewTab = form.querySelectorAll('[role="tab"]')[1] as HTMLElement;
+		await fireEvent.click(previewTab);
+
+		await waitFor(() => {
+			const panels = form.querySelectorAll('[role="tabpanel"]');
+			expect(panels[0]?.hasAttribute('hidden')).toBe(true);
+			expect(panels[1]?.hasAttribute('hidden')).toBe(false);
+			expect(panels[1]?.innerHTML ?? '').toContain('<strong>bold</strong>');
+			expect(panels[1]?.innerHTML ?? '').toContain('<em>italic</em>');
+		});
+	});
+
+	it('description 空 + Preview tab → empty 案内が出る', async () => {
+		const { form } = await openCreateFormDetails();
+		const previewTab = form.querySelectorAll('[role="tab"]')[1] as HTMLElement;
+		await fireEvent.click(previewTab);
+		const previewPanel = form.querySelectorAll('[role="tabpanel"]')[1] as HTMLElement;
+		await waitFor(() => {
+			expect(previewPanel.textContent ?? '').toMatch(/プレビューする内容/);
+		});
+	});
+
+	it('Write → Preview → Write の往復で textarea の値が保持される (両 panel mount)', async () => {
+		const { form } = await openCreateFormDetails();
+		const textarea = form.querySelector('textarea[name="description"]') as HTMLTextAreaElement;
+		await fireEvent.input(textarea, { target: { value: 'hello' } });
+
+		const tabs = form.querySelectorAll('[role="tab"]');
+		await fireEvent.click(tabs[1] as HTMLElement);
+		await fireEvent.click(tabs[0] as HTMLElement);
+
+		const textarea2 = form.querySelector('textarea[name="description"]') as HTMLTextAreaElement;
+		expect(textarea2.value).toBe('hello');
+	});
+});
