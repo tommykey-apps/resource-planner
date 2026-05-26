@@ -7,6 +7,7 @@
  *   `data.locale` で渡す → `+layout.svelte` で `localeState.set(...)` 同期
  * - client は localStorage > navigator.language の優先順で初期化 (SSR 経由でも cookie から復元)
  */
+import { buildClientCookie, isSecureClientContext } from '$lib/cookies';
 import en from './en.json';
 import ja from './ja.json';
 
@@ -27,7 +28,13 @@ class LocaleState {
 		if (typeof window !== 'undefined') {
 			try {
 				localStorage.setItem(STORAGE_KEY, next);
-				document.cookie = `${COOKIE_NAME}=${next}; path=/; max-age=31536000; samesite=lax`;
+				// #184: production (HTTPS) では Secure 属性付与、 dev (http://localhost) では skip。
+				document.cookie = buildClientCookie({
+					name: COOKIE_NAME,
+					value: next,
+					maxAge: 31536000,
+					secure: isSecureClientContext()
+				});
 			} catch {
 				// ignore storage errors
 			}

@@ -22,15 +22,20 @@
 
 	// DB 形式のアサインを source of truth として保持。
 	// timeline 形式 (end-exclusive Date) は $derived で都度 compose する。
-	// data.assignments は load 再実行 (invalidateAll 後など) で更新されるため $effect で再同期。
+	// #184: data.assignments は server load 由来 (immutable snapshot)、 一方 dbAssignments は
+	// drag/resize の optimistic update を直接書き換える reactive。 server confirm が
+	// invalidateAll → load 再実行で data.assignments を更新したら、 本 $effect で再同期して
+	// server truth に rebase する。 trade-off: server confirm 後に optimistic state が一時
+	// 巻き戻る瞬間 (data 更新 → 再 sync の間) があるが、 通常 < 1 frame で気付かれない。
 	let dbAssignments = $state<DbAssignment[]>([]);
 	$effect(() => {
 		dbAssignments = data.assignments;
 	});
 
-	// #121: optimistic UI 用に resources / projects も local state へ lift。
-	// load 再実行で `data.resources` が更新されたら sync (= 楽観的更新 → server confirm 後に
-	// invalidate されたら server truth に rebase される)。
+	// #121 / #184: optimistic UI 用に resources / projects も local state へ lift。
+	// 同上の trade-off: server confirm 後の rebase 動作で local 楽観追加 entity (temp ID) が
+	// 一瞬消えて server entity (real ID) に置き換わる。 ResourceManager で
+	// onOptimisticCreate / onConfirmCreate を expose し、 swap を呼び出し側で同期させる。
 	let resources = $state<typeof data.resources>([]);
 	$effect(() => {
 		resources = data.resources;

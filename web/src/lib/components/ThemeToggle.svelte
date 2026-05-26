@@ -5,6 +5,7 @@
 	import Monitor from 'phosphor-svelte/lib/Monitor';
 	import { t } from '$lib/i18n/index.svelte';
 	import { THEME_COOKIE_NAME } from '$lib/theme';
+	import { buildClientCookie, isSecureClientContext } from '$lib/cookies';
 
 	/**
 	 * テーマ切替 (light → dark → system → light、#97)。
@@ -22,10 +23,16 @@
 	// userPrefersMode を cookie にミラー (#141)。
 	// setMode 直後だけでなく、初回 hydration で localStorage 由来の mode に確定したタイミング
 	// (cookie が未書込のレガシーユーザー) でも cookie を書くため、$effect で reactive に同期する。
+	// #184: production (HTTPS) では Secure 属性付与、 dev (http://localhost) では skip。
 	$effect(() => {
 		const current = userPrefersMode.current;
 		if (typeof document === 'undefined') return;
-		document.cookie = `${THEME_COOKIE_NAME}=${current}; path=/; max-age=31536000; samesite=lax`;
+		document.cookie = buildClientCookie({
+			name: THEME_COOKIE_NAME,
+			value: current,
+			maxAge: 31536000,
+			secure: isSecureClientContext()
+		});
 	});
 
 	const label = $derived.by(() => {

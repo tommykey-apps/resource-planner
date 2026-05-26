@@ -192,6 +192,10 @@ export const { handle, signIn, signOut } = SvelteKitAuth(async () => ({
 		Nodemailer({
 			// SMTP server 設定は production では SES SDK 経由で send するため未使用。
 			// Auth.js が provider 初期化時に server 値を要求するため dummy を渡す。
+			// #184: `server: {}` で代替可能か検証したが、 @auth/sveltekit@1.11.2 の Nodemailer
+			// provider は string か `{ host, port, auth }` 形式の object を要求する型定義のため、
+			// 空 object では TypeScript エラーになる。 dummy string で OK と判定 (active code path
+			// では sendVerificationRequest override で SES SDK を呼ぶため SMTP 接続は発生しない)。
 			server: env.EMAIL_SERVER ?? 'smtp://placeholder:25',
 			from: env.EMAIL_FROM ?? 'noreply@example.com',
 			sendVerificationRequest: isProductionTransport ? sendMagicLinkViaSES : sendMagicLinkDev
@@ -203,10 +207,11 @@ export const { handle, signIn, signOut } = SvelteKitAuth(async () => ({
 		error: '/sign-in/error'
 	},
 	callbacks: {
+		// #184: session callback は将来 user に追加属性を載せる場合 (team / role 等) の hook 点。
+		// 現状は素の session をそのまま返す = Auth.js default 挙動と等価で削除可能だが、 将来
+		// 拡張時に「ここに足せばいい」 という navigation marker として明示的に残す。
 		signIn: async ({ user }) => shouldAllowSignIn(user.email, env.ALLOWED_DOMAIN),
-		session: async ({ session }) => {
-			return session;
-		}
+		session: async ({ session }) => session
 	},
 	events: {
 		// 初回 sign-in 時 (User が DDB adapter で作成された直後) に default team へ自動 join。
