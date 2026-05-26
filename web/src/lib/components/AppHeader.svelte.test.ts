@@ -24,7 +24,12 @@ const SAMPLE_ASSIGNMENTS: Assignment[] = [
 	}
 ];
 
-type StubOverrides = { isAssignmentsActive?: boolean; email?: string; csrfToken?: string };
+type StubOverrides = {
+	isAssignmentsActive?: boolean;
+	isHomeActive?: boolean;
+	email?: string;
+	csrfToken?: string;
+};
 
 const stubProps = (overrides: StubOverrides = {}) => ({
 	props: {
@@ -33,6 +38,7 @@ const stubProps = (overrides: StubOverrides = {}) => ({
 		assignments: SAMPLE_ASSIGNMENTS,
 		user: { email: overrides.email ?? 'alice@example.com' },
 		isAssignmentsActive: overrides.isAssignmentsActive ?? false,
+		isHomeActive: overrides.isHomeActive ?? false,
 		csrfToken: overrides.csrfToken ?? 'test-csrf-token'
 	}
 });
@@ -73,6 +79,42 @@ describe('AppHeader — assignments link active state (#136)', () => {
 		const { container } = render(AppHeader, stubProps({ isAssignmentsActive: true }));
 		const link = container.querySelector('a[href="/assignments"]');
 		expect(link?.getAttribute('aria-current')).toBe('page');
+	});
+});
+
+/**
+ * Timeline nav button (home へ named button)。 /assignments → home (ガント) への
+ * 双方向 navigation 対称化。 logo (左上) も href="/" だが、 ListChecks ボタンと
+ * 並ぶ named button が無いと nav 構造が非対称で発見性が低い。
+ */
+describe('AppHeader — Timeline (home) named nav button', () => {
+	it('Timeline button (a[href="/"]) が右側 nav に存在 + named label', () => {
+		const { container } = render(AppHeader, stubProps());
+		// 右側 nav cluster (logo の a[href="/"] とは別) に href="/" の named button
+		const navLinks = container.querySelectorAll('a[href="/"]');
+		// logo + Timeline button の 2 つあるはず
+		expect(navLinks.length).toBeGreaterThanOrEqual(2);
+		// Timeline label を持つ link が存在
+		const timelineBtn = Array.from(navLinks).find((a) =>
+			a.textContent?.match(/タイムライン|Timeline/i)
+		);
+		expect(timelineBtn).toBeTruthy();
+	});
+
+	it('isHomeActive=false → Timeline link に aria-current 無し', () => {
+		const { container } = render(AppHeader, stubProps({ isHomeActive: false }));
+		const timelineBtn = Array.from(container.querySelectorAll('a[href="/"]')).find((a) =>
+			a.textContent?.match(/タイムライン|Timeline/i)
+		);
+		expect(timelineBtn?.getAttribute('aria-current')).toBeNull();
+	});
+
+	it('isHomeActive=true → Timeline link に aria-current="page"', () => {
+		const { container } = render(AppHeader, stubProps({ isHomeActive: true }));
+		const timelineBtn = Array.from(container.querySelectorAll('a[href="/"]')).find((a) =>
+			a.textContent?.match(/タイムライン|Timeline/i)
+		);
+		expect(timelineBtn?.getAttribute('aria-current')).toBe('page');
 	});
 });
 

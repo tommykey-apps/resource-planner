@@ -68,6 +68,10 @@
 		"editDetail": "詳細を編集",
 		"descriptionLabel": "説明",
 		"descriptionHint": "markdown 記法が使えます",
+		"descriptionTabsLabel": "説明の編集モード",
+		"writeTab": "編集",
+		"previewTab": "プレビュー",
+		"previewEmpty": "プレビューする内容がありません。",
 		"tagsLabel": "使用技術",
 		"tagsHint": "カンマで区切る (例: TypeScript, Svelte, AWS)",
 		"linksLabel": "関連リンク",
@@ -77,6 +81,9 @@
 		"removeLink": "削除",
 		"viewDetail": "詳細を表示",
 		"detailTitle": "{name} の詳細"
+	},
+	"nav": {
+		"timelineLink": "タイムライン"
 	},
 	"assignments": {
 		"add": "アサインを追加",
