@@ -98,7 +98,8 @@ CI では `.github/workflows/ci.yaml` の `test` job が `services.dynamodb` で
 
 | 機能 | 採用箇所 | 関連 ui-components issue |
 |---|---|---|
-| Cursor follow hover tooltip (旧: bar 中央 anchor で wide bar 時画面端に貼り付き) | `web/src/routes/+page.svelte` | #42 / #48 / #50 |
+| Bar label sticky 化 (long bar / viewport scroll 中も label が常時 viewport 内に貼り付く、旧 hover tooltip は全廃 BREAKING in 1.0.0) | `web/src/routes/+page.svelte` | #84 |
+| Bar click → AssignmentEditor 起動 (`onActivate` prop、 click vs drag は threshold 4px で分離) | 同上 | #85 / #92 |
 | Resource rail auto-fit (最長名 + chrome を Canvas measureText で実測、 `resourceColWidth="auto"`) | 同上 | #43 / #47 / #51 / #53 |
 | i18n labels prop | 全 ResourceTimeline 利用箇所 | #33 |
 

@@ -159,9 +159,10 @@
 		<!--
 			ui-components 0.9.3 で resourceColWidth='auto' が **Canvas measureText** で
 			再実装され、 sticky 衝突問題 (旧 #34 / 本番事故 #162) を解消。 長名 resource は
-			ellipsis 切れせず最大 400px まで rail が自動拡張する。 同 release で hover
-			tooltip もカーソル追従に修正済 (#42)。 home-layout.spec.ts の auto-fit /
-			cursor-anchor assertion が regression を守る。
+			ellipsis 切れせず最大 400px まで rail が自動拡張する。
+			ui-components 1.0.0 (#84 BREAKING) で hover tooltip 全廃 + label sticky 化 に変更、
+			wide bar (viewport を超える長期間 assignment) でも label が常時 viewport 内に
+			貼り付くようになった。 旧 tooltip 関連 E2E spec は home-layout.spec.ts で削除済。
 		-->
 		<ResourceTimeline
 			{resources}
