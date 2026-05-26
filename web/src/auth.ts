@@ -55,65 +55,30 @@ export async function shouldAllowSignIn(
 	return true;
 }
 
-// ── AUTH_SECRET resolution (#168) ──
-// production: env.AUTH_SECRET_PARAM (SSM SecureString) を **handler 初回呼び出し時** に lazy fetch。
+// ── AUTH_SECRET resolution ──
+// production: env.AUTH_SECRET_PARAM (SSM SecureString) を top-level await で fetch。
 // dev / test:  env.AUTH_SECRET をそのまま使う (vite.config.ts で test 用ダミー注入済)。
 //
-// 旧実装は top-level await で SSM を fetch していたため、
-//   - Lambda cold start で +100-300ms (SSM API + KMS decrypt)
-//   - SSM 一時障害時に module load 失敗 = Lambda fn 全死 (502)
-// が発生していた。 lazy + memoize により module load は副作用なし、 失敗時は cache を
-// clear して次回 retry できる (transient SSM 障害からの自動回復)。
-async function fetchAuthSecretFromSsm(paramName: string): Promise<string> {
+// #168 (regression revert): PR #208 で「lazy memoize + function-form SvelteKitAuth」 に
+// 切り替えたが、 production で magic link verification が継続的に fail (Verification error
+// 多発、 詳細 root cause 未確定) する regression が発生したため、 pre-#208 の eager 解決
+// + object-form SvelteKitAuth に純 revert する。 #168 本来の目的 (cold start ~100-300ms 削減
+// + SSM 障害耐性) は AWS Lambda Parameters and Secrets Extension の採用で別 PR で達成予定。
+// 参考: https://docs.aws.amazon.com/systems-manager/latest/userguide/ps-integration-lambda-extensions.html
+let resolvedAuthSecret: string | undefined = env.AUTH_SECRET;
+if (!resolvedAuthSecret && env.AUTH_SECRET_PARAM) {
 	const ssm = new SSMClient({});
 	const out = await ssm.send(
-		new GetParameterCommand({ Name: paramName, WithDecryption: true })
+		new GetParameterCommand({ Name: env.AUTH_SECRET_PARAM, WithDecryption: true })
 	);
-	const value = out.Parameter?.Value;
-	if (!value) {
-		throw new Error(`AUTH_SECRET could not be resolved from SSM param ${paramName}`);
+	resolvedAuthSecret = out.Parameter?.Value;
+	if (!resolvedAuthSecret) {
+		throw new Error(`AUTH_SECRET could not be resolved from SSM param ${env.AUTH_SECRET_PARAM}`);
 	}
-	return value;
 }
-
-/**
- * #168: AUTH_SECRET resolver factory。 lazy + memoize + retry-on-failure。
- *
- * テスト容易性のため env と fetcher を DI で受け取り、 closure 内で cache する。
- * production の wiring は module bottom で env を流し込んだ 1 個のインスタンスを使う。
- */
-export function makeAuthSecretResolver(deps: {
-	authSecret: string | undefined;
-	authSecretParam: string | undefined;
-	fetcher?: (paramName: string) => Promise<string>;
-}): () => Promise<string> {
-	if (deps.authSecret) {
-		const secret = deps.authSecret;
-		return async () => secret;
-	}
-	if (!deps.authSecretParam) {
-		return async () => {
-			throw new Error('Neither AUTH_SECRET nor AUTH_SECRET_PARAM is set');
-		};
-	}
-	const paramName = deps.authSecretParam;
-	const fetcher = deps.fetcher ?? fetchAuthSecretFromSsm;
-	let cached: Promise<string> | undefined;
-	return async () => {
-		if (!cached) {
-			cached = fetcher(paramName).catch((err) => {
-				cached = undefined; // transient 障害から自動回復するため cache を clear
-				throw err;
-			});
-		}
-		return cached;
-	};
+if (!resolvedAuthSecret) {
+	throw new Error('Neither AUTH_SECRET nor AUTH_SECRET_PARAM is set');
 }
-
-const resolveAuthSecret = makeAuthSecretResolver({
-	authSecret: env.AUTH_SECRET,
-	authSecretParam: env.AUTH_SECRET_PARAM
-});
 
 const adapterClient = DynamoDBDocument.from(new DynamoDBClient({}), {
 	marshallOptions: {
@@ -181,10 +146,10 @@ export async function sendMagicLinkDev(params: {
 	}
 }
 
-// #168: SvelteKitAuth の function-form を使い、 handler 評価時に secret を lazy 取得する。
-// module load 時には SSM を叩かないので、 SSM 障害でも app は起動できる。
-export const { handle, signIn, signOut } = SvelteKitAuth(async () => ({
-	secret: await resolveAuthSecret(),
+// #168 (regression revert): object-form SvelteKitAuth に戻す。 secret は module load 時に
+// resolvedAuthSecret として確定済。
+export const { handle, signIn, signOut } = SvelteKitAuth({
+	secret: resolvedAuthSecret,
 	adapter: DynamoDBAdapter(adapterClient, {
 		tableName: env.DYNAMODB_TABLE
 	}),
@@ -232,4 +197,4 @@ export const { handle, signIn, signOut } = SvelteKitAuth(async () => ({
 		}
 	},
 	trustHost: true
-}));
+});
