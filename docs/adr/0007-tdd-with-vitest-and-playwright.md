@@ -20,8 +20,8 @@ resource-planner はこれまで「動くコードを書いて手動で確認」
 | レイヤ | ツール | 用途 |
 |---|---|---|
 | Unit / Integration | **Vitest** | 純粋関数 (date, schemas, timeline-adapter)、repository 層 (`aws-sdk-client-mock`)、DDB Local 統合 |
-| Component | Vitest + `@testing-library/svelte` (将来) | Svelte 5 コンポーネント (必要になった PR で導入) |
-| E2E | **Playwright** (基盤 PR-T5、実 spec は PR-A3 以降) | サインイン → CRUD のフルパス |
+| Component | Vitest + `@testing-library/svelte` | Svelte 5 コンポーネント (`*.svelte.test.ts`、 jsdom 環境)。 **`+page.svelte` (route root) は load 関数 / form action / hooks.server 経由でしか realistic に動作しないため component test ではなく E2E (Playwright) でカバーする方針** (#185) |
+| E2E | **Playwright** (基盤 PR-T5、実 spec は PR-A3 以降) | サインイン → CRUD のフルパス、 **`+page.svelte` レベルの結合動作も本層が単一の source of truth** |
 
 **設定方針**:
 - `web/vitest.config.ts` は作らず、**`web/vite.config.ts` の `test` block** に併設 (設定一元化)

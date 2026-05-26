@@ -74,6 +74,14 @@
 </script>
 
 <Dialog bind:open title={t('assignments.editTitle')} description={t('assignments.description')}>
+	<!--
+		#184: action は **絶対 path 必須**。 本 component は home (/) と /assignments 両方で使われる
+		shared component で、 form action `updateAssignment` は root (`/+page.server.ts`) にだけ存在する。
+		相対 `?/updateAssignment` だと /assignments から submit したとき
+		`/assignments/?/updateAssignment` を target して 404 になる。
+		将来 +page.server.ts を per-route 分割する PR を起こす場合は本 path と submission target を
+		同時に合わせて変更すること。
+	-->
 	<form method="POST" action="/?/updateAssignment" use:enhance={submit} class="flex flex-col gap-3">
 		{#if assignment}
 			<input type="hidden" name="id" value={assignment.id} />

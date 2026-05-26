@@ -4,18 +4,21 @@ import type { DateString } from './types';
  * 純粋な日付ユーティリティ。
  *
  * resource-planner は **DATE-only floating** (TZ なし `YYYY-MM-DD` 文字列) で日付を扱う
- * (iCalendar `VALUE=DATE` / Google Calendar 終日イベント相当)。Asia/Tokyo の暦日として
- * 解釈する前提。`Date.toISOString().slice(0, 10)` は UTC ベースで JST と日付がずれる
- * ことがあるため、フォーマッタは自前実装。
+ * (iCalendar `VALUE=DATE` / Google Calendar 終日イベント相当)。 **host TZ の暦日として
+ * 解釈する**: ブラウザは user の local TZ、 Lambda は UTC、 CI も UTC (`TZ=UTC` 固定)。
+ * 同じ DateString が異なる host で「同じ暦日」 を表す前提で全 layer (form / API / DB / UI)
+ * を整合させる (#184)。
+ * `Date.toISOString().slice(0, 10)` は UTC ベースで non-UTC host で日付ずれするため、
+ * フォーマッタは自前実装。
  */
 
-/** YYYY-MM-DD (Asia/Tokyo) から、その日の 0:00 ローカルを表す Date を作る。 */
+/** YYYY-MM-DD から、その日の 0:00 host-local を表す Date を作る。 */
 export function parseLocalDate(s: DateString): Date {
 	const [y, m, d] = s.split('-').map(Number);
 	return new Date(y, m - 1, d);
 }
 
-/** Date を Asia/Tokyo の YYYY-MM-DD に変換する。 */
+/** Date を host-local の YYYY-MM-DD に変換する。 */
 export function formatLocalDate(d: Date): DateString {
 	const y = d.getFullYear();
 	const m = String(d.getMonth() + 1).padStart(2, '0');
