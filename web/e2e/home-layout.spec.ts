@@ -91,59 +91,11 @@ test('home: ResourceTimeline の rail が collapse せず、 bar も visible', a
 	).toBeGreaterThanOrEqual(railBox!.x + railBox!.width - 5);
 });
 
-/**
- * ui-components 0.8.0 で #32 sticky label が revert され、 hover tooltip が常時 enabled に
- * なった (#39)。 旧仕様 (ellipsis 切れ時のみ tooltip) からの behavior change を CI で守る。
- */
-test('home: hover で bar の tooltip が常時表示される (ui-components 0.8.0 #39)', async ({
-	page
-}) => {
-	await signIn(page);
-	await bootstrap1Assignment(page, `tooltip-${Date.now()}`);
-	await page.goto('/?d=2026-05-12&z=day');
-
-	const firstBar = page.locator('div.bar, [class~="bar"]').first();
-	await expect(firstBar).toBeVisible();
-	await firstBar.hover();
-
-	// bits-ui floating-ui の wrapper + .ui-bar-tooltip を await
-	const tooltip = page.locator('.ui-bar-tooltip').first();
-	await expect(tooltip).toBeVisible({ timeout: 1000 });
-});
-
-/**
- * ui-components 0.9.3 (#42): hover tooltip を **カーソル位置に追従** させる修正。 旧 (0.8.0)
- * では bar 全体が anchor で、 wide bar の場合 tooltip が画面端に貼り付く問題があった。
- *
- * 検証ポイント:
- *   - bits-ui の floating-ui wrapper が出力する \`--bits-floating-anchor-width\` が **0px**
- *     (= virtual element pattern、 bar 全体 anchor なら bar の width が入る)
- *   - tooltip の center 座標が cursor 位置 ± offset の範囲内
- */
-test('home: tooltip がカーソルに追従する (ui-components 0.9.3 #42)', async ({ page }) => {
-	await signIn(page);
-	await bootstrap1Assignment(page, `tooltip-follow-${Date.now()}`);
-	await page.goto('/?d=2026-05-12&z=day');
-
-	const firstBar = page.locator('div.bar, [class~="bar"]').first();
-	await expect(firstBar).toBeVisible();
-	await firstBar.hover();
-
-	const tooltip = page.locator('.ui-bar-tooltip').first();
-	await expect(tooltip).toBeVisible({ timeout: 1500 });
-
-	// 主検証: floating-ui wrapper の \`--bits-floating-anchor-width\` で anchor 種別判定。
-	//   - 旧 (0.8.0 以前): bar 全体が anchor → anchor-width = bar.width (数百 px)
-	//   - 新 (0.9.0 #42):  virtual element (cursor point) → anchor-width = 0px
-	const wrapper = page.locator('[data-bits-floating-content-wrapper]').first();
-	const anchorWidth = await wrapper.evaluate(
-		(el) => getComputedStyle(el).getPropertyValue('--bits-floating-anchor-width').trim()
-	);
-	expect(
-		anchorWidth,
-		`--bits-floating-anchor-width=${anchorWidth} ですが virtual element pattern なら "0px" のはず`
-	).toBe('0px');
-});
+// ui-components 1.0.0 (#84) で hover tooltip 全廃 → 旧 tooltip 関連 spec (常時表示
+// `home: hover で bar の tooltip が常時表示される (0.8.0 #39)` と
+// `home: tooltip がカーソルに追従する (0.9.3 #42)`) は削除。 sticky label に置き換わったので
+// 「label が long bar の viewport scroll 中も常時 viewport 内に表示される」 を別途検証する
+// spec を将来追加する余地あり (本 PR の scope では未対応、 必要なら別 issue)。
 
 /**
  * ui-components 0.9.3 (#43): resourceColWidth='auto' で rail を最長名 + padding に fit させる

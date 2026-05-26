@@ -359,9 +359,10 @@ sequenceDiagram
 - ドラッグ中の visual feedback はライブラリ任せ (custom hover/preview UI なし)
 - 「Resize で startDate も同時に変える」「他リソース行へ drop で resourceId 変更」 等の挙動は ResourceTimeline ライブラリの実装に依存
 
-### ui-components 由来の補助 UI (0.9.x、#185)
+### ui-components 由来の補助 UI (1.0.x、#185)
 
-- **Hover tooltip がカーソル右上に追従** (旧: bar 中央 anchor で wide bar 時画面端に貼り付き、ui-components #42/#48/#50 で修正済)。 wide bar 中のどこで hover しても full project label が確認できる
+- **Bar label sticky 化** (ui-components 1.0.0 #84、 BREAKING)。 long bar (viewport を超える長期間 assignment) でも、 horizontal scroll 中に label が常時 viewport 内に貼り付く。 hover tooltip は全廃され、 sticky label がその役割を完全代替 (旧 hover の離散的 UX → 常時可視に格上げ)
+- **Bar click で AssignmentEditor 起動** (ui-components 1.0.0 #85/#92)。 click (移動量 < 4px) で resource / project / 期間の編集 dialog、 drag (移動量 ≥ 4px) は従来通り onMove。 keyboard Enter/Space でも同 dialog (WAI-ARIA APG Button pattern)
 - **Resource rail 列幅が最長名 + chrome を Canvas measureText で実測して auto-fit** (`resourceColWidth="auto"`、ui-components #43/#47/#51/#53)。 長い resource 名でも bar の上に侵食しない
 
 ---
