@@ -1,20 +1,24 @@
 data "aws_caller_identity" "current" {}
 
-resource "aws_iam_role" "lambda" {
-  name = "${var.project}-lambda-role"
-
-  assume_role_policy = jsonencode({
+# #186: Lambda assume_role policy は本 module 内 (lambda.tf + ses_bounce.tf) で同一のため
+# locals に集約して DRY 化。 jsonencode 単体で十分シンプルなので data "aws_iam_policy_document"
+# は採用しない (HashiCorp 公式: locals は「reused value に名前を付ける」 用途を推奨)。
+locals {
+  lambda_assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "lambda.amazonaws.com"
-        }
+        Action    = "sts:AssumeRole"
+        Effect    = "Allow"
+        Principal = { Service = "lambda.amazonaws.com" }
       }
     ]
   })
+}
+
+resource "aws_iam_role" "lambda" {
+  name               = "${var.project}-lambda-role"
+  assume_role_policy = local.lambda_assume_role_policy
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_basic" {

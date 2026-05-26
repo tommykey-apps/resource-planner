@@ -1,3 +1,27 @@
+# #186: AWS-managed CloudFront policy UUID hardcode を data source 参照に置換。
+# 効果: 意図 (CachingDisabled / CachingOptimized 等) が一目で分かる、 UUID は data source が
+# AWS から取得する (現状 stable だが defensive)。 resource ID は同じ UUID なので no-op plan。
+#
+# 公式 docs:
+# - https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html
+# - https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-origin-request-policies.html
+# - https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-response-headers-policies.html
+data "aws_cloudfront_cache_policy" "caching_disabled" {
+  name = "Managed-CachingDisabled"
+}
+
+data "aws_cloudfront_cache_policy" "caching_optimized" {
+  name = "Managed-CachingOptimized"
+}
+
+data "aws_cloudfront_origin_request_policy" "all_viewer_except_host_header" {
+  name = "Managed-AllViewerExceptHostHeader"
+}
+
+data "aws_cloudfront_response_headers_policy" "security_headers" {
+  name = "Managed-SecurityHeadersPolicy"
+}
+
 resource "aws_cloudfront_distribution" "app" {
   enabled     = true
   price_class = "PriceClass_200"
@@ -32,9 +56,9 @@ resource "aws_cloudfront_distribution" "app" {
     viewer_protocol_policy = "redirect-to-https"
     compress               = true
 
-    cache_policy_id            = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad"
-    origin_request_policy_id   = "b689b0a8-53d0-40ab-baf2-68738e2966ac"
-    response_headers_policy_id = "67f7725c-6f97-4210-82d7-5512b31e9d03"
+    cache_policy_id            = data.aws_cloudfront_cache_policy.caching_disabled.id
+    origin_request_policy_id   = data.aws_cloudfront_origin_request_policy.all_viewer_except_host_header.id
+    response_headers_policy_id = data.aws_cloudfront_response_headers_policy.security_headers.id
   }
 
   ordered_cache_behavior {
@@ -45,8 +69,8 @@ resource "aws_cloudfront_distribution" "app" {
     viewer_protocol_policy = "redirect-to-https"
     compress               = true
 
-    cache_policy_id            = "658327ea-f89d-4fab-a63d-7e88639e58f6"
-    response_headers_policy_id = "67f7725c-6f97-4210-82d7-5512b31e9d03"
+    cache_policy_id            = data.aws_cloudfront_cache_policy.caching_optimized.id
+    response_headers_policy_id = data.aws_cloudfront_response_headers_policy.security_headers.id
   }
 
   restrictions {
