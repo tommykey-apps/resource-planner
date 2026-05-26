@@ -1,18 +1,10 @@
 /**
- * Auth.js 設定の入り口 (#65 / #79 / #81 / #83 / #85 / #168)。
+ * Auth.js 設定の入り口 (#65 / #79 / #81 / #83 / #85)。
  * 認証は Email Magic Link 単体 (ADR 0008 で Clerk から移行済)。
  *
- * - dev / test: env.AUTH_SECRET を直接利用
- * - production (Lambda): env.AUTH_SECRET_PARAM (SSM SecureString) を
- *   **AWS Parameters and Secrets Lambda Extension** (layer + localhost HTTP server)
- *   経由で取得。 公式 docs (https://docs.aws.amazon.com/systems-manager/latest/userguide/ps-integration-lambda-extensions.html):
- *     - GET http://localhost:2773/systemsmanager/parameters/get?name=...&withDecryption=true
- *     - Header: X-Aws-Parameters-Secrets-Token = $AWS_SESSION_TOKEN
- *     - Extension が 300s TTL でローカル cache + retry を持つ → SDK 不要、 cold start 短縮
- *
- * **重要**: Extension は INVOKE phase でのみ起動しているため top-level await では呼べない。
- * SvelteKitAuth は function-form (`async (event) => config`) で per-request に解決し、
- * 同 container 内では module-level Promise で memoize (1 回だけ extension に行く)。
+ * - dev / test: env から AUTH_SECRET 直接 / sendVerificationRequest を console.log
+ * - production (Lambda): env.AUTH_SECRET 未設定 + env.AUTH_SECRET_PARAM 設定
+ *   → SSM SecureString から resolve、sendVerificationRequest を SES SDK で送信
  */
 // 本番安全 guard を副作用 import で最上位に置く (#135、#125 の強化)。
 // auth.ts は独立に DynamoDBClient を構築 (DDB adapter 経由) するので、 client.ts と同じ
@@ -23,6 +15,7 @@ import Nodemailer from '@auth/sveltekit/providers/nodemailer';
 import { DynamoDBAdapter } from '@auth/dynamodb-adapter';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
+import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2';
 import { promises as fs } from 'node:fs';
 import { env } from '$env/dynamic/private';
@@ -62,68 +55,36 @@ export async function shouldAllowSignIn(
 	return true;
 }
 
-// ── AUTH_SECRET resolution via AWS Parameters and Secrets Lambda Extension (#168) ──
+// ── AUTH_SECRET resolution ──
+// production: env.AUTH_SECRET_PARAM (SSM SecureString) を top-level await で fetch。
+// dev / test:  env.AUTH_SECRET をそのまま使う (vite.config.ts で test 用ダミー注入済)。
 //
-// 公式 docs の Recommended Pattern: layer 経由の localhost HTTP endpoint を叩く。
-// SDK は不要 (extension が SSM への retry / cache / decrypt を内包)。
-//
-// dev / test:    env.AUTH_SECRET があれば fetch せず直接返す
-// production:    env.AUTH_SECRET_PARAM + AWS_SESSION_TOKEN が揃ったら extension へ GET
-//
-// `fetchAuthSecret` は pure (state を持たない) ので unit test しやすい。 module-level の
-// memoize は別レイヤで行う (`getAuthSecret` 内 Promise キャッシュ)。
-const EXTENSION_PORT = 2773;
-const EXTENSION_HOST = `http://localhost:${EXTENSION_PORT}`;
-
-export async function fetchAuthSecret({
-	authSecret,
-	authSecretParam,
-	sessionToken
-}: {
-	authSecret: string | undefined;
-	authSecretParam: string | undefined;
-	sessionToken: string | undefined;
-}): Promise<string> {
-	if (authSecret) return authSecret;
-	if (!authSecretParam) {
-		throw new Error('Neither AUTH_SECRET nor AUTH_SECRET_PARAM is set');
+// #168 history:
+//   PR #208 で 「lazy memoize + function-form」 → 同時にあった callbackUrl UX bug の
+//   症状を 「sign-in 失敗」 と誤診し PR #221 で revert。 PR #222 で AWS Parameters and
+//   Secrets Lambda Extension に乗せようとしたが、 **container Lambda は layer 非対応**
+//   なため terraform apply が
+//   "Please don't provide Handler or Runtime or Layer when the intended function
+//   PackageType is Image" で失敗。 PR #223 で revert。
+//   AWS 公式: "For a function defined as a container image, you add the extensions
+//   to your container image"
+//   https://docs.aws.amazon.com/lambda/latest/dg/runtimes-extensions-api.html
+//   結論: container Lambda + SDK 直接が AWS 標準 pattern なので本実装を維持する。
+//   Extension を embed する選択もあるが Dockerfile に extension binary を /opt/extensions/
+//   へコピーする手間 + maintain コストに見合わないため採用しない。
+let resolvedAuthSecret: string | undefined = env.AUTH_SECRET;
+if (!resolvedAuthSecret && env.AUTH_SECRET_PARAM) {
+	const ssm = new SSMClient({});
+	const out = await ssm.send(
+		new GetParameterCommand({ Name: env.AUTH_SECRET_PARAM, WithDecryption: true })
+	);
+	resolvedAuthSecret = out.Parameter?.Value;
+	if (!resolvedAuthSecret) {
+		throw new Error(`AUTH_SECRET could not be resolved from SSM param ${env.AUTH_SECRET_PARAM}`);
 	}
-	if (!sessionToken) {
-		throw new Error(
-			'AWS_SESSION_TOKEN is required to fetch via Lambda Parameters and Secrets Extension'
-		);
-	}
-	const url = `${EXTENSION_HOST}/systemsmanager/parameters/get?name=${encodeURIComponent(authSecretParam)}&withDecryption=true`;
-	const res = await fetch(url, {
-		headers: { 'X-Aws-Parameters-Secrets-Token': sessionToken }
-	});
-	if (!res.ok) {
-		const body = await res.text().catch(() => '');
-		throw new Error(`Lambda Extension fetch failed: ${res.status} ${body}`.trim());
-	}
-	const data = (await res.json()) as { Parameter?: { Value?: string } };
-	const value = data.Parameter?.Value;
-	if (!value) {
-		throw new Error('Lambda Extension response missing Parameter.Value');
-	}
-	return value;
 }
-
-// Lambda container の寿命 (数分〜数時間) 内では SSM 値は変わらない前提で永続 memoize。
-// fail 時は cache せず次回再試行 (extension が SSM 障害から復旧したら成功する)。
-let cachedSecretPromise: Promise<string> | undefined;
-function getAuthSecret(): Promise<string> {
-	if (!cachedSecretPromise) {
-		cachedSecretPromise = fetchAuthSecret({
-			authSecret: env.AUTH_SECRET,
-			authSecretParam: env.AUTH_SECRET_PARAM,
-			sessionToken: process.env.AWS_SESSION_TOKEN
-		}).catch((e) => {
-			cachedSecretPromise = undefined;
-			throw e;
-		});
-	}
-	return cachedSecretPromise;
+if (!resolvedAuthSecret) {
+	throw new Error('Neither AUTH_SECRET nor AUTH_SECRET_PARAM is set');
 }
 
 const adapterClient = DynamoDBDocument.from(new DynamoDBClient({}), {
@@ -189,11 +150,10 @@ export async function sendMagicLinkDev(params: { identifier: string; url: string
 	}
 }
 
-// SvelteKitAuth function-form: per-request に config を build する (#168)。
-// `secret` は extension fetch なので INVOKE phase でしか呼べない (top-level await NG)。
-// adapter / providers / pages 等 secret に依存しない部分は module-level の不変値を再利用する。
-export const { handle, signIn, signOut } = SvelteKitAuth(async () => ({
-	secret: await getAuthSecret(),
+// #168 (regression revert): object-form SvelteKitAuth に戻す。 secret は module load 時に
+// resolvedAuthSecret として確定済。
+export const { handle, signIn, signOut } = SvelteKitAuth({
+	secret: resolvedAuthSecret,
 	adapter: DynamoDBAdapter(adapterClient, {
 		tableName: env.DYNAMODB_TABLE
 	}),
@@ -241,4 +201,4 @@ export const { handle, signIn, signOut } = SvelteKitAuth(async () => ({
 		}
 	},
 	trustHost: true
-}));
+});
