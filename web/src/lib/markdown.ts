@@ -8,10 +8,13 @@ marked.use({ gfm: true, breaks: true, async: false });
 // DOMPurify は allow-list (= ALLOWED_TAGS / ALLOWED_ATTR) を明示すれば、 そこに無い tag / attr は
 // 自動的に strip される (cure53 公式の deny-by-default semantics)。 よって以下の設定は冗長な
 // FORBID_TAGS / FORBID_ATTR を持たず、 allow-list だけで XSS を遮断する。
-// - h1 解禁 (#224): GitHub Issues / Notion / Linear / Confluence 等 rich content editor 系の
-//   業界 main stream に追随。 「1 page 1 h1」 lint warning は出るが WCAG 公式違反ではなく、
-//   accessibility audit ツール (axe / Lighthouse) の指摘レベル。 user 生成 content の表現力
-//   優先で受容。 抜本対応は AppHeader の app title h1 を banner landmark に降格する別 issue で。
+// - h1 解禁 (#224): GitHub Issues / Notion / Discourse / Linear / Confluence 等 rich content
+//   editor 系の業界 main stream に追随。 axe-core 4.10.2 で実 audit したところ、 multi-h1 は
+//   そもそも violation すら出ない (axe の heading 系 rule は empty-heading / heading-order /
+//   page-has-heading-one (少なくとも 1 つ) / p-as-heading のみで、 「single h1 per page」 を
+//   flag する rule は存在しない。 Lighthouse a11y は axe を内部利用するので同じ)。 WCAG 2.1/2.2
+//   公式にも multi-h1 制限なし。 HTML5 Outline 仕様 (h1 を section 内で自由に使う案) は
+//   browser / AT 未実装で実質廃止。
 // - img / style / iframe / script / svg / form / input 等は allow-list 不在で自動 strip される
 // - onclick / onerror / onload / formaction 等の event handler は ALLOWED_ATTR 不在で自動 strip
 // - SAFE_FOR_TEMPLATES は使わない (CVE-2025-26791 発火条件、 BP B2)
