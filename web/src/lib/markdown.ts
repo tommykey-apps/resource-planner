@@ -8,7 +8,10 @@ marked.use({ gfm: true, breaks: true, async: false });
 // DOMPurify は allow-list (= ALLOWED_TAGS / ALLOWED_ATTR) を明示すれば、 そこに無い tag / attr は
 // 自動的に strip される (cure53 公式の deny-by-default semantics)。 よって以下の設定は冗長な
 // FORBID_TAGS / FORBID_ATTR を持たず、 allow-list だけで XSS を遮断する。
-// - h1 は page title 衝突回避で ALLOWED_TAGS に入れない (業界事例: GitHub README と同じ)
+// - h1 解禁 (#224): GitHub Issues / Notion / Linear / Confluence 等 rich content editor 系の
+//   業界 main stream に追随。 「1 page 1 h1」 lint warning は出るが WCAG 公式違反ではなく、
+//   accessibility audit ツール (axe / Lighthouse) の指摘レベル。 user 生成 content の表現力
+//   優先で受容。 抜本対応は AppHeader の app title h1 を banner landmark に降格する別 issue で。
 // - img / style / iframe / script / svg / form / input 等は allow-list 不在で自動 strip される
 // - onclick / onerror / onload / formaction 等の event handler は ALLOWED_ATTR 不在で自動 strip
 // - SAFE_FOR_TEMPLATES は使わない (CVE-2025-26791 発火条件、 BP B2)
@@ -23,6 +26,7 @@ const SANITIZE_CONFIG = {
 		'del',
 		'code',
 		'pre',
+		'h1',
 		'h2',
 		'h3',
 		'h4',
