@@ -43,12 +43,11 @@ describe('renderMarkdown — basic markdown', () => {
 		expect(out).toContain('<a href="mailto:foo@example.com">mail</a>');
 	});
 
-	it('renders h2-h4 but not h1 (h1 is page title)', () => {
+	it('renders h1-h4 (h1 解禁: 業界 main stream に追随、 ADR 0010 補遺)', () => {
+		expect(renderMarkdown('# h1')).toContain('<h1>');
 		expect(renderMarkdown('## h2')).toContain('<h2>');
 		expect(renderMarkdown('### h3')).toContain('<h3>');
 		expect(renderMarkdown('#### h4')).toContain('<h4>');
-		// h1 は ALLOWED_TAGS 外 → DOMPurify が strip
-		expect(renderMarkdown('# h1')).not.toContain('<h1>');
 	});
 
 	it('renders blockquote', () => {
@@ -74,11 +73,7 @@ describe('renderMarkdown — XSS protection (BP B2 + OWASP)', () => {
 		['<img src=x onerror=alert(1)>', /<img/i, 'img with onerror (FORBID_TAGS)'],
 		['<iframe src="evil"></iframe>', /<iframe/i, 'iframe'],
 		['<a href="javascript:alert(1)">x</a>', /javascript:/i, 'javascript: in href'],
-		[
-			'<a href="data:text/html,<script>alert(1)</script>">x</a>',
-			/data:/i,
-			'data: URL'
-		],
+		['<a href="data:text/html,<script>alert(1)</script>">x</a>', /data:/i, 'data: URL'],
 		['<svg><script>alert(1)</script></svg>', /<script/i, 'svg + script'],
 		['<style>body{display:none}</style>', /<style/i, 'style tag (FORBID_TAGS)'],
 		['<form><input type=submit></form>', /<form|<input/i, 'form + input (FORBID_TAGS)'],
