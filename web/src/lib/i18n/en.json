@@ -42,8 +42,7 @@
 		"add": "+ Add department",
 		"createTitle": "Add department",
 		"name": "Department name",
-		"empty": "No departments yet.",
-		"createFailed": "Failed to add the department. Please try again."
+		"empty": "No departments yet."
 	},
 	"resources": {
 		"manage": "Manage people",

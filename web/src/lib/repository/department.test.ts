@@ -20,7 +20,8 @@ describe('createDepartment (ADR 0013)', () => {
 	it('uses SK = DEPT#{id}, stores name, attribute_not_exists guard; root は parentId 属性を持たない', async () => {
 		ddbMock.on(PutCommand).resolves({});
 
-		const result = await createDepartment(TEAM, { name: '開発本部', parentId: null });
+		// root = parentId 省略 (form は parentId を送らない)
+		const result = await createDepartment(TEAM, { name: '開発本部' });
 
 		expect(result).toMatchObject({ name: '開発本部', parentId: null });
 		const input = ddbMock.commandCalls(PutCommand)[0].args[0].input;

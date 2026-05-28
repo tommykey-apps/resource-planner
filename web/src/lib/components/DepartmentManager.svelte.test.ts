@@ -17,13 +17,12 @@ const DEPARTMENTS: Department[] = [
 describe('DepartmentManager (#238)', () => {
 	it('renders the manage trigger with the department count', () => {
 		const { getByRole } = render(DepartmentManager, { props: { departments: DEPARTMENTS } });
-		const btn = getByRole('button');
-		expect(btn.textContent).toMatch(/部署|Department/);
+		const btn = getByRole('button', { name: /部署|Department/ });
 		expect(btn.textContent).toContain('2');
 	});
 
 	it('shows count 0 when there are no departments', () => {
 		const { getByRole } = render(DepartmentManager, { props: { departments: [] } });
-		expect(getByRole('button').textContent).toContain('0');
+		expect(getByRole('button', { name: /部署|Department/ }).textContent).toContain('0');
 	});
 });
