@@ -63,12 +63,14 @@ export async function queryAllByTeam(teamId: string): Promise<TeamData> {
 				data.projects.push(project);
 			} else if (sk.startsWith(SK_PREFIX.assignment)) {
 				// ADR 0010 「DDB read path 規約」: `as <Entity>` 全体キャスト禁止、 個別 cast に localize。
+				// version は ADR 0012 (楽観ロック)。 移行前の legacy item で欠落時は 1 に default。
 				const assignment: Assignment = {
 					id: item.id as string,
 					resourceId: item.resourceId as string,
 					projectId: item.projectId as string,
 					startDate: item.startDate as string,
-					endDateExclusive: item.endDateExclusive as string
+					endDateExclusive: item.endDateExclusive as string,
+					version: (item.version as number | undefined) ?? 1
 				};
 				data.assignments.push(assignment);
 			}

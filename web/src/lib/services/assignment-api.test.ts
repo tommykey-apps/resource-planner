@@ -20,30 +20,49 @@ afterEach(() => {
 });
 
 const PAYLOAD = {
-	prevStartDate: '2026-05-01',
+	expectedVersion: 2,
 	resourceId: 'r1',
 	projectId: 'p1',
 	startDate: '2026-05-03',
 	endDateExclusive: '2026-05-10'
 };
 
-describe('patchAssignment (#180)', () => {
-	it('sends PATCH /api/assignments/{id} with JSON body, returns { ok: true } on 200', async () => {
+describe('patchAssignment (#180 / ADR 0012)', () => {
+	it('sends PATCH /api/assignments/{id} with JSON body, returns { ok: true, version } on 200', async () => {
 		fetchMock.mockResolvedValueOnce({
 			ok: true,
 			status: 200,
-			json: async () => ({ success: true })
+			json: async () => ({ success: true, version: 3 })
 		} as unknown as Response);
 
 		const result = await patchAssignment('asn-1', PAYLOAD);
 
-		expect(result).toEqual({ ok: true });
+		expect(result).toEqual({ ok: true, version: 3 });
 		expect(fetchMock).toHaveBeenCalledWith('/api/assignments/asn-1', {
 			method: 'PATCH',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(PAYLOAD),
 			signal: expect.any(AbortSignal)
 		});
+	});
+
+	it('returns { ok: false, conflict: true, latest } on 409 version conflict (ADR 0012)', async () => {
+		const latest = {
+			id: 'asn-1',
+			resourceId: 'r1',
+			projectId: 'p2',
+			startDate: '2026-05-05',
+			endDateExclusive: '2026-05-12',
+			version: 4
+		};
+		fetchMock.mockResolvedValueOnce({
+			ok: false,
+			status: 409,
+			json: async () => ({ conflict: true, latest })
+		} as unknown as Response);
+
+		const result = await patchAssignment('asn-1', PAYLOAD);
+		expect(result).toEqual({ ok: false, conflict: true, latest });
 	});
 
 	it('returns { ok: false, errors, status } when server returns 400 + ServerErrors', async () => {
@@ -106,7 +125,7 @@ describe('patchAssignment cancel-latest (#231)', () => {
 			.mockResolvedValueOnce({
 				ok: true,
 				status: 200,
-				json: async () => ({ success: true })
+				json: async () => ({ success: true, version: 2 })
 			} as unknown as Response);
 
 		const p1 = patchAssignment('asn-1', PAYLOAD);
@@ -114,7 +133,7 @@ describe('patchAssignment cancel-latest (#231)', () => {
 		const r1 = await p1;
 
 		expect(r1).toEqual({ ok: false, superseded: true });
-		expect(r2).toEqual({ ok: true });
+		expect(r2).toEqual({ ok: true, version: 2 });
 	});
 
 	it('does not abort an in-flight request for a different id', async () => {

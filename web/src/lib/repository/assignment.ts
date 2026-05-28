@@ -1,28 +1,32 @@
-import {
-	PutCommand,
-	DeleteCommand,
-	QueryCommand,
-	TransactWriteCommand
-} from '@aws-sdk/lib-dynamodb';
+import { PutCommand, DeleteCommand, GetCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { ddb, TABLE } from '$lib/db/client';
 import { newId } from '$lib/id';
 import { pk, assignmentSk, SK_PREFIX } from './keys';
 import type { Assignment } from '$lib/types';
-import type {
-	AssignmentCreatePayload,
-	AssignmentUpdatePayload
-} from '$lib/schemas';
+import type { AssignmentCreatePayload, AssignmentUpdatePayload } from '$lib/schemas';
+
+/**
+ * 楽観ロック競合 (ADR 0012): `version` 不一致 = 他プロセスが先に更新、 または対象が消えた。
+ * API 層 (`+server.ts`) が catch して 409 + 最新 item に map する。
+ */
+export class AssignmentVersionConflictError extends Error {
+	constructor(public readonly assignmentId: string) {
+		super(`assignment ${assignmentId} version conflict`);
+		this.name = 'AssignmentVersionConflictError';
+	}
+}
 
 export async function createAssignment(
 	teamId: string,
 	input: AssignmentCreatePayload
 ): Promise<Assignment> {
 	const id = newId();
-	const item: Assignment = { id, ...input };
+	// version は create 時 1 始まり (ADR 0012)。
+	const item: Assignment = { id, ...input, version: 1 };
 	await ddb.send(
 		new PutCommand({
 			TableName: TABLE,
-			Item: { pk: pk(teamId), sk: assignmentSk(input.startDate, id), ...item },
+			Item: { pk: pk(teamId), sk: assignmentSk(id), ...item },
 			ConditionExpression: 'attribute_not_exists(sk)'
 		})
 	);
@@ -30,73 +34,76 @@ export async function createAssignment(
 }
 
 /**
- * Assignment の更新は startDate 変更があると SK が変わる (ASN#{startDate}#{id})。
- * UpdateItem では SK を変更できないため、TransactWriteItems で旧 SK Delete + 新 SK Put を原子的に実行する。
+ * Assignment 更新 (ADR 0012)。 SK = `ASN#{id}` 安定キーになったため、 startDate を変えても
+ * SK は不変 = 単一 `PutCommand` で atomic に上書きできる (旧: TransactWrite で delete+put)。
  *
- * @param prevStartDate - 変更前の startDate (旧 SK 計算用)
+ * 楽観ロック: `version = :expected` を条件に書き込み、 成功時は version を +1 する。
+ * 不一致 (= 他ユーザが先に更新) なら `ConditionalCheckFailedException` →
+ * `AssignmentVersionConflictError` に変換して throw。
+ *
+ * @returns 書き込み後の新しい version
  */
 export async function updateAssignment(
 	teamId: string,
-	prevStartDate: string,
 	input: AssignmentUpdatePayload
-): Promise<void> {
-	const oldSk = assignmentSk(prevStartDate, input.id);
-	const newSk = assignmentSk(input.startDate, input.id);
-
+): Promise<number> {
+	const nextVersion = input.expectedVersion + 1;
 	const item = {
 		id: input.id,
 		resourceId: input.resourceId,
 		projectId: input.projectId,
 		startDate: input.startDate,
-		endDateExclusive: input.endDateExclusive
+		endDateExclusive: input.endDateExclusive,
+		version: nextVersion
 	};
-
-	if (oldSk === newSk) {
-		// SK 変更なし → 通常 Put で上書き
+	try {
 		await ddb.send(
 			new PutCommand({
 				TableName: TABLE,
-				Item: { pk: pk(teamId), sk: newSk, ...item },
-				ConditionExpression: 'attribute_exists(sk)'
+				Item: { pk: pk(teamId), sk: assignmentSk(input.id), ...item },
+				ConditionExpression: 'attribute_exists(sk) AND version = :expected',
+				ExpressionAttributeValues: { ':expected': input.expectedVersion }
 			})
 		);
-		return;
+	} catch (e) {
+		// team.ts と同じ name 判定パターン (instanceof は SDK の re-export で不安定)。
+		const c = e as { name?: string };
+		if (c.name === 'ConditionalCheckFailedException') {
+			throw new AssignmentVersionConflictError(input.id);
+		}
+		throw e;
 	}
+	return nextVersion;
+}
 
-	// SK 変更あり → 旧 Delete + 新 Put を原子的に
+export async function deleteAssignment(teamId: string, id: string): Promise<void> {
 	await ddb.send(
-		new TransactWriteCommand({
-			TransactItems: [
-				{
-					Delete: {
-						TableName: TABLE,
-						Key: { pk: pk(teamId), sk: oldSk },
-						ConditionExpression: 'attribute_exists(sk)'
-					}
-				},
-				{
-					Put: {
-						TableName: TABLE,
-						Item: { pk: pk(teamId), sk: newSk, ...item },
-						ConditionExpression: 'attribute_not_exists(sk)'
-					}
-				}
-			]
+		new DeleteCommand({
+			TableName: TABLE,
+			Key: { pk: pk(teamId), sk: assignmentSk(id) }
 		})
 	);
 }
 
-export async function deleteAssignment(
-	teamId: string,
-	startDate: string,
-	id: string
-): Promise<void> {
-	await ddb.send(
-		new DeleteCommand({
-			TableName: TABLE,
-			Key: { pk: pk(teamId), sk: assignmentSk(startDate, id) }
-		})
+/**
+ * 単一 Assignment を取得 (主に競合 409 で「最新」を client へ返すため)。
+ * 見つからなければ null。
+ */
+export async function getAssignment(teamId: string, id: string): Promise<Assignment | null> {
+	const out = await ddb.send(
+		new GetCommand({ TableName: TABLE, Key: { pk: pk(teamId), sk: assignmentSk(id) } })
 	);
+	const item = out.Item;
+	if (!item) return null;
+	// ADR 0010 「DDB read path 規約」: 全体キャストせず個別 cast に localize。
+	return {
+		id: item.id as string,
+		resourceId: item.resourceId as string,
+		projectId: item.projectId as string,
+		startDate: item.startDate as string,
+		endDateExclusive: item.endDateExclusive as string,
+		version: (item.version as number | undefined) ?? 1
+	};
 }
 
 /**

@@ -2,14 +2,16 @@
  * Home (/) の form actions。
  *
  * #171: 9 form action のボイラープレート (requireSession → formData → safeParse → fail / run) を
- * `makeFormAction` helper に集約。 188 → ~75 行。 delete 系の `typeof id !== 'string'` 手書き
- * チェックは `deleteByIdSchema` / `deleteAssignmentSchema` で zod 経由に揃え、 ServerErrors
- * wire format を form action と API endpoint で統一 (#179 と整合)。
+ * `makeFormAction` helper に集約。 delete 系の `typeof id !== 'string'` 手書きチェックは
+ * `deleteByIdSchema` で zod 経由に揃え、 ServerErrors wire format を統一 (#179)。
+ *
+ * updateAssignment だけは ADR 0012 の version 楽観ロック競合を `fail(409, { conflict })` に
+ * map する必要があるため makeFormAction を使わず専用実装にしている。
  */
+import { fail } from '@sveltejs/kit';
 import {
 	assignmentCreateSchema,
 	assignmentFormUpdateSchema,
-	deleteAssignmentSchema,
 	deleteByIdSchema,
 	projectCreateSchema,
 	projectUpdateSchema,
@@ -17,6 +19,7 @@ import {
 	resourceUpdateSchema
 } from '$lib/schemas';
 import {
+	AssignmentVersionConflictError,
 	createAssignment,
 	createProject,
 	createResource,
@@ -28,6 +31,8 @@ import {
 	updateResource
 } from '$lib/repository';
 import { makeFormAction } from '$lib/forms/make-form-action';
+import { requireSession } from '$lib/session';
+import { formatZodErrors } from '$lib/forms/server-error';
 import type { Actions } from './$types';
 
 export const actions: Actions = {
@@ -87,21 +92,32 @@ export const actions: Actions = {
 		}
 	}),
 
-	// SK = ASN#{startDate}#{id}: startDate 変更時は旧 SK Delete + 新 SK Put (assignment.ts 参照)。
-	updateAssignment: makeFormAction({
-		action: 'updateAssignment',
-		schema: assignmentFormUpdateSchema,
-		run: async (session, parsed) => {
-			await updateAssignment(session.teamId, parsed.prevStartDate, parsed.payload);
+	// ADR 0012: SK = ASN#{id} 安定キー + version 楽観ロック。 startDate を変えても SK 再構築は不要。
+	// makeFormAction は run の throw を catch しないため、 version 競合を 409 に map する都合で専用実装。
+	updateAssignment: async (event) => {
+		const session = await requireSession(event);
+		const input = Object.fromEntries(await event.request.formData());
+		const parsed = assignmentFormUpdateSchema.safeParse(input);
+		if (!parsed.success) {
+			return fail(400, { action: 'updateAssignment', errors: formatZodErrors(parsed) });
 		}
-	}),
+		try {
+			await updateAssignment(session.teamId, parsed.data);
+		} catch (e) {
+			if (e instanceof AssignmentVersionConflictError) {
+				return fail(409, { action: 'updateAssignment', conflict: true });
+			}
+			throw e;
+		}
+		return { action: 'updateAssignment', success: true };
+	},
 
-	// SK = ASN#{startDate}#{id} で構成されるため startDate も必要 (UC-05 / ADR 0005)。
+	// ADR 0012: SK = ASN#{id} になったため delete は id のみ (旧: startDate 込み)。
 	deleteAssignment: makeFormAction({
 		action: 'deleteAssignment',
-		schema: deleteAssignmentSchema,
+		schema: deleteByIdSchema,
 		run: async (session, parsed) => {
-			await deleteAssignment(session.teamId, parsed.startDate, parsed.id);
+			await deleteAssignment(session.teamId, parsed.id);
 		}
 	})
 };

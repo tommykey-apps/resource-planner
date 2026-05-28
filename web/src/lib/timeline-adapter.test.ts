@@ -7,7 +7,8 @@ const sampleDb: DbAssignment = {
 	resourceId: 'r1',
 	projectId: 'p1',
 	startDate: '2026-05-01',
-	endDateExclusive: '2026-06-01'
+	endDateExclusive: '2026-06-01',
+	version: 1
 };
 
 describe('toTimelineAssignment', () => {
@@ -48,7 +49,8 @@ describe('fromTimelineAssignment', () => {
 			resourceId: 'r2',
 			projectId: 'p1', // preserved from prev (timeline has no projectId)
 			startDate: '2026-06-15',
-			endDateExclusive: '2026-07-01'
+			endDateExclusive: '2026-07-01',
+			version: 1 // ADR 0012: version は prev から温存される
 		});
 	});
 

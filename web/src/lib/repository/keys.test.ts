@@ -38,10 +38,8 @@ describe('repository/keys (#81 single table design)', () => {
 			expect(projectSk('01PRJ')).toBe('PRJ#01PRJ');
 		});
 
-		it('assignmentSk(startDate, id) → "ASN#{startDate}#{id}" (date 先頭で sort 可能)', () => {
-			expect(assignmentSk('2026-05-01', '01ASN')).toBe('ASN#2026-05-01#01ASN');
-			// startDate のフォーマットが ISO ならソート可能 (access-patterns.md A3 の前提)
-			expect(assignmentSk('2026-01-01', 'a').localeCompare(assignmentSk('2026-12-31', 'b'))).toBeLessThan(0);
+		it('assignmentSk(id) → "ASN#{id}" (ADR 0012: startDate を含まない安定キー)', () => {
+			expect(assignmentSk('01ASN')).toBe('ASN#01ASN');
 		});
 
 		it('teamMembershipSk(userId) → "MEMBER#{userId}"', () => {

@@ -145,6 +145,9 @@ OpenAPI は使わず、TypeScript 型 + Zod schema を API 仕様の正本とし
 | [0007](docs/adr/0007-tdd-with-vitest-and-playwright.md) | TDD で開発する: Vitest + Playwright | Accepted |
 | [0008](docs/adr/0008-auth-migration-clerk-to-authjs.md) | 認証を Clerk → Auth.js + Email Magic Link に移行する | Accepted |
 | [0009](docs/adr/0009-org-to-team-redesign.md) | マルチテナント単位を Clerk Org → 自前 Team モデルに再設計する | Accepted |
+| [0010](docs/adr/0010-project-metadata.md) | Project に詳細情報 (description / tags / links) を同 item の attribute として追加する | Accepted |
+| [0011](docs/adr/0011-defer-better-auth-migration.md) | Better Auth への移行は当面据え置く (DynamoDB primary 不適合) | Accepted |
+| [0012](docs/adr/0012-assignment-stable-key-and-optimistic-locking.md) | Assignment の SK を安定キー化し version 楽観ロックで同時編集を扱う | Accepted |
 
 ### Use Cases
 

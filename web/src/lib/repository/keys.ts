@@ -3,7 +3,8 @@
  *
  * **Team scope (アプリデータ)**:
  * - pk: `TEAM#{teamId}` (#81 で ORG → TEAM 改名)
- * - sk: `RES#{id}` | `PRJ#{id}` | `ASN#{startDate}#{id}` | `MEMBER#{userId}` | `META`
+ * - sk: `RES#{id}` | `PRJ#{id}` | `ASN#{id}` | `MEMBER#{userId}` | `META`
+ *   (ADR 0012: assignment SK は `ASN#{id}` 安定キー。 startDate は通常属性 + version 楽観ロック)
  *
  * **User scope (Auth.js / membership 逆引き)**:
  * - pk: `USER#{userId}` sk: `META` | `ACCOUNT#{provider}#{providerAccountId}`
@@ -29,8 +30,7 @@ export const pk = (teamId: string) => `TEAM#${teamId}`;
 export const teamMetaSk = () => 'META';
 export const resourceSk = (id: string) => `${SK_PREFIX.resource}${id}`;
 export const projectSk = (id: string) => `${SK_PREFIX.project}${id}`;
-export const assignmentSk = (startDate: string, id: string) =>
-	`${SK_PREFIX.assignment}${startDate}#${id}`;
+export const assignmentSk = (id: string) => `${SK_PREFIX.assignment}${id}`;
 export const teamMembershipSk = (userId: string) => `${SK_PREFIX.teamMember}${userId}`;
 
 // ── User scope ──

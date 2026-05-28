@@ -43,6 +43,8 @@
 		startDate?: string;
 		endDate?: string;
 	} | null>(null);
+	// ADR 0012: 他ユーザが先に更新した場合の楽観ロック競合 (409)。
+	let formConflict = $state(false);
 
 	// assignment が変わるか dialog が open になるたびに form を初期化
 	$effect(() => {
@@ -52,6 +54,7 @@
 			formStartDate = assignment.startDate;
 			formEndDate = displayEndDate(assignment);
 			formError = null;
+			formConflict = false;
 		}
 	});
 
@@ -65,8 +68,13 @@
 				open = false;
 				onSuccess?.();
 			} else if (result.type === 'failure') {
-				const errs = (result.data as { errors?: ServerErrors })?.errors;
-				formError = mapServerErrors(errs, ASSIGNMENT_FORM_FIELDS);
+				const data = result.data as { errors?: ServerErrors; conflict?: boolean };
+				if (data?.conflict) {
+					// ADR 0012: 他ユーザが先に更新。 update() で最新を読み込み、 競合を通知する。
+					formConflict = true;
+				} else {
+					formError = mapServerErrors(data?.errors, ASSIGNMENT_FORM_FIELDS);
+				}
 			}
 			await update();
 		};
@@ -85,7 +93,12 @@
 	<form method="POST" action="/?/updateAssignment" use:enhance={submit} class="flex flex-col gap-3">
 		{#if assignment}
 			<input type="hidden" name="id" value={assignment.id} />
-			<input type="hidden" name="prevStartDate" value={assignment.startDate} />
+			<!-- ADR 0012: 楽観ロック。 旧 prevStartDate (SK 再構築用) は廃止し version を送る。 -->
+			<input type="hidden" name="expectedVersion" value={assignment.version} />
+		{/if}
+
+		{#if formConflict}
+			<p class="text-sm text-destructive" role="alert">{t('assignments.conflict')}</p>
 		{/if}
 
 		<label class="flex flex-col gap-1 text-sm">

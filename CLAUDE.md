@@ -89,7 +89,7 @@ Single Table Design (詳細: `docs/db/entities.md`、`docs/db/access-patterns.md
 |--------|------------|------------|
 | Resource | `RES#{id}` | id, name |
 | Project | `PRJ#{id}` | id, name, color |
-| Assignment | `ASN#{start_date}#{id}` | id, resourceId, projectId, startDate, endDateExclusive |
+| Assignment | `ASN#{id}` | id, resourceId, projectId, startDate, endDateExclusive, version (ADR 0012: 安定キー + 楽観ロック) |
 | Team meta | `META` | id, name, createdAt |
 | Team membership | `MEMBER#{userId}` | teamId, userId, role, joinedAt |
 

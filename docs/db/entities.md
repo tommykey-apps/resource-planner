@@ -23,7 +23,7 @@ DynamoDB シングルテーブル `resource-planner` には 3 種類のエンテ
 |---|---|---|
 | [Resource](#resource) | `RES#{resource_id}` | リソース (人/メンバー) |
 | [Project](#project) | `PRJ#{project_id}` | 案件 (クライアント / 仕事) |
-| [Assignment](#assignment) | `ASN#{start_date}#{assignment_id}` | 期間内のリソース → 案件アサイン |
+| [Assignment](#assignment) | `ASN#{assignment_id}` | リソース → 案件アサイン (ADR 0012: 安定キー + version 楽観ロック) |
 | Team meta | `META` | Team 自体のメタデータ (name, createdAt) |
 | Team membership | `MEMBER#{userId}` | Team の所属メンバー (role) |
 
@@ -123,16 +123,18 @@ DynamoDB シングルテーブル `resource-planner` には 3 種類のエンテ
 「いつ・誰を・どの案件に」割り当てたかを表す関連 entity。
 
 - **PK**: `TEAM#{teamId}`
-- **SK**: `ASN#{start_date}#{assignment_id}`
-  (`start_date` を SK 先頭に置くことで時系列 begins_with / between クエリを可能にする)
+- **SK**: `ASN#{assignment_id}` (ADR 0012: **安定キー**。 startDate は SK に含めない)
+  - 旧: `ASN#{start_date}#{assignment_id}`。 startDate を SK に埋めると移動/リサイズのたびに SK rename (delete+put) が必要で、 連続操作・同時編集で条件失敗していた (ADR 0012)。
+  - 並び替え (startDate 順) は client (`assignments/+page.svelte`) の責務。 DB の物理順は ULID 順。
 
 | Field | Type | 説明 |
 |---|---|---|
-| `id` | str (ULID) | assignment の主キー |
+| `id` | str (ULID) | assignment の主キー (= SK の `ASN#` 以降) |
 | `resourceId` | str | 紐づく [Resource](#resource) の `id` (FK 制約は DDB に無い) |
 | `projectId` | str | 紐づく [Project](#project) の `id` (FK 制約は DDB に無い) |
-| `startDate` | str (`YYYY-MM-DD`) | アサイン開始日 (**inclusive、この日を含む**)。SK にも埋め込む |
+| `startDate` | str (`YYYY-MM-DD`) | アサイン開始日 (**inclusive、この日を含む**)。通常属性 (SK には埋めない) |
 | `endDateExclusive` | str (`YYYY-MM-DD`) | アサイン終了日の翌日 (**exclusive、この日は含まない**)。半開区間 `[startDate, endDateExclusive)` (ADR 0004) |
+| `version` | number | 楽観ロック (ADR 0012)。 create で 1、 update のたびに +1。 client が read した値を `expectedVersion` として送り、 `version = :expected` 条件で書き込む。 不一致なら 409 |
 
 > **endDateExclusive の解釈**: 「5/1〜5/31 のアサイン」 = `startDate=2026-05-01`, `endDateExclusive=2026-06-01`。最終作業日 (5/31) ではなく、その翌日 (6/1) を保存する。RFC 5545 / Google Calendar API / PostgreSQL daterange と同じ規約。
 
@@ -140,12 +142,13 @@ DynamoDB シングルテーブル `resource-planner` には 3 種類のエンテ
 ```json
 {
   "pk": "TEAM#team_default",
-  "sk": "ASN#2026-05-01#01HDEF...",
+  "sk": "ASN#01HDEF...",
   "id": "01HDEF...",
   "resourceId": "01HXYZ...",
   "projectId": "01HABC...",
   "startDate": "2026-05-01",
-  "endDateExclusive": "2026-06-01"
+  "endDateExclusive": "2026-06-01",
+  "version": 1
 }
 ```
 
@@ -155,6 +158,6 @@ DynamoDB シングルテーブル `resource-planner` には 3 種類のエンテ
 
 - **Single Table Design**: 1 query で組織内全データ取得を効率的にしたい (リソース計画 UI は組織全体を一度に表示するユースケース)。Resource / Project / Assignment を別テーブルに分けると 3 回の query / Scan が必要になる
 - **`pk = TEAM#...` で固定**: マルチテナント isolation を物理的に強制 (PK が違えば物理的に到達不能)
-- **`ASN` の SK 先頭に `start_date`**: 期間検索 `begins_with(sk, "ASN#2026-05")` や `BETWEEN` クエリで対応できる。`endDateExclusive` は条件式 (FilterExpression) で post-filter
+- **`ASN` の SK は `ASN#{id}` 安定キー (ADR 0012)**: startDate は頻繁更新属性なので SK に入れない (キー rename を避ける)。 現状 assignment の期間 range query は無く全件取得 + client ソートで足りるため、 startDate を SK から外しても支障はない。 将来 DB 側で期間 range query が要るなら startDate を載せた GSI を新設する。 更新は `version` 属性 + 条件付き書き込み (楽観ロック) で同時編集の lost update を検出する
 - **半開区間 `[start, end)` 規約**: 業界標準 (RFC 5545 / Google Calendar / PostgreSQL daterange / Java / Rust / Python) に整合。隣接区間 (5/1〜5/3 と 5/3〜5/5) が境界で接して重ならない。詳細 [ADR 0004](../adr/0004-end-date-exclusive-with-form-transform.md)
 - **FK 整合性は app 層で担保**: DynamoDB は外部キー制約を持たないため、Resource / Project の delete 時に Assignment を残骸として残さないようカスケード削除を app 層で実装する (将来要件)

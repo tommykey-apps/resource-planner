@@ -86,22 +86,36 @@
 		dbAssignments = dbAssignments.map((a) => (a.id === next.id ? next : a));
 
 		const result = await patchAssignment(next.id, {
-			prevStartDate: prev.startDate,
+			expectedVersion: prev.version,
 			resourceId: next.resourceId,
 			projectId: next.projectId,
 			startDate: next.startDate,
 			endDateExclusive: next.endDateExclusive
 		});
-		if (!result.ok) {
-			// #231: 後続ドラッグに supersede された PATCH は最新の楽観 state を保持し、 revert / toast しない。
-			if ('superseded' in result) return;
-			dbAssignments = snapshot;
-			const firstError = result.errors ? Object.values(result.errors)[0] : null;
-			const description = firstError
-				? translateServerError(firstError)
-				: t('assignments.networkError');
-			toast.error(t('assignments.updateError'), { description });
+		if (result.ok) {
+			// ADR 0012: server 確定 version をローカルに反映し、 次回編集の expectedVersion を正にする。
+			dbAssignments = dbAssignments.map((a) =>
+				a.id === next.id ? { ...a, version: result.version } : a
+			);
+			return;
 		}
+		// #231: 後続ドラッグに supersede された PATCH は最新の楽観 state を保持し、 revert / toast しない。
+		if ('superseded' in result) return;
+		// ADR 0012: 楽観ロック競合 = 他ユーザが先に更新。 最新を表示して自分のドラッグは破棄 + 通知。
+		if ('conflict' in result) {
+			const latest = result.latest;
+			dbAssignments = latest
+				? dbAssignments.map((a) => (a.id === latest.id ? latest : a))
+				: snapshot;
+			toast.error(t('assignments.conflict'));
+			return;
+		}
+		dbAssignments = snapshot;
+		const firstError = result.errors ? Object.values(result.errors)[0] : null;
+		const description = firstError
+			? translateServerError(firstError)
+			: t('assignments.networkError');
+		toast.error(t('assignments.updateError'), { description });
 	}
 
 	/**

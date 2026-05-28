@@ -1,16 +1,19 @@
 import {
 	DeleteCommand,
 	DynamoDBDocumentClient,
+	GetCommand,
 	PutCommand,
-	QueryCommand,
-	TransactWriteCommand
+	QueryCommand
 } from '@aws-sdk/lib-dynamodb';
+import { ConditionalCheckFailedException } from '@aws-sdk/client-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 import 'aws-sdk-client-mock-vitest';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
+	AssignmentVersionConflictError,
 	createAssignment,
 	deleteAssignment,
+	getAssignment,
 	queryRelatedAssignmentSk,
 	updateAssignment
 } from './assignment';
@@ -23,8 +26,8 @@ beforeEach(() => {
 	ddbMock.reset();
 });
 
-describe('createAssignment', () => {
-	it('uses SK = ASN#{startDate}#{id} and stores half-open interval', async () => {
+describe('createAssignment (ADR 0012)', () => {
+	it('uses stable SK = ASN#{id}, version=1, half-open interval', async () => {
 		ddbMock.on(PutCommand).resolves({});
 
 		const result = await createAssignment(TEAM, {
@@ -38,95 +41,114 @@ describe('createAssignment', () => {
 			resourceId: 'r1',
 			projectId: 'p1',
 			startDate: '2026-05-01',
-			endDateExclusive: '2026-06-01'
+			endDateExclusive: '2026-06-01',
+			version: 1
 		});
 		const input = ddbMock.commandCalls(PutCommand)[0].args[0].input;
 		expect(input.Item).toMatchObject({
 			pk: `TEAM#${TEAM}`,
-			sk: `ASN#2026-05-01#${result.id}`,
+			sk: `ASN#${result.id}`,
 			id: result.id,
-			resourceId: 'r1',
-			projectId: 'p1',
 			startDate: '2026-05-01',
-			endDateExclusive: '2026-06-01'
+			endDateExclusive: '2026-06-01',
+			version: 1
 		});
 		expect(input.ConditionExpression).toBe('attribute_not_exists(sk)');
 	});
 });
 
-describe('updateAssignment (SK aware)', () => {
+describe('updateAssignment (ADR 0012 optimistic lock)', () => {
 	const baseInput = {
 		id: 'a1',
+		expectedVersion: 3,
 		resourceId: 'r1',
 		projectId: 'p1',
 		startDate: '2026-05-01',
 		endDateExclusive: '2026-06-01'
 	};
 
-	it('SK unchanged → uses PutCommand with attribute_exists guard', async () => {
+	it('single PutCommand to stable SK with version condition, increments version', async () => {
 		ddbMock.on(PutCommand).resolves({});
 
-		await updateAssignment(TEAM, '2026-05-01', baseInput);
+		const newVersion = await updateAssignment(TEAM, baseInput);
 
 		const calls = ddbMock.commandCalls(PutCommand);
 		expect(calls).toHaveLength(1);
-		expect(ddbMock.commandCalls(TransactWriteCommand)).toHaveLength(0);
 
 		const input = calls[0].args[0].input;
 		expect(input.Item).toMatchObject({
 			pk: `TEAM#${TEAM}`,
-			sk: 'ASN#2026-05-01#a1',
+			sk: 'ASN#a1',
+			id: 'a1',
+			startDate: '2026-05-01',
+			endDateExclusive: '2026-06-01',
+			version: 4
+		});
+		expect(input.ConditionExpression).toBe('attribute_exists(sk) AND version = :expected');
+		expect(input.ExpressionAttributeValues).toEqual({ ':expected': 3 });
+		expect(newVersion).toBe(4);
+	});
+
+	it('startDate change keeps the same SK (no rename / no TransactWrite)', async () => {
+		ddbMock.on(PutCommand).resolves({});
+
+		await updateAssignment(TEAM, { ...baseInput, startDate: '2026-05-15' });
+
+		const input = ddbMock.commandCalls(PutCommand)[0].args[0].input;
+		expect(input.Item).toMatchObject({ sk: 'ASN#a1', startDate: '2026-05-15' });
+	});
+
+	it('maps ConditionalCheckFailedException to AssignmentVersionConflictError', async () => {
+		ddbMock
+			.on(PutCommand)
+			.rejects(new ConditionalCheckFailedException({ message: 'conflict', $metadata: {} }));
+
+		await expect(updateAssignment(TEAM, baseInput)).rejects.toBeInstanceOf(
+			AssignmentVersionConflictError
+		);
+	});
+});
+
+describe('deleteAssignment (ADR 0012)', () => {
+	it('sends DeleteCommand with stable SK = ASN#{id}', async () => {
+		ddbMock.on(DeleteCommand).resolves({});
+
+		await deleteAssignment(TEAM, 'a1');
+
+		const input = ddbMock.commandCalls(DeleteCommand)[0].args[0].input;
+		expect(input.Key).toEqual({ pk: `TEAM#${TEAM}`, sk: 'ASN#a1' });
+	});
+});
+
+describe('getAssignment (ADR 0012)', () => {
+	it('returns the item with version (legacy 欠落は 1 に default)', async () => {
+		ddbMock.on(GetCommand).resolves({
+			Item: {
+				pk: `TEAM#${TEAM}`,
+				sk: 'ASN#a1',
+				id: 'a1',
+				resourceId: 'r1',
+				projectId: 'p1',
+				startDate: '2026-05-01',
+				endDateExclusive: '2026-06-01',
+				version: 5
+			}
+		});
+
+		const result = await getAssignment(TEAM, 'a1');
+		expect(result).toEqual({
 			id: 'a1',
 			resourceId: 'r1',
 			projectId: 'p1',
 			startDate: '2026-05-01',
-			endDateExclusive: '2026-06-01'
-		});
-		expect(input.ConditionExpression).toBe('attribute_exists(sk)');
-	});
-
-	it('SK changed (startDate moved) → TransactWriteCommand: old Delete + new Put atomic', async () => {
-		ddbMock.on(TransactWriteCommand).resolves({});
-
-		const moved = { ...baseInput, startDate: '2026-05-15' };
-		await updateAssignment(TEAM, '2026-05-01', moved);
-
-		expect(ddbMock.commandCalls(PutCommand)).toHaveLength(0);
-		const txCalls = ddbMock.commandCalls(TransactWriteCommand);
-		expect(txCalls).toHaveLength(1);
-
-		const items = txCalls[0].args[0].input.TransactItems;
-		expect(items).toHaveLength(2);
-
-		// Old SK delete (with attribute_exists guard)
-		expect(items?.[0].Delete).toMatchObject({
-			TableName: TABLE,
-			Key: { pk: `TEAM#${TEAM}`, sk: 'ASN#2026-05-01#a1' },
-			ConditionExpression: 'attribute_exists(sk)'
-		});
-
-		// New SK put (with attribute_not_exists guard)
-		expect(items?.[1].Put).toMatchObject({
-			TableName: TABLE,
-			ConditionExpression: 'attribute_not_exists(sk)'
-		});
-		expect(items?.[1].Put?.Item).toMatchObject({
-			pk: `TEAM#${TEAM}`,
-			sk: 'ASN#2026-05-15#a1',
-			startDate: '2026-05-15',
-			endDateExclusive: '2026-06-01'
+			endDateExclusive: '2026-06-01',
+			version: 5
 		});
 	});
-});
 
-describe('deleteAssignment', () => {
-	it('sends DeleteCommand with composite SK', async () => {
-		ddbMock.on(DeleteCommand).resolves({});
-
-		await deleteAssignment(TEAM, '2026-05-01', 'a1');
-
-		const input = ddbMock.commandCalls(DeleteCommand)[0].args[0].input;
-		expect(input.Key).toEqual({ pk: `TEAM#${TEAM}`, sk: 'ASN#2026-05-01#a1' });
+	it('returns null when not found', async () => {
+		ddbMock.on(GetCommand).resolves({});
+		expect(await getAssignment(TEAM, 'missing')).toBeNull();
 	});
 });
 
