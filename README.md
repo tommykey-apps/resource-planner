@@ -85,9 +85,13 @@ make db                    # DynamoDB Local 起動 + table 作成
 cd web
 AWS_ENDPOINT_URL=http://localhost:8000 \
 AWS_ACCESS_KEY_ID=local AWS_SECRET_ACCESS_KEY=local AWS_DEFAULT_REGION=ap-northeast-1 \
-DYNAMODB_TABLE=resource-planner \
+DYNAMODB_TABLE=resource-planner-local \
 pnpm test
 ```
+
+> #235: ローカルの table 名は本番と別名 `resource-planner-local` (`make db` が作成)。 `dev` サーバ起動時も
+> `AWS_ENDPOINT_URL` を **シェルの環境変数として** 渡すこと (例: `AWS_ENDPOINT_URL=http://localhost:8000 ... pnpm dev`)。
+> `.env.local` に書くだけでは AWS SDK の `process.env` に届かず本番に繋がる場合がある (app 側で明示注入するよう是正済だが、 dev では env で渡すのが確実)。
 
 CI では `.github/workflows/ci.yaml` の `test` job が `services.dynamodb` で起動して unit + integration を一括実行する。
 詳細方針は [ADR 0007](docs/adr/0007-tdd-with-vitest-and-playwright.md) 参照。

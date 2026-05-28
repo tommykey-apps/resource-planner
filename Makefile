@@ -18,14 +18,16 @@ build: ## Build SvelteKit for production
 # ── Infrastructure ──
 
 # #186: create-table 定義は bin/create-ddb-table.sh に集約 (旧: 4 箇所コピペ)。
-db: ## Start DynamoDB Local + create resource-planner table (with GSI1)
+db: ## Start DynamoDB Local + create resource-planner-local table (with GSI1)
 	docker compose up -d dynamodb-local
 	@for i in $$(seq 1 30); do \
 		curl -s http://localhost:8000 > /dev/null && break; \
 		sleep 1; \
 	done
+	@# #235: ローカルは本番と別名 `resource-planner-local`。 endpoint 誤設定時に
+	@# 「table not found」 で即落ち = 本番への誤接続をサイレントに成立させない。
 	@AWS_ACCESS_KEY_ID=local AWS_SECRET_ACCESS_KEY=local AWS_DEFAULT_REGION=ap-northeast-1 \
-		./bin/create-ddb-table.sh > /dev/null 2>&1 || true
+		TABLE_NAME=resource-planner-local ./bin/create-ddb-table.sh > /dev/null 2>&1 || true
 
 # ── DB Docs ──
 

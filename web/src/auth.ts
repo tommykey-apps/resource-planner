@@ -6,10 +6,10 @@
  * - production (Lambda): env.AUTH_SECRET 未設定 + env.AUTH_SECRET_PARAM 設定
  *   → SSM SecureString から resolve、sendVerificationRequest を SES SDK で送信
  */
-// 本番安全 guard を副作用 import で最上位に置く (#135、#125 の強化)。
-// auth.ts は独立に DynamoDBClient を構築 (DDB adapter 経由) するので、 client.ts と同じ
-// guard を必ず通すように import する。これを怠ると Auth.js が本番 DDB に到達する事故が再発する。
-import '$lib/db/guard';
+// #235: DDB adapter 用の DynamoDBClient も client.ts と同じ設定 helper を使う。
+// dynamoClientConfig() が $env から endpoint を明示注入し、 同じ endpoint で guard を実行する
+// (#135/#125 の副作用 guard を統合。 Auth.js が本番 DDB に到達する事故の再発防止)。
+import { dynamoClientConfig } from '$lib/db/client-config';
 import { SvelteKitAuth } from '@auth/sveltekit';
 import Nodemailer from '@auth/sveltekit/providers/nodemailer';
 import { DynamoDBAdapter } from '@auth/dynamodb-adapter';
@@ -87,7 +87,7 @@ if (!resolvedAuthSecret) {
 	throw new Error('Neither AUTH_SECRET nor AUTH_SECRET_PARAM is set');
 }
 
-const adapterClient = DynamoDBDocument.from(new DynamoDBClient({}), {
+const adapterClient = DynamoDBDocument.from(new DynamoDBClient(dynamoClientConfig()), {
 	marshallOptions: {
 		convertEmptyValues: true,
 		removeUndefinedValues: true,
