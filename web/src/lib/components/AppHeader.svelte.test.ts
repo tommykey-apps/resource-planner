@@ -2,7 +2,7 @@
 import { render } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
 import AppHeader from './AppHeader.svelte';
-import type { Resource, Project, Assignment } from '$lib/types';
+import type { Resource, Project, Assignment, Department } from '$lib/types';
 
 /**
  * #136 / #146: 共通 Header の振る舞い契約。
@@ -14,6 +14,7 @@ import type { Resource, Project, Assignment } from '$lib/types';
 
 const SAMPLE_RESOURCES: Resource[] = [{ id: 'r1', name: 'Alice' }];
 const SAMPLE_PROJECTS: Project[] = [{ id: 'p1', name: 'Project A', color: '#0EA5E9' }];
+const SAMPLE_DEPARTMENTS: Department[] = [{ id: 'd1', name: '開発本部', parentId: null }];
 const SAMPLE_ASSIGNMENTS: Assignment[] = [
 	{
 		id: 'a1',
@@ -37,6 +38,7 @@ const stubProps = (overrides: StubOverrides = {}) => ({
 		resources: SAMPLE_RESOURCES,
 		projects: SAMPLE_PROJECTS,
 		assignments: SAMPLE_ASSIGNMENTS,
+		departments: SAMPLE_DEPARTMENTS,
 		user: { email: overrides.email ?? 'alice@example.com' },
 		isAssignmentsActive: overrides.isAssignmentsActive ?? false,
 		isHomeActive: overrides.isHomeActive ?? false,

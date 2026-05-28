@@ -35,6 +35,15 @@
 		"statusKeyResizeStart": "キー開始日変更: {range}",
 		"statusKeyResizeEnd": "キー終了日変更: {range}"
 	},
+	"departments": {
+		"manageWithCount": "部署を管理 ({count})",
+		"manage": "部署を管理",
+		"description": "部署 (組織) の追加・一覧",
+		"add": "+ 部署を追加",
+		"createTitle": "部署を追加",
+		"name": "部署名",
+		"empty": "まだ部署が登録されていません。"
+	},
 	"resources": {
 		"manage": "人を管理",
 		"manageWithCount": "人を管理 ({count})",

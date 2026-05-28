@@ -24,6 +24,7 @@ DynamoDB シングルテーブル `resource-planner` には 3 種類のエンテ
 | [Resource](#resource) | `RES#{resource_id}` | リソース (人/メンバー) |
 | [Project](#project) | `PRJ#{project_id}` | 案件 (クライアント / 仕事) |
 | [Assignment](#assignment) | `ASN#{assignment_id}` | リソース → 案件アサイン (ADR 0012: 安定キー + version 楽観ロック) |
+| [Department](#department) | `DEPT#{department_id}` | 部署 (組織ツリーのノード、 ADR 0013: adjacency-list グルーピング) |
 | Team meta | `META` | Team 自体のメタデータ (name, createdAt) |
 | Team membership | `MEMBER#{userId}` | Team の所属メンバー (role) |
 
@@ -150,6 +151,30 @@ DynamoDB シングルテーブル `resource-planner` には 3 種類のエンテ
   "endDateExclusive": "2026-06-01",
   "version": 1
 }
+```
+
+---
+
+## Department
+
+組織ツリーのノード (部署/課/本部)。 1 Team 内の **グルーピング専用** (隔離境界ではない、 ADR 0013)。
+
+- **PK**: `TEAM#{teamId}`
+- **SK**: `DEPT#{department_id}` (**adjacency list**: 親 ID を通常属性 `parentId` で持つ)
+
+| Field | Type | 説明 |
+|---|---|---|
+| `id` | str (ULID) | department の主キー (= SK の `DEPT#` 以降) |
+| `name` | str | 部署名 (兄弟内で一意、 ADR 0013) |
+| `parentId` | str (optional) | 親 Department の `id`。 **属性なし = ルート** (read で `null` 正規化)。 1 Team 内にルートは複数可 (フォレスト) |
+
+> ツリーは `queryAllByTeam` が返すフラットな `DEPT#` item 群から client/server が in-memory で組む
+> (ADR 0013、 materialized path/GSI は導入しない)。 Resource の所属 (`departmentId`) は #239 で追加。
+
+サンプルアイテム (ルート + 子部署):
+```json
+{ "pk": "TEAM#team_default", "sk": "DEPT#01HROOT", "id": "01HROOT", "name": "開発本部" }
+{ "pk": "TEAM#team_default", "sk": "DEPT#01HCHILD", "id": "01HCHILD", "name": "バックエンド課", "parentId": "01HROOT" }
 ```
 
 ---

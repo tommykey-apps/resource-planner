@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	SK_PREFIX,
 	assignmentSk,
+	departmentSk,
 	pk,
 	projectSk,
 	resourceSk,
@@ -40,6 +41,10 @@ describe('repository/keys (#81 single table design)', () => {
 
 		it('assignmentSk(id) → "ASN#{id}" (ADR 0012: startDate を含まない安定キー)', () => {
 			expect(assignmentSk('01ASN')).toBe('ASN#01ASN');
+		});
+
+		it('departmentSk(id) → "DEPT#{id}" (ADR 0013: 部署ツリーのノード)', () => {
+			expect(departmentSk('01DEPT')).toBe('DEPT#01DEPT');
 		});
 
 		it('teamMembershipSk(userId) → "MEMBER#{userId}"', () => {
@@ -81,6 +86,7 @@ describe('repository/keys (#81 single table design)', () => {
 				resource: 'RES#',
 				project: 'PRJ#',
 				assignment: 'ASN#',
+				department: 'DEPT#',
 				teamMember: 'MEMBER#'
 			});
 		});

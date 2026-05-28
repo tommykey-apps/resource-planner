@@ -15,7 +15,15 @@ export const load: LayoutServerLoad = async (event) => {
 	if (!session?.user?.id) {
 		if (event.url.pathname.startsWith('/sign-in') || event.url.pathname.startsWith('/auth')) {
 			// csrfToken は未認証時 AppHeader を mount しないので空文字で OK (型整合用)。
-			return { locale, theme, csrfToken: '', resources: [], projects: [], assignments: [] };
+			return {
+				locale,
+				theme,
+				csrfToken: '',
+				resources: [],
+				projects: [],
+				assignments: [],
+				departments: []
+			};
 		}
 		redirect(303, '/sign-in');
 	}
@@ -52,6 +60,7 @@ export const load: LayoutServerLoad = async (event) => {
 		user: { id: session.user.id, email: session.user.email, name: session.user.name },
 		resources: data.resources,
 		projects,
-		assignments: data.assignments
+		assignments: data.assignments,
+		departments: data.departments
 	};
 };

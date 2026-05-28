@@ -12,6 +12,7 @@ import { fail } from '@sveltejs/kit';
 import {
 	assignmentCreateSchema,
 	assignmentFormUpdateSchema,
+	departmentCreateSchema,
 	deleteByIdSchema,
 	projectCreateSchema,
 	projectUpdateSchema,
@@ -21,6 +22,7 @@ import {
 import {
 	AssignmentVersionConflictError,
 	createAssignment,
+	createDepartment,
 	createProject,
 	createResource,
 	deleteAssignment,
@@ -80,6 +82,15 @@ export const actions: Actions = {
 		schema: deleteByIdSchema,
 		run: async (session, parsed) => {
 			await deleteProject(session.teamId, parsed.id);
+		}
+	}),
+
+	// ADR 0013 / #238: 部署作成 (フラット = parentId 省略でルート)。 ツリー/編集/削除は後続 issue。
+	createDepartment: makeFormAction({
+		action: 'createDepartment',
+		schema: departmentCreateSchema,
+		run: async (session, parsed) => {
+			await createDepartment(session.teamId, parsed);
 		}
 	}),
 

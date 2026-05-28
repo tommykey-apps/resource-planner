@@ -10,3 +10,4 @@ export { deleteByIdSchema } from './shared';
 export * from './resource';
 export * from './project';
 export * from './assignment';
+export * from './department';

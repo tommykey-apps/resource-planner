@@ -35,6 +35,15 @@
 		"statusKeyResizeStart": "Start date changed by keyboard: {range}",
 		"statusKeyResizeEnd": "End date changed by keyboard: {range}"
 	},
+	"departments": {
+		"manageWithCount": "Manage departments ({count})",
+		"manage": "Manage departments",
+		"description": "Add and list departments (organization)",
+		"add": "+ Add department",
+		"createTitle": "Add department",
+		"name": "Department name",
+		"empty": "No departments yet."
+	},
 	"resources": {
 		"manage": "Manage people",
 		"manageWithCount": "Manage people ({count})",
