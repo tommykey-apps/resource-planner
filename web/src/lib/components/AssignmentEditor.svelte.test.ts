@@ -26,7 +26,8 @@ const SAMPLE: Assignment = {
 	resourceId: 'r1',
 	projectId: 'p2',
 	startDate: '2026-05-01',
-	endDateExclusive: '2026-05-08' // inclusive 表示は 2026-05-07
+	endDateExclusive: '2026-05-08', // inclusive 表示は 2026-05-07
+	version: 2
 };
 
 async function findInPortal<T extends HTMLElement = HTMLElement>(
@@ -47,15 +48,15 @@ describe('AssignmentEditor (#100)', () => {
 		expect(document.querySelector('form[action="/?/updateAssignment"]')).toBeNull();
 	});
 
-	it('open=true で assignment を渡すと form が描画され、 hidden の id / prevStartDate が assignment に一致', async () => {
+	it('open=true で assignment を渡すと form が描画され、 hidden の id / expectedVersion が assignment に一致', async () => {
 		render(AssignmentEditor, {
 			props: { open: true, assignment: SAMPLE, resources: RESOURCES, projects: PROJECTS }
 		});
 		const form = await findInPortal<HTMLFormElement>('form[action="/?/updateAssignment"]');
 		const idInput = form.querySelector('input[name="id"]') as HTMLInputElement;
-		const prev = form.querySelector('input[name="prevStartDate"]') as HTMLInputElement;
+		const version = form.querySelector('input[name="expectedVersion"]') as HTMLInputElement;
 		expect(idInput.value).toBe('asn-1');
-		expect(prev.value).toBe('2026-05-01');
+		expect(version.value).toBe('2'); // ADR 0012: version 楽観ロック (SAMPLE.version = 2)
 	});
 
 	it('select[name=resourceId] / projectId に全候補が出て、 assignment の値が選択済', async () => {
@@ -107,12 +108,12 @@ describe('AssignmentEditor (#100)', () => {
 		expect(cancelBtns.length).toBeGreaterThanOrEqual(1);
 	});
 
-	it('assignment が null のとき hidden id / prevStartDate は描画されない (新規モードのガード)', async () => {
+	it('assignment が null のとき hidden id / expectedVersion は描画されない (新規モードのガード)', async () => {
 		render(AssignmentEditor, {
 			props: { open: true, assignment: null, resources: RESOURCES, projects: PROJECTS }
 		});
 		const form = await findInPortal<HTMLFormElement>('form[action="/?/updateAssignment"]');
 		expect(form.querySelector('input[name="id"]')).toBeNull();
-		expect(form.querySelector('input[name="prevStartDate"]')).toBeNull();
+		expect(form.querySelector('input[name="expectedVersion"]')).toBeNull();
 	});
 });

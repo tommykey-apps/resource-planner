@@ -19,12 +19,13 @@ describe('queryAllByTeam', () => {
 				{ sk: 'RES#r2', id: 'r2', name: 'Bob' },
 				{ sk: 'PRJ#p1', id: 'p1', name: 'Project A', color: '#ff0000' },
 				{
-					sk: 'ASN#2026-05-01#a1',
+					sk: 'ASN#a1',
 					id: 'a1',
 					resourceId: 'r1',
 					projectId: 'p1',
 					startDate: '2026-05-01',
-					endDateExclusive: '2026-06-01'
+					endDateExclusive: '2026-06-01',
+					version: 7
 				}
 			]
 		});
@@ -42,7 +43,8 @@ describe('queryAllByTeam', () => {
 				resourceId: 'r1',
 				projectId: 'p1',
 				startDate: '2026-05-01',
-				endDateExclusive: '2026-06-01'
+				endDateExclusive: '2026-06-01',
+				version: 7
 			}
 		]);
 

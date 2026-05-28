@@ -2,11 +2,8 @@ import { z } from 'zod';
 import { addDays } from '$lib/date';
 import { dateString } from './shared';
 
-// assignment の delete は SK = ASN#{startDate}#{id} 構成のため startDate も必要。
-export const deleteAssignmentSchema = z.object({
-	id: z.string({ error: 'required' }).min(1, 'required'),
-	startDate: z.string({ error: 'invalidDateFormat' }).regex(/^\d{4}-\d{2}-\d{2}$/, 'invalidDateFormat')
-});
+// ADR 0012: assignment SK は `ASN#{id}` 安定キーになったため delete も id のみ
+// (旧: startDate 込みで SK 再構築)。 `$lib/schemas` の `deleteByIdSchema` をそのまま使う。
 
 // ── Assignment ──────────────────────────────────────────────────────
 
@@ -46,33 +43,29 @@ function toExclusivePayload<T extends { startDate: string; endDate: string }>(
 	return { ...rest, endDateExclusive: addDays(endDate, 1) };
 }
 
+/**
+ * 楽観ロックの expectedVersion (ADR 0012)。 client が read した version を送る。
+ * form は FormData (string)、 API は JSON (number) で来るため `z.coerce.number()` で両対応。
+ */
+const expectedVersion = z.coerce.number('invalidVersion').int('invalidVersion').min(0, 'invalidVersion');
+
 export const assignmentCreateSchema = z
 	.object(assignmentBaseShape)
 	.refine(refineEndAfterStart, refineOpts)
 	.transform(toExclusivePayload);
 
+/**
+ * 更新 schema (form action / 編集ダイアログ)。 ADR 0012 で `prevStartDate` (旧 SK 再構築用) を
+ * 廃止し、 代わりに `expectedVersion` (楽観ロック) を受け取る。 SK は `ASN#{id}` 安定キーなので
+ * startDate を変えても SK 再構築は不要。 post-transform で `endDate` → `endDateExclusive`。
+ */
 export const assignmentUpdateSchema = z
-	.object({ id: z.string().min(1, 'required'), ...assignmentBaseShape })
+	.object({ id: z.string().min(1, 'required'), expectedVersion, ...assignmentBaseShape })
 	.refine(refineEndAfterStart, refineOpts)
 	.transform(toExclusivePayload);
 
-/**
- * 編集フォーム送信用 schema (#99 item 1)。`prevStartDate` を含めて受け取り、
- * post-transform で repository 呼び出しに必要な `(prevStartDate, AssignmentUpdatePayload)` 構造に分割する。
- *
- * `prevStartDate` は SK = `ASN#{startDate}#{id}` 再構築に必要 (startDate を変更したとき旧 SK を削除する)。
- */
-export const assignmentFormUpdateSchema = z
-	.object({
-		id: z.string().min(1, 'required'),
-		prevStartDate: dateString,
-		...assignmentBaseShape
-	})
-	.refine(refineEndAfterStart, refineOpts)
-	.transform((input) => {
-		const { prevStartDate, ...rest } = input;
-		return { prevStartDate, payload: toExclusivePayload(rest) };
-	});
+/** 編集フォーム送信用 (#99)。 ADR 0012 以降は update schema と同一 (prevStartDate 廃止)。 */
+export const assignmentFormUpdateSchema = assignmentUpdateSchema;
 
 /** Post-transform shape (storage)。repository が受け取る型。 */
 export type AssignmentCreatePayload = z.output<typeof assignmentCreateSchema>;
@@ -85,11 +78,11 @@ export type AssignmentUpdatePayload = z.output<typeof assignmentUpdateSchema>;
  * `endDateExclusive` を直接受け取る (transform 不要、ADR 0004)。
  *
  * `id` は URL param (`[id]`) から取得するため body には含めない。
- * `prevStartDate` は SK 再構築用 (startDate 変更時に旧 SK を Delete するため)。
+ * `expectedVersion` は楽観ロック用 (ADR 0012、不一致なら 409)。
  */
 export const assignmentApiUpdateSchema = z
 	.object({
-		prevStartDate: dateString,
+		expectedVersion,
 		resourceId: z.string().min(1, 'required'),
 		projectId: z.string().min(1, 'required'),
 		startDate: dateString,

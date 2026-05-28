@@ -177,7 +177,6 @@
 				})}
 			>
 				<input type="hidden" name="id" value={a.id} />
-				<input type="hidden" name="startDate" value={a.startDate} />
 				<Button size="xs" variant="destructive" type="submit">
 					{t('common.delete')}
 				</Button>

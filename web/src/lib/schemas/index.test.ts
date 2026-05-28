@@ -247,10 +247,11 @@ describe('assignmentCreateSchema', () => {
 	});
 });
 
-describe('assignmentUpdateSchema', () => {
-	it('requires id and applies the same +1-day transform', () => {
+describe('assignmentUpdateSchema (ADR 0012: expectedVersion)', () => {
+	it('requires id + expectedVersion and applies the +1-day transform', () => {
 		const r = assignmentUpdateSchema.safeParse({
 			id: 'a1',
+			expectedVersion: 3,
 			resourceId: 'r1',
 			projectId: 'p1',
 			startDate: '2026-05-01',
@@ -260,6 +261,7 @@ describe('assignmentUpdateSchema', () => {
 		if (!r.success) return;
 		expect(r.data).toEqual({
 			id: 'a1',
+			expectedVersion: 3,
 			resourceId: 'r1',
 			projectId: 'p1',
 			startDate: '2026-05-01',
@@ -267,9 +269,24 @@ describe('assignmentUpdateSchema', () => {
 		});
 	});
 
+	it('coerces expectedVersion from string (FormData hidden input)', () => {
+		const r = assignmentUpdateSchema.safeParse({
+			id: 'a1',
+			expectedVersion: '5',
+			resourceId: 'r1',
+			projectId: 'p1',
+			startDate: '2026-05-01',
+			endDate: '2026-05-31'
+		});
+		expect(r.success).toBe(true);
+		if (!r.success) return;
+		expect(r.data.expectedVersion).toBe(5);
+	});
+
 	it('rejects missing id', () => {
 		expect(
 			assignmentUpdateSchema.safeParse({
+				expectedVersion: 1,
 				resourceId: 'r1',
 				projectId: 'p1',
 				startDate: '2026-05-01',
@@ -279,35 +296,28 @@ describe('assignmentUpdateSchema', () => {
 	});
 });
 
-describe('assignmentFormUpdateSchema (#99)', () => {
+describe('assignmentFormUpdateSchema (#99 / ADR 0012)', () => {
 	const valid = {
 		id: 'a1',
+		expectedVersion: '2',
 		resourceId: 'r1',
 		projectId: 'p1',
-		prevStartDate: '2026-05-01',
 		startDate: '2026-05-03',
 		endDate: '2026-05-09'
 	};
 
-	it('splits prevStartDate from payload and applies the +1-day transform', () => {
+	it('= assignmentUpdateSchema (prevStartDate 廃止): flat payload + +1-day transform', () => {
 		const r = assignmentFormUpdateSchema.safeParse(valid);
 		expect(r.success).toBe(true);
 		if (!r.success) return;
 		expect(r.data).toEqual({
-			prevStartDate: '2026-05-01',
-			payload: {
-				id: 'a1',
-				resourceId: 'r1',
-				projectId: 'p1',
-				startDate: '2026-05-03',
-				endDateExclusive: '2026-05-10'
-			}
+			id: 'a1',
+			expectedVersion: 2,
+			resourceId: 'r1',
+			projectId: 'p1',
+			startDate: '2026-05-03',
+			endDateExclusive: '2026-05-10'
 		});
-	});
-
-	it('rejects when prevStartDate is not YYYY-MM-DD', () => {
-		const r = assignmentFormUpdateSchema.safeParse({ ...valid, prevStartDate: 'bad' });
-		expect(r.success).toBe(false);
 	});
 
 	it('rejects when endDate < startDate', () => {
@@ -332,6 +342,7 @@ describe('error message contract — i18n codes (#139)', () => {
 		'invalidDateFormat',
 		'invalidColorFormat',
 		'invalidUrl',
+		'invalidVersion',
 		'endBeforeStart'
 	]);
 
@@ -433,7 +444,7 @@ describe('error message contract — i18n codes (#139)', () => {
 
 describe('assignmentApiUpdateSchema', () => {
 	const valid = {
-		prevStartDate: '2026-05-01',
+		expectedVersion: 2,
 		resourceId: 'r1',
 		projectId: 'p1',
 		startDate: '2026-05-01',

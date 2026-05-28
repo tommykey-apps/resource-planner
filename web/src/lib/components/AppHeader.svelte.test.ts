@@ -20,7 +20,8 @@ const SAMPLE_ASSIGNMENTS: Assignment[] = [
 		resourceId: 'r1',
 		projectId: 'p1',
 		startDate: '2026-05-01',
-		endDateExclusive: '2026-05-08'
+		endDateExclusive: '2026-05-08',
+		version: 1
 	}
 ];
 

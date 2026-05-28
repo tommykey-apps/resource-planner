@@ -107,6 +107,7 @@
 		"requirePeopleAndProjects": "人と案件を 1 件以上登録してから作成できます",
 		"updateError": "アサインの更新に失敗しました",
 		"networkError": "通信エラー",
+		"conflict": "他のユーザーがこのアサインを更新しました。最新の状態に更新しました",
 		"confirmDelete": "このアサインを削除しますか?\n{label}",
 		"searchPlaceholder": "人 / 案件で検索",
 		"allResources": "すべての人",
@@ -176,6 +177,7 @@
 		"invalidDateFormat": "{field} は YYYY-MM-DD 形式で入力してください",
 		"invalidColorFormat": "色は #RRGGBB 形式で入力してください",
 		"endBeforeStart": "終了日は開始日以降にしてください",
+		"invalidVersion": "更新の競合を検出しました。再読み込みしてください",
 		"tooMany": "{field} は {max} 件以内で入力してください",
 		"invalidUrl": "{field} は http / https の URL を入力してください",
 		"authRequired": "認証が必要です"
@@ -186,7 +188,6 @@
 		"color": "色",
 		"startDate": "開始日",
 		"endDate": "終了日",
-		"prevStartDate": "前回開始日",
 		"resourceId": "人",
 		"projectId": "案件"
 	}

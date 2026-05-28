@@ -107,6 +107,7 @@
 		"requirePeopleAndProjects": "Register at least one person and one project to create assignments",
 		"updateError": "Failed to update the assignment",
 		"networkError": "Network error",
+		"conflict": "Another user updated this assignment. Refreshed to the latest.",
 		"confirmDelete": "Delete this assignment?\n{label}",
 		"searchPlaceholder": "Search by person / project",
 		"allResources": "All people",
@@ -176,6 +177,7 @@
 		"invalidDateFormat": "{field} must be in YYYY-MM-DD format",
 		"invalidColorFormat": "Color must be in #RRGGBB format",
 		"endBeforeStart": "End date must be on or after the start date",
+		"invalidVersion": "Update conflict detected. Please reload.",
 		"tooMany": "{field} must have at most {max} entries",
 		"invalidUrl": "{field} must be an http or https URL",
 		"authRequired": "Authentication required"
@@ -186,7 +188,6 @@
 		"color": "Color",
 		"startDate": "Start date",
 		"endDate": "End date",
-		"prevStartDate": "Previous start date",
 		"resourceId": "Person",
 		"projectId": "Project"
 	}

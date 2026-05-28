@@ -22,6 +22,18 @@ const createAssignmentMock = vi.fn();
 const updateAssignmentMock = vi.fn();
 const deleteAssignmentMock = vi.fn();
 
+// ADR 0012: updateAssignment action は version 競合を instanceof で判定するため、 mock でも
+// 実クラスを export する。 vi.mock factory は巻き上げられるので vi.hoisted で先に初期化。
+const { AssignmentVersionConflictError } = vi.hoisted(() => {
+	class AssignmentVersionConflictError extends Error {
+		constructor(public readonly assignmentId: string) {
+			super(`assignment ${assignmentId} version conflict`);
+			this.name = 'AssignmentVersionConflictError';
+		}
+	}
+	return { AssignmentVersionConflictError };
+});
+
 vi.mock('$lib/session', () => ({
 	requireSession: (event: unknown) => requireSessionMock(event)
 }));
@@ -35,7 +47,8 @@ vi.mock('$lib/repository', () => ({
 	deleteProject: (...args: unknown[]) => deleteProjectMock(...args),
 	createAssignment: (...args: unknown[]) => createAssignmentMock(...args),
 	updateAssignment: (...args: unknown[]) => updateAssignmentMock(...args),
-	deleteAssignment: (...args: unknown[]) => deleteAssignmentMock(...args)
+	deleteAssignment: (...args: unknown[]) => deleteAssignmentMock(...args),
+	AssignmentVersionConflictError
 }));
 
 import { actions } from './+page.server';
@@ -48,32 +61,32 @@ function makeEvent(form: Record<string, string>) {
 	} as unknown as Parameters<NonNullable<typeof actions.updateAssignment>>[0];
 }
 
-describe('?/updateAssignment action (#99)', () => {
+describe('?/updateAssignment action (#99 / ADR 0012)', () => {
 	beforeEach(() => {
 		requireSessionMock.mockReset().mockResolvedValue({ teamId: 'team_default', userId: 'u1' });
-		updateAssignmentMock.mockReset().mockResolvedValue(undefined);
+		updateAssignmentMock.mockReset().mockResolvedValue(4);
 	});
 
 	it('is exported on actions', () => {
 		expect(typeof actions.updateAssignment).toBe('function');
 	});
 
-	it('calls updateAssignment(teamId, prevStartDate, payload) with endDateExclusive transform applied', async () => {
+	it('calls updateAssignment(teamId, payload incl expectedVersion) with endDateExclusive transform', async () => {
 		const event = makeEvent({
 			id: 'asn-1',
+			expectedVersion: '3',
 			resourceId: 'r1',
 			projectId: 'p1',
-			prevStartDate: '2026-05-01',
 			startDate: '2026-05-03',
 			endDate: '2026-05-09' // inclusive
 		});
 		const result = await actions.updateAssignment!(event);
 		expect(updateAssignmentMock).toHaveBeenCalledTimes(1);
-		const [teamId, prevStartDate, payload] = updateAssignmentMock.mock.calls[0];
+		const [teamId, payload] = updateAssignmentMock.mock.calls[0];
 		expect(teamId).toBe('team_default');
-		expect(prevStartDate).toBe('2026-05-01');
 		expect(payload).toEqual({
 			id: 'asn-1',
+			expectedVersion: 3,
 			resourceId: 'r1',
 			projectId: 'p1',
 			startDate: '2026-05-03',
@@ -85,9 +98,9 @@ describe('?/updateAssignment action (#99)', () => {
 	it('returns 400 failure when endDate is before startDate (zod refine)', async () => {
 		const event = makeEvent({
 			id: 'asn-1',
+			expectedVersion: '3',
 			resourceId: 'r1',
 			projectId: 'p1',
-			prevStartDate: '2026-05-01',
 			startDate: '2026-05-10',
 			endDate: '2026-05-09'
 		});
@@ -101,25 +114,22 @@ describe('?/updateAssignment action (#99)', () => {
 		expect(updateAssignmentMock).not.toHaveBeenCalled();
 	});
 
-	it('returns 400 failure when prevStartDate is missing or wrong format', async () => {
+	it('returns 409 failure with conflict flag on version conflict (ADR 0012)', async () => {
+		updateAssignmentMock.mockRejectedValueOnce(new AssignmentVersionConflictError('asn-1'));
 		const event = makeEvent({
 			id: 'asn-1',
+			expectedVersion: '3',
 			resourceId: 'r1',
 			projectId: 'p1',
-			prevStartDate: 'not-a-date',
 			startDate: '2026-05-03',
 			endDate: '2026-05-09'
 		});
 		const result = (await actions.updateAssignment!(event)) as {
 			status: number;
-			data: { errors: Record<string, ServerError> };
+			data: { action: string; conflict: boolean };
 		};
-		expect(result.status).toBe(400);
-		expect(result.data.errors.prevStartDate).toEqual({
-			code: 'invalidDateFormat',
-			field: 'prevStartDate'
-		});
-		expect(updateAssignmentMock).not.toHaveBeenCalled();
+		expect(result.status).toBe(409);
+		expect(result.data).toMatchObject({ action: 'updateAssignment', conflict: true });
 	});
 });
 
@@ -187,22 +197,12 @@ describe('#139 server error wire format (code, no localized strings)', () => {
 	});
 
 	it('deleteAssignment: id missing → { code: required, field: id }', async () => {
-		const r = (await actions.deleteAssignment!(
-			makeEvent({ startDate: '2026-05-01' })
-		)) as { status: number; data: { errors: Record<string, ServerError> } };
+		const r = (await actions.deleteAssignment!(makeEvent({}))) as {
+			status: number;
+			data: { errors: Record<string, ServerError> };
+		};
 		expect(r.status).toBe(400);
 		expect(r.data.errors.id).toEqual({ code: 'required', field: 'id' });
-	});
-
-	it('deleteAssignment: startDate 不正 → { code: invalidDateFormat, field: startDate }', async () => {
-		const r = (await actions.deleteAssignment!(
-			makeEvent({ id: 'a1', startDate: '2026/05/01' })
-		)) as { status: number; data: { errors: Record<string, ServerError> } };
-		expect(r.status).toBe(400);
-		expect(r.data.errors.startDate).toEqual({
-			code: 'invalidDateFormat',
-			field: 'startDate'
-		});
 	});
 
 	it('createProject: 不正 color → { code: invalidColorFormat, field: color }', async () => {
@@ -478,39 +478,21 @@ describe('?/createAssignment action (inclusive endDate → endDateExclusive tran
 	});
 });
 
-describe('?/deleteAssignment action (SK = ASN#{startDate}#{id} 構造に startDate が必要)', () => {
+describe('?/deleteAssignment action (ADR 0012: SK = ASN#{id} なので id のみ)', () => {
 	beforeEach(resetAllMocks);
 
-	it('calls deleteAssignment(teamId, startDate, id) on valid input', async () => {
-		await actions.deleteAssignment!(makeEvent({ id: 'asn-1', startDate: '2026-05-01' }));
-		expect(deleteAssignmentMock).toHaveBeenCalledWith('team_default', '2026-05-01', 'asn-1');
+	it('calls deleteAssignment(teamId, id) on valid input', async () => {
+		await actions.deleteAssignment!(makeEvent({ id: 'asn-1' }));
+		expect(deleteAssignmentMock).toHaveBeenCalledWith('team_default', 'asn-1');
 	});
 
 	it('fails 400 when id is missing', async () => {
-		const r = (await actions.deleteAssignment!(makeEvent({ startDate: '2026-05-01' }))) as {
+		const r = (await actions.deleteAssignment!(makeEvent({}))) as {
 			status: number;
 			data: { errors: Record<string, ServerError> };
 		};
 		expect(r.status).toBe(400);
 		expect(r.data.errors.id).toBeTruthy();
 		expect(deleteAssignmentMock).not.toHaveBeenCalled();
-	});
-
-	it('fails 400 when startDate is missing (SK 再構築に必須)', async () => {
-		const r = (await actions.deleteAssignment!(makeEvent({ id: 'asn-1' }))) as {
-			status: number;
-			data: { errors: Record<string, ServerError> };
-		};
-		expect(r.status).toBe(400);
-		expect(r.data.errors.startDate).toBeTruthy();
-		expect(deleteAssignmentMock).not.toHaveBeenCalled();
-	});
-
-	it('fails 400 when startDate is not ISO YYYY-MM-DD', async () => {
-		const r = (await actions.deleteAssignment!(
-			makeEvent({ id: 'asn-1', startDate: '2026/05/01' })
-		)) as { status: number; data: { errors: Record<string, ServerError> } };
-		expect(r.status).toBe(400);
-		expect(r.data.errors.startDate).toBeTruthy();
 	});
 });

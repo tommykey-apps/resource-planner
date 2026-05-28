@@ -62,6 +62,12 @@ export interface Assignment {
 	startDate: DateString;
 	/** 終了日の翌日 (exclusive、この日は含まない)。半開区間 `[startDate, endDateExclusive)`。 */
 	endDateExclusive: DateString;
+	/**
+	 * 楽観ロック用の version (ADR 0012)。 create で 1、 update のたびに +1。
+	 * client は read した version を `expectedVersion` として送り、 server は
+	 * `version = :expected` 条件で書き込む。 不一致 (他ユーザが先に更新) なら 409。
+	 */
+	version: number;
 }
 
 /** `+layout.server.ts` の load が返す形 (entity 別に振り分け済み)。 */

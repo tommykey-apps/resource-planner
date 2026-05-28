@@ -1,6 +1,11 @@
 import { ulid } from 'ulid';
 import { describe, expect, it } from 'vitest';
-import { createAssignment } from './assignment';
+import {
+	AssignmentVersionConflictError,
+	createAssignment,
+	getAssignment,
+	updateAssignment
+} from './assignment';
 import { createProject, deleteProject, updateProject } from './project';
 import { createResource, deleteResource, updateResource } from './resource';
 import { queryAllByTeam } from './index';
@@ -59,11 +64,12 @@ describe.runIf(process.env.AWS_ENDPOINT_URL)('repository integration (DDB Local)
 		expect(data.assignments).toEqual([]);
 	});
 
-	it('Query returns assignments in startDate ascending order (SK lexicographic)', async () => {
+	it('Query returns all assignments with version (ADR 0012: SK=ASN#{id}, client sorts by startDate)', async () => {
 		const teamId = `test-${ulid()}`;
 		const r = await createResource(teamId, { name: 'C' });
 
-		// 順番を逆に挿入しても、SK が `ASN#{startDate}#{id}` なのでソートされる
+		// ADR 0012 で SK は startDate を含まない (`ASN#{id}`) ため DB 順は startDate 順を保証しない。
+		// 並び替えは client 側 (assignments/+page.svelte) の責務。 ここでは全件 + version を確認する。
 		await createAssignment(teamId, {
 			resourceId: r.id,
 			projectId: 'p1',
@@ -78,10 +84,53 @@ describe.runIf(process.env.AWS_ENDPOINT_URL)('repository integration (DDB Local)
 		});
 
 		const data = await queryAllByTeam(teamId);
-		expect(data.assignments.map((a) => a.startDate)).toEqual(['2026-05-01', '2026-05-15']);
+		expect(data.assignments).toHaveLength(2);
+		expect(data.assignments.map((a) => a.startDate).sort()).toEqual(['2026-05-01', '2026-05-15']);
+		expect(data.assignments.every((a) => a.version === 1)).toBe(true);
 
 		// cleanup
 		await deleteResource(teamId, r.id);
+	});
+
+	it('optimistic lock: stale expectedVersion is rejected with AssignmentVersionConflictError (ADR 0012)', async () => {
+		const teamId = `test-${ulid()}`;
+		const a = await createAssignment(teamId, {
+			resourceId: 'r1',
+			projectId: 'p1',
+			startDate: '2026-05-01',
+			endDateExclusive: '2026-06-01'
+		});
+		expect(a.version).toBe(1);
+
+		// 正しい version (1) で更新 → version 2 になる
+		const newVersion = await updateAssignment(teamId, {
+			id: a.id,
+			expectedVersion: 1,
+			resourceId: 'r1',
+			projectId: 'p1',
+			startDate: '2026-05-02',
+			endDateExclusive: '2026-06-02'
+		});
+		expect(newVersion).toBe(2);
+
+		const stored = await getAssignment(teamId, a.id);
+		expect(stored?.version).toBe(2);
+		expect(stored?.startDate).toBe('2026-05-02');
+
+		// 古い version (1) で再度更新 → 競合
+		await expect(
+			updateAssignment(teamId, {
+				id: a.id,
+				expectedVersion: 1,
+				resourceId: 'r1',
+				projectId: 'p1',
+				startDate: '2026-05-03',
+				endDateExclusive: '2026-06-03'
+			})
+		).rejects.toBeInstanceOf(AssignmentVersionConflictError);
+
+		// cleanup
+		await deleteResource(teamId, 'r1').catch(() => {});
 	});
 
 	it('createResource enforces attribute_not_exists (no duplicate SK)', async () => {

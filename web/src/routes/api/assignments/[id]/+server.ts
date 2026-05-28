@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { assignmentApiUpdateSchema } from '$lib/schemas';
-import { updateAssignment } from '$lib/repository';
+import { AssignmentVersionConflictError, getAssignment, updateAssignment } from '$lib/repository';
 import { requireSession } from '$lib/session';
 import { formatZodErrors, type ServerErrors } from '$lib/forms/server-error';
 import type { RequestHandler } from './$types';
@@ -28,7 +28,9 @@ import type { RequestHandler } from './$types';
  * (= `Record<field, { code, field, max? }>`) で返して client が `translateServerError` で
  * 翻訳できる契約に統一する。
  *
- * 楽観ロックは未実装 (last-write-wins)。同時編集が問題になったら version 列導入を別 ADR で検討。
+ * 楽観ロック (ADR 0012): body の `expectedVersion` を条件に書き込み、 不一致 (他ユーザが先に
+ * 更新) なら `AssignmentVersionConflictError` → **409 + 最新 item** を返す。 client は最新を
+ * 表示して自分のドラッグを破棄する。 成功時は新 `version` を返し client の version を同期する。
  */
 export const PATCH: RequestHandler = async (event) => {
 	const session = await requireSession(event);
@@ -49,15 +51,24 @@ export const PATCH: RequestHandler = async (event) => {
 		return jsonErrors(formatZodErrors(parsed), 400);
 	}
 
-	await updateAssignment(session.teamId, parsed.data.prevStartDate, {
-		id,
-		resourceId: parsed.data.resourceId,
-		projectId: parsed.data.projectId,
-		startDate: parsed.data.startDate,
-		endDateExclusive: parsed.data.endDateExclusive
-	});
-
-	return json({ success: true });
+	try {
+		const version = await updateAssignment(session.teamId, {
+			id,
+			resourceId: parsed.data.resourceId,
+			projectId: parsed.data.projectId,
+			startDate: parsed.data.startDate,
+			endDateExclusive: parsed.data.endDateExclusive,
+			expectedVersion: parsed.data.expectedVersion
+		});
+		return json({ success: true, version });
+	} catch (e) {
+		if (e instanceof AssignmentVersionConflictError) {
+			// 競合: 最新を返して client が rebase + 通知できるようにする (ADR 0012)。
+			const latest = await getAssignment(session.teamId, id);
+			return json({ conflict: true, latest }, { status: 409 });
+		}
+		throw e;
+	}
 };
 
 function jsonErrors(errors: ServerErrors, status: number): Response {

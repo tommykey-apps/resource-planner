@@ -11,9 +11,11 @@
  * (= `Record<field, { code, field, max? }>`)。
  */
 import type { ServerErrors } from '$lib/forms/server-error';
+import type { Assignment } from '$lib/types';
 
 export interface PatchAssignmentPayload {
-	prevStartDate: string;
+	/** 楽観ロック用 (ADR 0012): client が read した version。 不一致なら 409。 */
+	expectedVersion: number;
 	resourceId: string;
 	projectId: string;
 	startDate: string;
@@ -21,8 +23,9 @@ export interface PatchAssignmentPayload {
 }
 
 export type PatchAssignmentResult =
-	| { ok: true }
+	| { ok: true; version: number }
 	| { ok: false; superseded: true }
+	| { ok: false; conflict: true; latest: Assignment | null }
 	| { ok: false; errors: ServerErrors | null; status: number };
 
 /**
@@ -58,9 +61,24 @@ export async function patchAssignment(
 			body: JSON.stringify(payload),
 			signal: controller.signal
 		});
-		if (res.ok) return { ok: true };
+		if (res.ok) {
+			const data: unknown = await res.json().catch(() => null);
+			const version =
+				data && typeof data === 'object' && 'version' in data
+					? (data as { version: number }).version
+					: NaN;
+			return { ok: true, version };
+		}
 
 		const data: unknown = await res.json().catch(() => null);
+		// 409: 楽観ロック競合 (ADR 0012)。 最新 item を返して呼び出し側が rebase + 通知する。
+		if (res.status === 409) {
+			const latest =
+				data && typeof data === 'object' && 'latest' in data
+					? (data as { latest: Assignment | null }).latest
+					: null;
+			return { ok: false, conflict: true, latest };
+		}
 		const errors =
 			data && typeof data === 'object' && 'errors' in data
 				? ((data as { errors: ServerErrors }).errors ?? null)
