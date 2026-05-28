@@ -22,23 +22,57 @@ export interface PatchAssignmentPayload {
 
 export type PatchAssignmentResult =
 	| { ok: true }
+	| { ok: false; superseded: true }
 	| { ok: false; errors: ServerErrors | null; status: number };
+
+/**
+ * #231 (cancel-latest / 単一フライト): assignment id 単位で進行中の PATCH を 1 本に絞る。
+ * drag/resize を連続操作すると PATCH が重なり、 server 側 conditional write が競合して
+ * エラーになるため、 新しい PATCH を出す前に同一 id の前 request を abort する。
+ */
+const inFlight = new Map<string, AbortController>();
+
+/** AbortController.abort() 由来の reject か判定 (DOMException / Error 両対応で instanceof は使わない)。 */
+function isAbortError(e: unknown): boolean {
+	return (
+		typeof e === 'object' &&
+		e !== null &&
+		'name' in e &&
+		(e as { name: unknown }).name === 'AbortError'
+	);
+}
 
 export async function patchAssignment(
 	id: string,
 	payload: PatchAssignmentPayload
 ): Promise<PatchAssignmentResult> {
-	const res = await fetch(`/api/assignments/${id}`, {
-		method: 'PATCH',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(payload)
-	});
-	if (res.ok) return { ok: true };
+	// 同一 id の前 request を abort してから新 controller を登録する。
+	inFlight.get(id)?.abort();
+	const controller = new AbortController();
+	inFlight.set(id, controller);
 
-	const data: unknown = await res.json().catch(() => null);
-	const errors =
-		data && typeof data === 'object' && 'errors' in data
-			? ((data as { errors: ServerErrors }).errors ?? null)
-			: null;
-	return { ok: false, errors, status: res.status };
+	try {
+		const res = await fetch(`/api/assignments/${id}`, {
+			method: 'PATCH',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(payload),
+			signal: controller.signal
+		});
+		if (res.ok) return { ok: true };
+
+		const data: unknown = await res.json().catch(() => null);
+		const errors =
+			data && typeof data === 'object' && 'errors' in data
+				? ((data as { errors: ServerErrors }).errors ?? null)
+				: null;
+		return { ok: false, errors, status: res.status };
+	} catch (e) {
+		// 後続 request に supersede された (= 自分が abort された) 場合は呼び出し側で
+		// revert / toast の対象にしない。 それ以外の network error は従来通り throw。
+		if (isAbortError(e)) return { ok: false, superseded: true };
+		throw e;
+	} finally {
+		// 自分が最新 controller のままなら掃除する (後続が set 済みなら触らない)。
+		if (inFlight.get(id) === controller) inFlight.delete(id);
+	}
 }
