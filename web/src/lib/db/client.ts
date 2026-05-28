@@ -1,11 +1,9 @@
-// 本番安全 guard を副作用 import で最上位に置く (#135、#125 の強化)。
-// この副作用 import は client.ts と auth.ts の双方で行うことで、別 DynamoDBClient 経路でも
-// guard を bypass できないことを保証する。
-import './guard';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 import { building } from '$app/environment';
 import { env } from '$env/dynamic/private';
+// #235: endpoint / credentials を $env から明示注入 + guard を単一ソース化 (旧 `./guard` 副作用を統合)。
+import { dynamoClientConfig } from './client-config';
 
 // SvelteKit の `analyse` ステップ (postbuild) はサーバーモジュールを top-level 評価するため、
 // build 中は env チェックをスキップする (Lambda 実行時にのみ env が揃う)。
@@ -13,10 +11,9 @@ if (!building && !env.DYNAMODB_TABLE) {
 	throw new Error('DYNAMODB_TABLE env not set');
 }
 
-// AWS SDK v3 は AWS_ENDPOINT_URL を自動認識する (v3.385+)。
-// 本番 (Lambda): IAM role + env なし → 本番 DynamoDB
-// 開発 (DynamoDB Local): AWS_ENDPOINT_URL=http://localhost:8000 を .env で渡す
-const client = new DynamoDBClient({});
+// #235: SDK の AWS_ENDPOINT_URL 自動検出には頼らず、 $env の endpoint を明示的に渡す。
+// (SvelteKit dev では .env.local が process.env に載らず本番接続する事故があったため)
+const client = new DynamoDBClient(dynamoClientConfig());
 
 export const ddb = DynamoDBDocumentClient.from(client, {
 	marshallOptions: {
