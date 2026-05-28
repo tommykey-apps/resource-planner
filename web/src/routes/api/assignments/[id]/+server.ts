@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { assignmentApiUpdateSchema } from '$lib/schemas';
 import { updateAssignment } from '$lib/repository';
-import { requireSession } from '$lib/auth';
+import { requireSession } from '$lib/session';
 import { formatZodErrors, type ServerErrors } from '$lib/forms/server-error';
 import type { RequestHandler } from './$types';
 

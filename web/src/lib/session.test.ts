@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RequestEvent } from '@sveltejs/kit';
-import { requireSession } from './auth';
+import { requireSession } from './session';
 
 interface HttpErrorLike {
 	status: number;
