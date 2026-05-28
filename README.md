@@ -148,6 +148,7 @@ OpenAPI は使わず、TypeScript 型 + Zod schema を API 仕様の正本とし
 | [0010](docs/adr/0010-project-metadata.md) | Project に詳細情報 (description / tags / links) を同 item の attribute として追加する | Accepted |
 | [0011](docs/adr/0011-defer-better-auth-migration.md) | Better Auth への移行は当面据え置く (DynamoDB primary 不適合) | Accepted |
 | [0012](docs/adr/0012-assignment-stable-key-and-optimistic-locking.md) | Assignment の SK を安定キー化し version 楽観ロックで同時編集を扱う | Accepted |
+| [0013](docs/adr/0013-department-grouping-tree.md) | Department を Team 内のグルーピング用ツリー (adjacency list) として追加する | Accepted |
 
 ### Use Cases
 
