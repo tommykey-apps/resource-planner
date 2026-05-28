@@ -1,11 +1,11 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { z } from 'zod';
 import type { RequestEvent } from '@sveltejs/kit';
-import type { AppSession } from '$lib/auth';
+import type { AppSession } from '$lib/session';
 
 const requireSessionMock = vi.fn();
 
-vi.mock('$lib/auth', () => ({
+vi.mock('$lib/session', () => ({
 	requireSession: (event: unknown) => requireSessionMock(event)
 }));
 

@@ -12,7 +12,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 const requireSessionMock = vi.fn();
 const updateAssignmentMock = vi.fn();
 
-vi.mock('$lib/auth', () => ({
+vi.mock('$lib/session', () => ({
 	requireSession: (event: unknown) => requireSessionMock(event)
 }));
 

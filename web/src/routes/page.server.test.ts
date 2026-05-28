@@ -22,7 +22,7 @@ const createAssignmentMock = vi.fn();
 const updateAssignmentMock = vi.fn();
 const deleteAssignmentMock = vi.fn();
 
-vi.mock('$lib/auth', () => ({
+vi.mock('$lib/session', () => ({
 	requireSession: (event: unknown) => requireSessionMock(event)
 }));
 

@@ -15,7 +15,7 @@
  */
 import { fail, type RequestEvent } from '@sveltejs/kit';
 import type { z } from 'zod';
-import { requireSession, type AppSession } from '$lib/auth';
+import { requireSession, type AppSession } from '$lib/session';
 import { formatZodErrors } from './server-error';
 
 type FormActionResult = Record<string, unknown> | void;
