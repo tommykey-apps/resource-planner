@@ -1,23 +1,25 @@
 import { QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { ddb, TABLE } from '$lib/db/client';
 import { pk, SK_PREFIX } from './keys';
-import type { TeamData, Resource, Project, ProjectLink, Assignment } from '$lib/types';
+import type { TeamData, Resource, Project, ProjectLink, Assignment, Department } from '$lib/types';
 
 export * from './resource';
 export * from './project';
 export * from './assignment';
+export * from './department';
 export * from './team';
 
 /**
- * Team 内の全アプリデータ (Resource / Project / Assignment) を 1 query で取得する。
+ * Team 内の全アプリデータ (Resource / Project / Assignment / Department) を 1 query で取得する。
  *
- * Single Table Design のため `Query(pk = TEAM#X)` だけで 3 entity が混在で返る。
- * SK プレフィックスで振り分けて返す (access-patterns.md UC #1)。
+ * Single Table Design のため `Query(pk = TEAM#X)` だけで全 entity が混在で返る。
+ * SK プレフィックスで振り分けて返す (access-patterns.md UC #1)。 Department ツリーも
+ * このフラットな item 群から client/server が in-memory で木を組む (ADR 0013)。
  *
  * Team META / MEMBER#... は本関数の戻り値には含めない (App data only)。
  */
 export async function queryAllByTeam(teamId: string): Promise<TeamData> {
-	const data: TeamData = { resources: [], projects: [], assignments: [] };
+	const data: TeamData = { resources: [], projects: [], assignments: [], departments: [] };
 	let lastKey: Record<string, unknown> | undefined;
 
 	do {
@@ -73,6 +75,14 @@ export async function queryAllByTeam(teamId: string): Promise<TeamData> {
 					version: (item.version as number | undefined) ?? 1
 				};
 				data.assignments.push(assignment);
+			} else if (sk.startsWith(SK_PREFIX.department)) {
+				// ADR 0013: adjacency-list ノード。 parentId なし (root) は null に正規化。
+				const department: Department = {
+					id: item.id as string,
+					name: item.name as string,
+					parentId: (item.parentId as string | undefined) ?? null
+				};
+				data.departments.push(department);
 			}
 			// META / MEMBER# は無視 (App data only)
 		}

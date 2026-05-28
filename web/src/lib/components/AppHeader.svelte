@@ -1,6 +1,7 @@
 <script lang="ts">
 	import ResourceManager from './ResourceManager.svelte';
 	import ProjectManager from './ProjectManager.svelte';
+	import DepartmentManager from './DepartmentManager.svelte';
 	import AssignmentCreator from './AssignmentCreator.svelte';
 	import AvatarDropdown from './AvatarDropdown.svelte';
 	import ThemeToggle from './ThemeToggle.svelte';
@@ -9,7 +10,7 @@
 	import ListChecks from 'phosphor-svelte/lib/ListChecks';
 	import Calendar from 'phosphor-svelte/lib/Calendar';
 	import { t } from '$lib/i18n/index.svelte';
-	import type { Resource, Project, Assignment } from '$lib/types';
+	import type { Resource, Project, Assignment, Department } from '$lib/types';
 
 	/**
 	 * アプリ共通ヘッダ (#136、 #146)。
@@ -27,6 +28,7 @@
 		resources,
 		projects,
 		assignments,
+		departments,
 		user,
 		csrfToken,
 		isAssignmentsActive = false,
@@ -38,6 +40,7 @@
 		resources: Resource[];
 		projects: Project[];
 		assignments: Assignment[];
+		departments: Department[];
 		user: { email?: string | null | undefined } | undefined;
 		csrfToken: string;
 		isAssignmentsActive?: boolean;
@@ -63,6 +66,7 @@
 				onRollbackCreate={onRollbackCreateResource}
 			/>
 			<ProjectManager {projects} {assignments} />
+			<DepartmentManager {departments} />
 			<AssignmentCreator {resources} {projects} />
 			<!-- Timeline (home / ガント) への named nav button、 /assignments と対称。 -->
 			<Button

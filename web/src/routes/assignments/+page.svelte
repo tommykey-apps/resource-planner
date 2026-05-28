@@ -107,6 +107,7 @@
 	{resources}
 	{projects}
 	{assignments}
+	departments={data.departments}
 	user={data.user}
 	csrfToken={data.csrfToken}
 	isAssignmentsActive

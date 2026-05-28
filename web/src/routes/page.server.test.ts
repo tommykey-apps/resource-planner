@@ -21,6 +21,7 @@ const deleteProjectMock = vi.fn();
 const createAssignmentMock = vi.fn();
 const updateAssignmentMock = vi.fn();
 const deleteAssignmentMock = vi.fn();
+const createDepartmentMock = vi.fn();
 
 // ADR 0012: updateAssignment action は version 競合を instanceof で判定するため、 mock でも
 // 実クラスを export する。 vi.mock factory は巻き上げられるので vi.hoisted で先に初期化。
@@ -48,6 +49,7 @@ vi.mock('$lib/repository', () => ({
 	createAssignment: (...args: unknown[]) => createAssignmentMock(...args),
 	updateAssignment: (...args: unknown[]) => updateAssignmentMock(...args),
 	deleteAssignment: (...args: unknown[]) => deleteAssignmentMock(...args),
+	createDepartment: (...args: unknown[]) => createDepartmentMock(...args),
 	AssignmentVersionConflictError
 }));
 
@@ -494,5 +496,34 @@ describe('?/deleteAssignment action (ADR 0012: SK = ASN#{id} なので id のみ
 		expect(r.status).toBe(400);
 		expect(r.data.errors.id).toBeTruthy();
 		expect(deleteAssignmentMock).not.toHaveBeenCalled();
+	});
+});
+
+/**
+ * #238 / ADR 0013: createDepartment action (フラット = parentId 省略でルート)。
+ */
+describe('?/createDepartment action (#238)', () => {
+	beforeEach(() => {
+		requireSessionMock.mockReset().mockResolvedValue({ teamId: 'team_default', userId: 'u1' });
+		createDepartmentMock.mockReset().mockResolvedValue({ id: 'd-1', name: '開発本部', parentId: null });
+	});
+
+	it('calls createDepartment(teamId, parsed) on valid name', async () => {
+		const r = await actions.createDepartment!(makeEvent({ name: '開発本部' }));
+		expect(createDepartmentMock).toHaveBeenCalledTimes(1);
+		const [teamId, parsed] = createDepartmentMock.mock.calls[0];
+		expect(teamId).toBe('team_default');
+		expect(parsed).toMatchObject({ name: '開発本部' });
+		expect(r).toMatchObject({ action: 'createDepartment', success: true });
+	});
+
+	it('fails 400 when name is empty', async () => {
+		const r = (await actions.createDepartment!(makeEvent({ name: '' }))) as {
+			status: number;
+			data: { errors: Record<string, ServerError> };
+		};
+		expect(r.status).toBe(400);
+		expect(r.data.errors.name).toEqual({ code: 'required', field: 'name' });
+		expect(createDepartmentMock).not.toHaveBeenCalled();
 	});
 });

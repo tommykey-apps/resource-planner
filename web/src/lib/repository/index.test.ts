@@ -12,7 +12,7 @@ beforeEach(() => {
 });
 
 describe('queryAllByTeam', () => {
-	it('partitions returned items by SK prefix into resources/projects/assignments', async () => {
+	it('partitions returned items by SK prefix into resources/projects/assignments/departments', async () => {
 		ddbMock.on(QueryCommand).resolves({
 			Items: [
 				{ sk: 'RES#r1', id: 'r1', name: 'Alice' },
@@ -26,7 +26,9 @@ describe('queryAllByTeam', () => {
 					startDate: '2026-05-01',
 					endDateExclusive: '2026-06-01',
 					version: 7
-				}
+				},
+				{ sk: 'DEPT#d1', id: 'd1', name: '開発本部' }, // root (parentId 属性なし → null 正規化)
+				{ sk: 'DEPT#d2', id: 'd2', name: 'バックエンド課', parentId: 'd1' }
 			]
 		});
 
@@ -46,6 +48,10 @@ describe('queryAllByTeam', () => {
 				endDateExclusive: '2026-06-01',
 				version: 7
 			}
+		]);
+		expect(data.departments).toEqual([
+			{ id: 'd1', name: '開発本部', parentId: null },
+			{ id: 'd2', name: 'バックエンド課', parentId: 'd1' }
 		]);
 
 		const input = ddbMock.commandCalls(QueryCommand)[0].args[0].input;
@@ -78,7 +84,7 @@ describe('queryAllByTeam', () => {
 
 		const data = await queryAllByTeam(TEAM);
 
-		expect(data).toEqual({ resources: [], projects: [], assignments: [] });
+		expect(data).toEqual({ resources: [], projects: [], assignments: [], departments: [] });
 	});
 
 	it('ignores items with unknown SK prefix', async () => {

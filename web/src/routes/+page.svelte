@@ -138,6 +138,7 @@
 	{resources}
 	{projects}
 	assignments={dbAssignments}
+	departments={data.departments}
 	user={data.user}
 	csrfToken={data.csrfToken}
 	isHomeActive

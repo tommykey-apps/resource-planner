@@ -35,6 +35,17 @@ export interface Resource {
 	name: string;
 }
 
+/**
+ * 部署 (組織ツリーのノード、 ADR 0013)。 1 Team 内の **グルーピング専用** ノード。
+ * `parentId = null` がルート (1 Team 内に複数可 = フォレスト)。 Team とは別概念 (隔離境界ではない)。
+ */
+export interface Department {
+	id: string;
+	name: string;
+	/** 親 Department の id。 `null` = ルート。 */
+	parentId: string | null;
+}
+
 export interface Project {
 	id: string;
 	name: string;
@@ -75,6 +86,7 @@ export interface TeamData {
 	resources: Resource[];
 	projects: Project[];
 	assignments: Assignment[];
+	departments: Department[];
 }
 
 /**
