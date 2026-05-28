@@ -93,6 +93,8 @@
 			endDateExclusive: next.endDateExclusive
 		});
 		if (!result.ok) {
+			// #231: 後続ドラッグに supersede された PATCH は最新の楽観 state を保持し、 revert / toast しない。
+			if ('superseded' in result) return;
 			dbAssignments = snapshot;
 			const firstError = result.errors ? Object.values(result.errors)[0] : null;
 			const description = firstError
