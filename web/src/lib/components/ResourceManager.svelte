@@ -9,23 +9,58 @@
 	import { translateServerError, type ServerErrors } from '$lib/forms/server-error';
 	import { rollbackRecoverState } from '$lib/forms/optimistic-rollback';
 	import { t } from '$lib/i18n/index.svelte';
-	import type { Resource, Assignment } from '$lib/types';
+	import type { Resource, Assignment, Department } from '$lib/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
 
 	let {
 		resources,
 		assignments,
+		departments = [],
 		onOptimisticCreate,
 		onConfirmCreate,
 		onRollbackCreate
 	}: {
 		resources: Resource[];
 		assignments: Assignment[];
+		/** #239: 所属部署の選択肢 + グルーピング表示用。 省略時は未所属のみ。 */
+		departments?: Department[];
 		/** #121 optimistic UI hooks。create 時に temp → server entity の swap を親で行う。 */
 		onOptimisticCreate?: (temp: Resource) => void;
 		onConfirmCreate?: (temp: Resource, real: Resource) => void;
 		onRollbackCreate?: (temp: Resource) => void;
 	} = $props();
+
+	// #239: 名前順の部署 (select の選択肢 + グループ見出し)。
+	const sortedDepartments = $derived(
+		[...departments].sort((a, b) => a.name.localeCompare(b.name))
+	);
+
+	/**
+	 * #239: Resource を所属部署でグルーピング (部署は名前順、 未所属は最後)。
+	 * 空グループは出さない。 ツリー階層 indent は #240。
+	 */
+	const groups = $derived.by(() => {
+		// 既知の department id のみ group key にする。 未所属 / 不明 (削除済み等の dangling) は
+		// すべて未所属バケットへ寄せ、 どの resource も一覧から消えないようにする。
+		const knownDeptIds = new Set(departments.map((d) => d.id));
+		const byDept = new Map<string, Resource[]>();
+		for (const r of resources) {
+			const key = r.departmentId && knownDeptIds.has(r.departmentId) ? r.departmentId : '';
+			const list = byDept.get(key);
+			if (list) list.push(r);
+			else byDept.set(key, [r]);
+		}
+		const ordered: { id: string; label: string; resources: Resource[] }[] = [];
+		for (const d of sortedDepartments) {
+			const rs = byDept.get(d.id);
+			if (rs && rs.length > 0) ordered.push({ id: d.id, label: d.name, resources: rs });
+		}
+		const unassigned = byDept.get('');
+		if (unassigned && unassigned.length > 0) {
+			ordered.push({ id: '', label: t('departments.unassigned'), resources: unassigned });
+		}
+		return ordered;
+	});
 
 	/** 各 Resource に紐づく Assignment 数 (cascade delete 時の警告で使う、UC-06) */
 	const assignmentCountByResource = $derived.by(() => {
@@ -40,6 +75,8 @@
 	let formOpen = $state(false);
 	let editing = $state<Resource | null>(null);
 	let formName = $state('');
+	/** #239: 所属部署 (空文字 = 未所属)。 */
+	let formDepartmentId = $state('');
 	let formError = $state<string | null>(null);
 
 	// 連打抑制 + submitting state (#94)。create / update form 用 (delete は #132 で confirm dialog が modal ブロックするため不要)。
@@ -48,6 +85,7 @@
 	function startCreate() {
 		editing = null;
 		formName = '';
+		formDepartmentId = '';
 		formError = null;
 		formOpen = true;
 	}
@@ -55,6 +93,7 @@
 	function startEdit(r: Resource) {
 		editing = r;
 		formName = r.name;
+		formDepartmentId = r.departmentId ?? '';
 		formError = null;
 		formOpen = true;
 	}
@@ -76,7 +115,13 @@
 		if (isCreate) {
 			const name = (formData.get('name') ?? '').toString().trim();
 			if (name.length > 0) {
-				pendingTemp = { id: `temp-${crypto.randomUUID()}`, name };
+				// #239: 楽観追加でも所属部署を持たせて正しいグループに即時表示する。
+				const departmentId = (formData.get('departmentId') ?? '').toString().trim() || undefined;
+				pendingTemp = {
+					id: `temp-${crypto.randomUUID()}`,
+					name,
+					...(departmentId ? { departmentId } : {})
+				};
 				onOptimisticCreate(pendingTemp);
 				formOpen = false; // dialog 即時 close
 			}
@@ -101,6 +146,8 @@
 					});
 					formName = recovered.formName;
 					formError = recovered.formError;
+					// #239: 選択した部署も復元する (rollbackRecoverState は name のみ対象のため別途)。
+					formDepartmentId = tempSnapshot.departmentId ?? '';
 					formOpen = true;
 				}
 				return; // optimistic は update() 不要
@@ -150,40 +197,44 @@
 	<div class="flex flex-col gap-3">
 		<Button onclick={startCreate}>{t('resources.add')}</Button>
 
-		{#if resources.length === 0}
+		{#if groups.length === 0}
 			<p class="py-4 text-center text-sm text-muted-foreground">{t('resources.empty')}</p>
 		{:else}
-			<ul class="divide-y divide-border border border-border">
-				{#each resources as r (r.id)}
-					{@const count = assignmentCountByResource.get(r.id) ?? 0}
-					<li class="flex items-center justify-between gap-2 px-3 py-2">
-						<span class="text-sm">
-							{r.name}
-							<span class="ml-1 text-xs text-muted-foreground"
-								>{t('resources.assignmentCount', { count })}</span
-							>
-						</span>
-						<div class="flex gap-1">
-							<Button size="xs" variant="outline" onclick={() => startEdit(r)}
-								>{t('common.edit')}</Button
-							>
-							<form
-								method="POST"
-								action="?/deleteResource"
-								use:enhance={makeDeleteSubmit({
-									name: r.name,
-									count
-								})}
-							>
-								<input type="hidden" name="id" value={r.id} />
-								<Button size="xs" variant="destructive" type="submit">
-									{t('common.delete')}
-								</Button>
-							</form>
-						</div>
-					</li>
-				{/each}
-			</ul>
+			<!-- #239: 所属部署でグルーピング (見出し + 各部署の resource)。 未所属は最後。 -->
+			{#each groups as g (g.id)}
+				<p class="px-1 pt-2 text-xs font-semibold text-muted-foreground">{g.label}</p>
+				<ul class="divide-y divide-border border border-border">
+					{#each g.resources as r (r.id)}
+						{@const count = assignmentCountByResource.get(r.id) ?? 0}
+						<li class="flex items-center justify-between gap-2 px-3 py-2">
+							<span class="text-sm">
+								{r.name}
+								<span class="ml-1 text-xs text-muted-foreground"
+									>{t('resources.assignmentCount', { count })}</span
+								>
+							</span>
+							<div class="flex gap-1">
+								<Button size="xs" variant="outline" onclick={() => startEdit(r)}
+									>{t('common.edit')}</Button
+								>
+								<form
+									method="POST"
+									action="?/deleteResource"
+									use:enhance={makeDeleteSubmit({
+										name: r.name,
+										count
+									})}
+								>
+									<input type="hidden" name="id" value={r.id} />
+									<Button size="xs" variant="destructive" type="submit">
+										{t('common.delete')}
+									</Button>
+								</form>
+							</div>
+						</li>
+					{/each}
+				</ul>
+			{/each}
 		{/if}
 	</div>
 </Dialog>
@@ -211,6 +262,22 @@
 				maxlength={100}
 				autocomplete="off"
 			/>
+		</label>
+		<!-- #239: 所属部署 (空 = 未所属)。 ツリー indent 付き選択は #240。 -->
+		<label class="flex flex-col gap-1 text-sm">
+			<span>{t('departments.field')}</span>
+			<select
+				name="departmentId"
+				aria-label={t('departments.field')}
+				bind:value={formDepartmentId}
+				class="h-9 border border-input bg-background px-2 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				style="border-radius: calc(var(--radius) * 0.6)"
+			>
+				<option value="">{t('departments.unassigned')}</option>
+				{#each sortedDepartments as d (d.id)}
+					<option value={d.id}>{d.name}</option>
+				{/each}
+			</select>
 		</label>
 		{#if formError}
 			<p class="text-xs text-destructive">{formError}</p>

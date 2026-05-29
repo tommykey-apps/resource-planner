@@ -42,7 +42,9 @@
 		"add": "+ Add department",
 		"createTitle": "Add department",
 		"name": "Department name",
-		"empty": "No departments yet."
+		"empty": "No departments yet.",
+		"unassigned": "Unassigned",
+		"field": "Department"
 	},
 	"resources": {
 		"manage": "Manage people",

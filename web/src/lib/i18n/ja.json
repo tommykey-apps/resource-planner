@@ -42,7 +42,9 @@
 		"add": "+ 部署を追加",
 		"createTitle": "部署を追加",
 		"name": "部署名",
-		"empty": "まだ部署が登録されていません。"
+		"empty": "まだ部署が登録されていません。",
+		"unassigned": "未所属",
+		"field": "部署"
 	},
 	"resources": {
 		"manage": "人を管理",
