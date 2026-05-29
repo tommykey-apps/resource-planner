@@ -36,11 +36,13 @@ export async function queryAllByTeam(teamId: string): Promise<TeamData> {
 			const sk = item.sk as string;
 			if (sk.startsWith(SK_PREFIX.resource)) {
 				// ADR 0010 「DDB read path 規約」: `as <Entity>` 全体キャスト禁止、 個別 cast に localize。
-				// Resource は現状 required field のみだが、 将来 optional 追加時に TS error で
-				// 気づけるよう同 pattern を踏む。
 				const resource: Resource = {
 					id: item.id as string,
-					name: item.name as string
+					name: item.name as string,
+					// #239: departmentId は present のときだけ載せる (未所属 = キー不在)。
+					...(typeof item.departmentId === 'string' && item.departmentId.length > 0
+						? { departmentId: item.departmentId }
+						: {})
 				};
 				data.resources.push(resource);
 			} else if (sk.startsWith(SK_PREFIX.project)) {

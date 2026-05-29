@@ -33,6 +33,12 @@ export interface TeamMembership {
 export interface Resource {
 	id: string;
 	name: string;
+	/**
+	 * 所属 Department の id (ADR 0013、 #239)。 高々 1 つ、 ツリーの任意ノード可。
+	 * **未所属は attribute なし** (optional、 REMOVE semantics)。 `null` ではなく「キー不在」で表現する
+	 * (Project の description/tags 等と同じ規約)。
+	 */
+	departmentId?: string;
 }
 
 /**

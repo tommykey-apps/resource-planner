@@ -61,6 +61,7 @@
 			<ResourceManager
 				{resources}
 				{assignments}
+				{departments}
 				onOptimisticCreate={onOptimisticCreateResource}
 				onConfirmCreate={onConfirmCreateResource}
 				onRollbackCreate={onRollbackCreateResource}

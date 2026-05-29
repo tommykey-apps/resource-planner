@@ -10,7 +10,12 @@ const TRANSACT_MAX_ITEMS = 100;
 
 export async function createResource(teamId: string, input: ResourceCreateInput): Promise<Resource> {
 	const id = newId();
-	const item: Resource = { id, name: input.name };
+	// #239: 未所属 (departmentId なし) は attribute を保存しない (REMOVE semantics、 Project と同規約)。
+	const item: Resource = {
+		id,
+		name: input.name,
+		...(input.departmentId ? { departmentId: input.departmentId } : {})
+	};
 	await ddb.send(
 		new PutCommand({
 			TableName: TABLE,
@@ -22,13 +27,27 @@ export async function createResource(teamId: string, input: ResourceCreateInput)
 }
 
 export async function updateResource(teamId: string, input: ResourceUpdateInput): Promise<void> {
+	// #239: departmentId は 「指定あり → SET / 未所属 → REMOVE」 を出し分ける (updateProject と同パターン)。
+	const sets = ['#name = :name'];
+	const removes: string[] = [];
+	const values: Record<string, unknown> = { ':name': input.name };
+
+	if (input.departmentId) {
+		sets.push('departmentId = :departmentId');
+		values[':departmentId'] = input.departmentId;
+	} else {
+		removes.push('departmentId');
+	}
+
+	const expr = `SET ${sets.join(', ')}` + (removes.length > 0 ? ` REMOVE ${removes.join(', ')}` : '');
+
 	await ddb.send(
 		new UpdateCommand({
 			TableName: TABLE,
 			Key: { pk: pk(teamId), sk: resourceSk(input.id) },
-			UpdateExpression: 'SET #name = :name',
+			UpdateExpression: expr,
 			ExpressionAttributeNames: { '#name': 'name' },
-			ExpressionAttributeValues: { ':name': input.name },
+			ExpressionAttributeValues: values,
 			ConditionExpression: 'attribute_exists(sk)'
 		})
 	);

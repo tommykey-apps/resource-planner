@@ -15,8 +15,8 @@ describe('queryAllByTeam', () => {
 	it('partitions returned items by SK prefix into resources/projects/assignments/departments', async () => {
 		ddbMock.on(QueryCommand).resolves({
 			Items: [
-				{ sk: 'RES#r1', id: 'r1', name: 'Alice' },
-				{ sk: 'RES#r2', id: 'r2', name: 'Bob' },
+				{ sk: 'RES#r1', id: 'r1', name: 'Alice', departmentId: 'd2' }, // #239: 部署所属
+				{ sk: 'RES#r2', id: 'r2', name: 'Bob' }, // 未所属 (departmentId 属性なし)
 				{ sk: 'PRJ#p1', id: 'p1', name: 'Project A', color: '#ff0000' },
 				{
 					sk: 'ASN#a1',
@@ -35,8 +35,8 @@ describe('queryAllByTeam', () => {
 		const data = await queryAllByTeam(TEAM);
 
 		expect(data.resources).toEqual([
-			{ id: 'r1', name: 'Alice' },
-			{ id: 'r2', name: 'Bob' }
+			{ id: 'r1', name: 'Alice', departmentId: 'd2' },
+			{ id: 'r2', name: 'Bob' } // 未所属 = departmentId キー不在
 		]);
 		expect(data.projects).toEqual([{ id: 'p1', name: 'Project A', color: '#ff0000' }]);
 		expect(data.assignments).toEqual([

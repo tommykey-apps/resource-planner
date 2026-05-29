@@ -44,11 +44,21 @@ describe('createResource', () => {
 			id: result.id,
 			name: 'Alice'
 		});
+		// #239: 未所属 (departmentId なし) は attribute を保存しない
+		expect(input.Item).not.toHaveProperty('departmentId');
+	});
+
+	it('stores departmentId when assigned (#239)', async () => {
+		ddbMock.on(PutCommand).resolves({});
+		const result = await createResource(TEAM, { name: 'Alice', departmentId: 'd1' });
+		expect(result.departmentId).toBe('d1');
+		const input = ddbMock.commandCalls(PutCommand)[0].args[0].input;
+		expect(input.Item).toMatchObject({ departmentId: 'd1' });
 	});
 });
 
-describe('updateResource', () => {
-	it('sends UpdateCommand with #name placeholder + attribute_exists guard', async () => {
+describe('updateResource (#239 departmentId set/remove)', () => {
+	it('未所属 (departmentId なし) → SET name + REMOVE departmentId', async () => {
 		ddbMock.on(UpdateCommand).resolves({});
 
 		await updateResource(TEAM, { id: 'res-1', name: 'Bob' });
@@ -58,10 +68,20 @@ describe('updateResource', () => {
 		const input = calls[0].args[0].input;
 		expect(input.TableName).toBe(TABLE);
 		expect(input.Key).toEqual({ pk: `TEAM#${TEAM}`, sk: 'RES#res-1' });
-		expect(input.UpdateExpression).toBe('SET #name = :name');
+		expect(input.UpdateExpression).toBe('SET #name = :name REMOVE departmentId');
 		expect(input.ExpressionAttributeNames).toEqual({ '#name': 'name' });
 		expect(input.ExpressionAttributeValues).toEqual({ ':name': 'Bob' });
 		expect(input.ConditionExpression).toBe('attribute_exists(sk)');
+	});
+
+	it('departmentId 指定 → SET name + departmentId (REMOVE なし)', async () => {
+		ddbMock.on(UpdateCommand).resolves({});
+
+		await updateResource(TEAM, { id: 'res-1', name: 'Bob', departmentId: 'd2' });
+
+		const input = ddbMock.commandCalls(UpdateCommand)[0].args[0].input;
+		expect(input.UpdateExpression).toBe('SET #name = :name, departmentId = :departmentId');
+		expect(input.ExpressionAttributeValues).toEqual({ ':name': 'Bob', ':departmentId': 'd2' });
 	});
 });
 
