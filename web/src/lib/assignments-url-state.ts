@@ -7,6 +7,7 @@
  *   - `q`: free text 検索 (resource name / project name に match)
  *   - `resourceId`: 特定 resource で絞る
  *   - `projectId`: 特定 project で絞る
+ *   - `departmentId`: 部署 (子孫含む) で絞る。 `__unassigned__` で未所属 (#242)
  *   - `from`: YYYY-MM-DD、開始日下限
  *   - `to`: YYYY-MM-DD、開始日上限 (inclusive)
  */
@@ -15,6 +16,7 @@ export type AssignmentFilters = {
 	q: string;
 	resourceId: string;
 	projectId: string;
+	departmentId: string;
 	from: string;
 	to: string;
 };
@@ -32,6 +34,7 @@ export function parseAssignmentParams(params: URLSearchParams): AssignmentFilter
 		q: params.get('q') ?? '',
 		resourceId: params.get('resourceId') ?? '',
 		projectId: params.get('projectId') ?? '',
+		departmentId: params.get('departmentId') ?? '',
 		from: readDate(params, 'from'),
 		to: readDate(params, 'to')
 	};
@@ -47,6 +50,7 @@ export function applyAssignmentParams(url: URL, filters: AssignmentFilters): URL
 	setOrDelete('q');
 	setOrDelete('resourceId');
 	setOrDelete('projectId');
+	setOrDelete('departmentId');
 	setOrDelete('from');
 	setOrDelete('to');
 	return next;

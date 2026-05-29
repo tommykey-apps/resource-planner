@@ -8,6 +8,7 @@ import { formatLocalDate, parseLocalDate } from './date';
  * 採用するクエリパラメータ:
  *   - `d`: viewport 開始日 (YYYY-MM-DD、ローカル日付として解釈)
  *   - `z`: zoom level id (`day` / `week` / `month` / `year`)
+ *   - `dept`: 部署 (子孫含む) フィルタ。 `__unassigned__` で未所属 (#242)
  *
  * 無効値や欠落は null を返し、呼び出し側で default にフォールバックする (純粋関数、テスト容易)。
  */
@@ -28,6 +29,7 @@ function isZoomId(v: string): v is ZoomId {
 export function parseTimelineParams(params: URLSearchParams): {
 	viewportStart: Date | null;
 	zoom: ZoomLevel | null;
+	departmentId: string;
 } {
 	const d = params.get('d');
 	const z = params.get('z');
@@ -41,7 +43,7 @@ export function parseTimelineParams(params: URLSearchParams): {
 	let zoom: ZoomLevel | null = null;
 	if (z && isZoomId(z)) zoom = ZOOMS[z];
 
-	return { viewportStart, zoom };
+	return { viewportStart, zoom, departmentId: params.get('dept') ?? '' };
 }
 
 /**
@@ -61,10 +63,12 @@ export function buildTimelineSearch(state: { viewportStart: Date; zoom: ZoomLeve
  */
 export function applyTimelineParams(
 	url: URL,
-	state: { viewportStart: Date; zoom: ZoomLevel }
+	state: { viewportStart: Date; zoom: ZoomLevel; departmentId?: string }
 ): URL {
 	const next = new URL(url.toString());
 	next.searchParams.set('d', formatLocalDate(state.viewportStart));
 	next.searchParams.set('z', state.zoom.id);
+	if (state.departmentId) next.searchParams.set('dept', state.departmentId);
+	else next.searchParams.delete('dept');
 	return next;
 }

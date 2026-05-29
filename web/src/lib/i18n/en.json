@@ -45,6 +45,7 @@
 		"empty": "No departments yet.",
 		"unassigned": "Unassigned",
 		"field": "Department",
+		"allOption": "All departments",
 		"addChild": "Add sub-department",
 		"parent": "Parent department",
 		"rootOption": "(root)",

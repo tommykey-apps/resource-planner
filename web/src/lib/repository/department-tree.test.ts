@@ -3,9 +3,11 @@ import {
 	descendantIds,
 	wouldCreateCycle,
 	siblingNameConflict,
-	flattenDepartmentTree
+	flattenDepartmentTree,
+	resourceIdsForDepartmentFilter,
+	DEPARTMENT_FILTER_UNASSIGNED
 } from './department-tree';
-import type { Department } from '$lib/types';
+import type { Department, Resource } from '$lib/types';
 
 /**
  * ADR 0013: adjacency-list ツリーの整合性検証 (純粋関数)。
@@ -97,5 +99,40 @@ describe('flattenDepartmentTree', () => {
 		const orphan: Department[] = [{ id: 'x', name: '孤立課', parentId: 'ghost' }];
 		const flat = flattenDepartmentTree(orphan);
 		expect(flat).toEqual([{ dept: orphan[0], depth: 0 }]);
+	});
+});
+
+describe('resourceIdsForDepartmentFilter (#242 部署フィルタ、 子孫含む)', () => {
+	const resources: Resource[] = [
+		{ id: 'u1', name: 'A', departmentId: 'a' },
+		{ id: 'u2', name: 'B', departmentId: 'a1' },
+		{ id: 'u3', name: 'C', departmentId: 'b' },
+		{ id: 'u4', name: 'D', departmentId: 's' },
+		{ id: 'u5', name: 'E' } // 未所属
+	];
+
+	it('空 (フィルタなし) は null を返す', () => {
+		expect(resourceIdsForDepartmentFilter(deps, resources, '')).toBeNull();
+	});
+
+	it('部署を指定すると子孫部署の Resource も含む', () => {
+		// r 配下 = a, a1, b → u1, u2, u3
+		expect(resourceIdsForDepartmentFilter(deps, resources, 'r')).toEqual(
+			new Set(['u1', 'u2', 'u3'])
+		);
+		// a 配下 = a, a1 → u1, u2
+		expect(resourceIdsForDepartmentFilter(deps, resources, 'a')).toEqual(new Set(['u1', 'u2']));
+		// 葉 s → u4
+		expect(resourceIdsForDepartmentFilter(deps, resources, 's')).toEqual(new Set(['u4']));
+	});
+
+	it('未所属フィルタは departmentId なしの Resource を返す', () => {
+		expect(resourceIdsForDepartmentFilter(deps, resources, DEPARTMENT_FILTER_UNASSIGNED)).toEqual(
+			new Set(['u5'])
+		);
+	});
+
+	it('存在しない部署 id は空集合 (該当なし)', () => {
+		expect(resourceIdsForDepartmentFilter(deps, resources, 'ghost')).toEqual(new Set());
 	});
 });
