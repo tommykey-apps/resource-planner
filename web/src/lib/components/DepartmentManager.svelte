@@ -6,6 +6,7 @@
 	import { Input } from './ui/input';
 	import Dialog from './Dialog.svelte';
 	import { createSubmitState } from '$lib/forms/submit-state.svelte';
+	import { confirmDialog } from '$lib/forms/confirm-dialog';
 	import { translateServerError, type ServerErrors } from '$lib/forms/server-error';
 	import { t } from '$lib/i18n/index.svelte';
 	import { DEPARTMENT_NAME_MAX_LENGTH } from '$lib/schemas';
@@ -14,8 +15,8 @@
 	import type { SubmitFunction } from '@sveltejs/kit';
 
 	/**
-	 * 部署の管理 (ADR 0013、 #240)。 ツリー (階層 indent) 表示 + 子部署作成 (親指定) + 付け替え (move)。
-	 * 循環 / 兄弟名一意の最終検証は server (moveDepartment / createDepartment)。 削除は #241。
+	 * 部署の管理 (ADR 0013)。 ツリー (階層 indent) 表示 + 子部署作成 (親指定) + 付け替え (move) +
+	 * 削除 (#241: 配下を親へ繰り上げ)。 循環 / 兄弟名一意の最終検証は server。
 	 */
 	let { departments }: { departments: Department[] } = $props();
 
@@ -82,6 +83,35 @@
 			await update();
 		};
 	};
+
+	/**
+	 * 削除 (#241): 配下 (子部署・所属者) は **親へ繰り上がる** ので、 確認で移動先を明示する。
+	 * 親があれば親名へ、 ルートなら「ルート / 未所属」へ移動する旨を出す。
+	 */
+	function makeDeleteSubmit(dept: Department): SubmitFunction {
+		return async ({ cancel }) => {
+			// 親が見つかれば親名へ、 ルート or dangling 親なら「ルート / 未所属」へ
+			// (server も dangling 親はルートに正規化するので表示と挙動が一致する)。
+			const parent = dept.parentId ? departments.find((d) => d.id === dept.parentId) : undefined;
+			const message = parent
+				? t('departments.confirmDelete', { name: dept.name, parent: parent.name })
+				: t('departments.confirmDeleteRoot', { name: dept.name });
+			const ok = await confirmDialog({
+				title: t('common.confirm'),
+				message,
+				confirmLabel: t('common.delete'),
+				destructive: true
+			});
+			if (!ok) {
+				cancel();
+				return;
+			}
+			return async ({ result, update }) => {
+				if (result.type === 'failure') toast.error(t('errors.generic'));
+				await update();
+			};
+		};
+	}
 </script>
 
 <Button variant="outline" onclick={() => (listOpen = true)}>
@@ -123,6 +153,11 @@
 										<option value={o.id}>{o.name}</option>
 									{/each}
 								</select>
+							</form>
+							<!-- 削除 (#241): 配下は親へ繰り上げ。 確認 dialog は makeDeleteSubmit が出す。 -->
+							<form method="POST" action="/?/deleteDepartment" use:enhance={makeDeleteSubmit(dept)}>
+								<input type="hidden" name="id" value={dept.id} />
+								<Button size="xs" variant="destructive" type="submit">{t('common.delete')}</Button>
 							</form>
 						</div>
 					</li>

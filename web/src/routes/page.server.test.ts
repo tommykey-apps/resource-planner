@@ -23,6 +23,7 @@ const updateAssignmentMock = vi.fn();
 const deleteAssignmentMock = vi.fn();
 const createDepartmentMock = vi.fn();
 const moveDepartmentMock = vi.fn();
+const deleteDepartmentMock = vi.fn();
 
 // ADR 0012/0013: 競合系を instanceof で判定するため mock でも実クラスを export。 vi.mock factory は
 // 巻き上げられるので vi.hoisted で先に初期化。
@@ -58,6 +59,7 @@ vi.mock('$lib/repository', () => ({
 	deleteAssignment: (...args: unknown[]) => deleteAssignmentMock(...args),
 	createDepartment: (...args: unknown[]) => createDepartmentMock(...args),
 	moveDepartment: (...args: unknown[]) => moveDepartmentMock(...args),
+	deleteDepartment: (...args: unknown[]) => deleteDepartmentMock(...args),
 	AssignmentVersionConflictError,
 	DepartmentTreeError
 }));
@@ -577,5 +579,24 @@ describe('?/moveDepartment action (#240)', () => {
 		const r = (await actions.moveDepartment!(makeEvent({ parentId: 's' }))) as { status: number };
 		expect(r.status).toBe(400);
 		expect(moveDepartmentMock).not.toHaveBeenCalled();
+	});
+});
+
+describe('?/deleteDepartment action (#241)', () => {
+	beforeEach(() => {
+		requireSessionMock.mockReset().mockResolvedValue({ teamId: 'team_default', userId: 'u1' });
+		deleteDepartmentMock.mockReset().mockResolvedValue(undefined);
+	});
+
+	it('calls deleteDepartment(teamId, id) on valid id', async () => {
+		const r = await actions.deleteDepartment!(makeEvent({ id: 'a' }));
+		expect(deleteDepartmentMock).toHaveBeenCalledWith('team_default', 'a');
+		expect(r).toMatchObject({ action: 'deleteDepartment', success: true });
+	});
+
+	it('fails 400 when id is missing', async () => {
+		const r = (await actions.deleteDepartment!(makeEvent({}))) as { status: number };
+		expect(r.status).toBe(400);
+		expect(deleteDepartmentMock).not.toHaveBeenCalled();
 	});
 });

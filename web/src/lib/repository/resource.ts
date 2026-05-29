@@ -1,12 +1,17 @@
-import { PutCommand, UpdateCommand, TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
+import {
+	PutCommand,
+	UpdateCommand,
+	QueryCommand,
+	TransactWriteCommand
+} from '@aws-sdk/lib-dynamodb';
 import { ddb, TABLE } from '$lib/db/client';
 import { newId } from '$lib/id';
-import { pk, resourceSk } from './keys';
+import { pk, resourceSk, SK_PREFIX } from './keys';
 import { queryRelatedAssignmentSk } from './assignment';
 import type { Resource } from '$lib/types';
 import type { ResourceCreateInput, ResourceUpdateInput } from '$lib/schemas';
 
-const TRANSACT_MAX_ITEMS = 100;
+export const TRANSACT_MAX_ITEMS = 100;
 
 export async function createResource(teamId: string, input: ResourceCreateInput): Promise<Resource> {
 	const id = newId();
@@ -86,4 +91,38 @@ export async function deleteResource(teamId: string, id: string): Promise<void> 
 			]
 		})
 	);
+}
+
+/**
+ * `departmentId` が一致する Resource の SK 一覧を返す (#241 部署削除の繰り上げ対象)。
+ * `pk = TEAM#X AND begins_with(sk, "RES#")` を Query して `departmentId` で post-filter。
+ * pagination (`LastEvaluatedKey`) 対応。 `queryRelatedAssignmentSk` (assignment) と同パターン。
+ */
+export async function queryResourceSkByDepartment(
+	teamId: string,
+	departmentId: string
+): Promise<string[]> {
+	const skList: string[] = [];
+	let lastKey: Record<string, unknown> | undefined;
+	do {
+		const out = await ddb.send(
+			new QueryCommand({
+				TableName: TABLE,
+				KeyConditionExpression: 'pk = :pk AND begins_with(sk, :res)',
+				FilterExpression: 'departmentId = :v',
+				ExpressionAttributeValues: {
+					':pk': pk(teamId),
+					':res': SK_PREFIX.resource,
+					':v': departmentId
+				},
+				ProjectionExpression: 'sk',
+				ExclusiveStartKey: lastKey
+			})
+		);
+		for (const item of out.Items ?? []) {
+			if (typeof item.sk === 'string') skList.push(item.sk);
+		}
+		lastKey = out.LastEvaluatedKey;
+	} while (lastKey);
+	return skList;
 }
