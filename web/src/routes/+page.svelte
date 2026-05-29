@@ -75,6 +75,8 @@
 	syncStateToUrl(() => ({ viewportStart, zoom, departmentId }), applyTimelineParams);
 
 	// #242: 部署 (子孫含む) で resource 行と帯を絞り込む。 null = フィルタなし (全件)。
+	// 注: フィルタ中に楽観追加した resource (temp は departmentId なし) は未所属扱いで、 部署
+	// フィルタ中は行が出ない (server confirm 後に実 departmentId が付けば再評価される)。 想定どおり。
 	const departmentOptions = $derived(flattenDepartmentTree(data.departments));
 	const deptResourceIds = $derived(
 		resourceIdsForDepartmentFilter(data.departments, resources, departmentId)

@@ -95,6 +95,8 @@ export const DEPARTMENT_FILTER_UNASSIGNED = '__unassigned__';
  * - `''` (フィルタなし) → `null` (呼び出し側はフィルタをスキップ)
  * - `DEPARTMENT_FILTER_UNASSIGNED` → 部署未所属の Resource
  * - 部署 id → その部署 **+ 全子孫** に所属する Resource (in-memory 子孫展開、 DB 追加クエリなし)
+ *
+ * `descendantIds` は毎回 Map を組み直すが、 組織ツリーは小さい前提なので `$derived` の都度再計算で十分。
  */
 export function resourceIdsForDepartmentFilter(
 	departments: Department[],
