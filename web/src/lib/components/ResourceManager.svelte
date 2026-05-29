@@ -40,9 +40,12 @@
 	 * 空グループは出さない。 ツリー階層 indent は #240。
 	 */
 	const groups = $derived.by(() => {
+		// 既知の department id のみ group key にする。 未所属 / 不明 (削除済み等の dangling) は
+		// すべて未所属バケットへ寄せ、 どの resource も一覧から消えないようにする。
+		const knownDeptIds = new Set(departments.map((d) => d.id));
 		const byDept = new Map<string, Resource[]>();
 		for (const r of resources) {
-			const key = r.departmentId ?? '';
+			const key = r.departmentId && knownDeptIds.has(r.departmentId) ? r.departmentId : '';
 			const list = byDept.get(key);
 			if (list) list.push(r);
 			else byDept.set(key, [r]);
@@ -143,6 +146,8 @@
 					});
 					formName = recovered.formName;
 					formError = recovered.formError;
+					// #239: 選択した部署も復元する (rollbackRecoverState は name のみ対象のため別途)。
+					formDepartmentId = tempSnapshot.departmentId ?? '';
 					formOpen = true;
 				}
 				return; // optimistic は update() 不要
@@ -192,7 +197,7 @@
 	<div class="flex flex-col gap-3">
 		<Button onclick={startCreate}>{t('resources.add')}</Button>
 
-		{#if resources.length === 0}
+		{#if groups.length === 0}
 			<p class="py-4 text-center text-sm text-muted-foreground">{t('resources.empty')}</p>
 		{:else}
 			<!-- #239: 所属部署でグルーピング (見出し + 各部署の resource)。 未所属は最後。 -->

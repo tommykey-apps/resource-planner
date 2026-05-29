@@ -71,6 +71,7 @@ describe('updateResource (#239 departmentId set/remove)', () => {
 		expect(input.UpdateExpression).toBe('SET #name = :name REMOVE departmentId');
 		expect(input.ExpressionAttributeNames).toEqual({ '#name': 'name' });
 		expect(input.ExpressionAttributeValues).toEqual({ ':name': 'Bob' });
+		expect(input.ExpressionAttributeValues).not.toHaveProperty(':departmentId');
 		expect(input.ConditionExpression).toBe('attribute_exists(sk)');
 	});
 
