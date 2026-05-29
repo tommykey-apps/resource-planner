@@ -69,7 +69,8 @@
 	// で集約 ($effect ループ回避のため getState 経由で current 値を都度読む)。
 	const initialUrlState = parseTimelineParams(page.url.searchParams);
 	let viewportStart = $state(initialUrlState.viewportStart ?? new Date());
-	let zoom = $state(initialUrlState.zoom ?? ZOOMS.day);
+	// デフォルトの表示単位は月 (URL `?z=` 指定があればそれを優先)。
+	let zoom = $state(initialUrlState.zoom ?? ZOOMS.month);
 	// #242: 部署フィルタ (子孫含む) も URL (`?dept=`) と同期。
 	let departmentId = $state(initialUrlState.departmentId);
 	syncStateToUrl(() => ({ viewportStart, zoom, departmentId }), applyTimelineParams);
