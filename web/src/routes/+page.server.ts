@@ -13,6 +13,7 @@ import {
 	assignmentCreateSchema,
 	assignmentFormUpdateSchema,
 	departmentCreateSchema,
+	departmentMoveSchema,
 	deleteByIdSchema,
 	projectCreateSchema,
 	projectUpdateSchema,
@@ -21,6 +22,7 @@ import {
 } from '$lib/schemas';
 import {
 	AssignmentVersionConflictError,
+	DepartmentTreeError,
 	createAssignment,
 	createDepartment,
 	createProject,
@@ -28,6 +30,7 @@ import {
 	deleteAssignment,
 	deleteProject,
 	deleteResource,
+	moveDepartment,
 	updateAssignment,
 	updateProject,
 	updateResource
@@ -36,6 +39,13 @@ import { makeFormAction } from '$lib/forms/make-form-action';
 import { requireSession } from '$lib/session';
 import { formatZodErrors } from '$lib/forms/server-error';
 import type { Actions } from './$types';
+
+/** DepartmentTreeError を ServerErrors wire format (#179) の fail(400) に map する (#240)。 */
+function departmentTreeFail(action: string, e: DepartmentTreeError) {
+	// nameConflict は name フィールド、 cycle / parentNotFound / notFound は parentId フィールドに紐づける。
+	const field = e.code === 'nameConflict' ? 'name' : 'parentId';
+	return fail(400, { action, errors: { [field]: { code: e.code, field } } });
+}
 
 export const actions: Actions = {
 	createResource: makeFormAction({
@@ -85,14 +95,40 @@ export const actions: Actions = {
 		}
 	}),
 
-	// ADR 0013 / #238: 部署作成 (フラット = parentId 省略でルート)。 ツリー/編集/削除は後続 issue。
-	createDepartment: makeFormAction({
-		action: 'createDepartment',
-		schema: departmentCreateSchema,
-		run: async (session, parsed) => {
-			await createDepartment(session.teamId, parsed);
+	// ADR 0013: 部署作成。 兄弟名一意 / 親存在 (#240) を DepartmentTreeError → fail(400) に map する
+	// ため makeFormAction を使わず専用実装。
+	createDepartment: async (event) => {
+		const session = await requireSession(event);
+		const input = Object.fromEntries(await event.request.formData());
+		const parsed = departmentCreateSchema.safeParse(input);
+		if (!parsed.success) {
+			return fail(400, { action: 'createDepartment', errors: formatZodErrors(parsed) });
 		}
-	}),
+		try {
+			await createDepartment(session.teamId, parsed.data);
+		} catch (e) {
+			if (e instanceof DepartmentTreeError) return departmentTreeFail('createDepartment', e);
+			throw e;
+		}
+		return { action: 'createDepartment', success: true };
+	},
+
+	// ADR 0013 / #240: 部署の付け替え (循環 / 兄弟名衝突 / 親不在を DepartmentTreeError → fail)。
+	moveDepartment: async (event) => {
+		const session = await requireSession(event);
+		const input = Object.fromEntries(await event.request.formData());
+		const parsed = departmentMoveSchema.safeParse(input);
+		if (!parsed.success) {
+			return fail(400, { action: 'moveDepartment', errors: formatZodErrors(parsed) });
+		}
+		try {
+			await moveDepartment(session.teamId, parsed.data.id, parsed.data.parentId ?? null);
+		} catch (e) {
+			if (e instanceof DepartmentTreeError) return departmentTreeFail('moveDepartment', e);
+			throw e;
+		}
+		return { action: 'moveDepartment', success: true };
+	},
 
 	createAssignment: makeFormAction({
 		action: 'createAssignment',

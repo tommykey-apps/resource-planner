@@ -22,17 +22,24 @@ const createAssignmentMock = vi.fn();
 const updateAssignmentMock = vi.fn();
 const deleteAssignmentMock = vi.fn();
 const createDepartmentMock = vi.fn();
+const moveDepartmentMock = vi.fn();
 
-// ADR 0012: updateAssignment action は version 競合を instanceof で判定するため、 mock でも
-// 実クラスを export する。 vi.mock factory は巻き上げられるので vi.hoisted で先に初期化。
-const { AssignmentVersionConflictError } = vi.hoisted(() => {
+// ADR 0012/0013: 競合系を instanceof で判定するため mock でも実クラスを export。 vi.mock factory は
+// 巻き上げられるので vi.hoisted で先に初期化。
+const { AssignmentVersionConflictError, DepartmentTreeError } = vi.hoisted(() => {
 	class AssignmentVersionConflictError extends Error {
 		constructor(public readonly assignmentId: string) {
 			super(`assignment ${assignmentId} version conflict`);
 			this.name = 'AssignmentVersionConflictError';
 		}
 	}
-	return { AssignmentVersionConflictError };
+	class DepartmentTreeError extends Error {
+		constructor(public readonly code: 'cycle' | 'nameConflict' | 'parentNotFound' | 'notFound') {
+			super(`department tree violation: ${code}`);
+			this.name = 'DepartmentTreeError';
+		}
+	}
+	return { AssignmentVersionConflictError, DepartmentTreeError };
 });
 
 vi.mock('$lib/session', () => ({
@@ -50,7 +57,9 @@ vi.mock('$lib/repository', () => ({
 	updateAssignment: (...args: unknown[]) => updateAssignmentMock(...args),
 	deleteAssignment: (...args: unknown[]) => deleteAssignmentMock(...args),
 	createDepartment: (...args: unknown[]) => createDepartmentMock(...args),
-	AssignmentVersionConflictError
+	moveDepartment: (...args: unknown[]) => moveDepartmentMock(...args),
+	AssignmentVersionConflictError,
+	DepartmentTreeError
 }));
 
 import { actions } from './+page.server';
@@ -525,5 +534,48 @@ describe('?/createDepartment action (#238)', () => {
 		expect(r.status).toBe(400);
 		expect(r.data.errors.name).toEqual({ code: 'required', field: 'name' });
 		expect(createDepartmentMock).not.toHaveBeenCalled();
+	});
+
+	it('#240: DepartmentTreeError(nameConflict) → fail(400) errors.name', async () => {
+		createDepartmentMock.mockRejectedValueOnce(new DepartmentTreeError('nameConflict'));
+		const r = (await actions.createDepartment!(makeEvent({ name: '開発本部' }))) as {
+			status: number;
+			data: { errors: Record<string, ServerError> };
+		};
+		expect(r.status).toBe(400);
+		expect(r.data.errors.name).toEqual({ code: 'nameConflict', field: 'name' });
+	});
+});
+
+describe('?/moveDepartment action (#240)', () => {
+	beforeEach(() => {
+		requireSessionMock.mockReset().mockResolvedValue({ teamId: 'team_default', userId: 'u1' });
+		moveDepartmentMock.mockReset().mockResolvedValue(undefined);
+	});
+
+	it('calls moveDepartment(teamId, id, parentId) on valid input', async () => {
+		await actions.moveDepartment!(makeEvent({ id: 'a', parentId: 's' }));
+		expect(moveDepartmentMock).toHaveBeenCalledWith('team_default', 'a', 's');
+	});
+
+	it('空 parentId はルート化 (null)', async () => {
+		await actions.moveDepartment!(makeEvent({ id: 'a', parentId: '' }));
+		expect(moveDepartmentMock).toHaveBeenCalledWith('team_default', 'a', null);
+	});
+
+	it('DepartmentTreeError(cycle) → fail(400) errors.parentId', async () => {
+		moveDepartmentMock.mockRejectedValueOnce(new DepartmentTreeError('cycle'));
+		const r = (await actions.moveDepartment!(makeEvent({ id: 'r', parentId: 'a1' }))) as {
+			status: number;
+			data: { errors: Record<string, ServerError> };
+		};
+		expect(r.status).toBe(400);
+		expect(r.data.errors.parentId).toEqual({ code: 'cycle', field: 'parentId' });
+	});
+
+	it('fails 400 when id is missing', async () => {
+		const r = (await actions.moveDepartment!(makeEvent({ parentId: 's' }))) as { status: number };
+		expect(r.status).toBe(400);
+		expect(moveDepartmentMock).not.toHaveBeenCalled();
 	});
 });

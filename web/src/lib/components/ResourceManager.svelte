@@ -9,6 +9,7 @@
 	import { translateServerError, type ServerErrors } from '$lib/forms/server-error';
 	import { rollbackRecoverState } from '$lib/forms/optimistic-rollback';
 	import { t } from '$lib/i18n/index.svelte';
+	import { flattenDepartmentTree } from '$lib/repository/department-tree';
 	import type { Resource, Assignment, Department } from '$lib/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
 
@@ -30,18 +31,14 @@
 		onRollbackCreate?: (temp: Resource) => void;
 	} = $props();
 
-	// #239: 名前順の部署 (select の選択肢 + グループ見出し)。
-	const sortedDepartments = $derived(
-		[...departments].sort((a, b) => a.name.localeCompare(b.name))
-	);
+	// #239/#240: 部署ツリー (DFS 平坦化、 depth 付き)。 select の選択肢 + グループ見出しの両方に使う。
+	const flatTree = $derived(flattenDepartmentTree(departments));
 
 	/**
-	 * #239: Resource を所属部署でグルーピング (部署は名前順、 未所属は最後)。
-	 * 空グループは出さない。 ツリー階層 indent は #240。
+	 * #239/#240: Resource を所属部署でグルーピング。 部署は **ツリー順 (親→子) + depth で indent**、
+	 * 未所属は最後。 空グループは出さない。 未所属 / 不明 (dangling) はすべて未所属バケットへ。
 	 */
 	const groups = $derived.by(() => {
-		// 既知の department id のみ group key にする。 未所属 / 不明 (削除済み等の dangling) は
-		// すべて未所属バケットへ寄せ、 どの resource も一覧から消えないようにする。
 		const knownDeptIds = new Set(departments.map((d) => d.id));
 		const byDept = new Map<string, Resource[]>();
 		for (const r of resources) {
@@ -50,14 +47,14 @@
 			if (list) list.push(r);
 			else byDept.set(key, [r]);
 		}
-		const ordered: { id: string; label: string; resources: Resource[] }[] = [];
-		for (const d of sortedDepartments) {
-			const rs = byDept.get(d.id);
-			if (rs && rs.length > 0) ordered.push({ id: d.id, label: d.name, resources: rs });
+		const ordered: { id: string; label: string; depth: number; resources: Resource[] }[] = [];
+		for (const { dept, depth } of flatTree) {
+			const rs = byDept.get(dept.id);
+			if (rs && rs.length > 0) ordered.push({ id: dept.id, label: dept.name, depth, resources: rs });
 		}
 		const unassigned = byDept.get('');
 		if (unassigned && unassigned.length > 0) {
-			ordered.push({ id: '', label: t('departments.unassigned'), resources: unassigned });
+			ordered.push({ id: '', label: t('departments.unassigned'), depth: 0, resources: unassigned });
 		}
 		return ordered;
 	});
@@ -202,7 +199,12 @@
 		{:else}
 			<!-- #239: 所属部署でグルーピング (見出し + 各部署の resource)。 未所属は最後。 -->
 			{#each groups as g (g.id)}
-				<p class="px-1 pt-2 text-xs font-semibold text-muted-foreground">{g.label}</p>
+				<p
+					class="px-1 pt-2 text-xs font-semibold text-muted-foreground"
+					style="padding-left: {g.depth * 16}px"
+				>
+					{g.label}
+				</p>
 				<ul class="divide-y divide-border border border-border">
 					{#each g.resources as r (r.id)}
 						{@const count = assignmentCountByResource.get(r.id) ?? 0}
@@ -274,8 +276,8 @@
 				style="border-radius: calc(var(--radius) * 0.6)"
 			>
 				<option value="">{t('departments.unassigned')}</option>
-				{#each sortedDepartments as d (d.id)}
-					<option value={d.id}>{d.name}</option>
+				{#each flatTree as { dept, depth } (dept.id)}
+					<option value={dept.id}>{'\u00A0\u00A0'.repeat(depth)}{dept.name}</option>
 				{/each}
 			</select>
 		</label>
