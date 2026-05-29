@@ -51,6 +51,12 @@ Resource (人) を部署単位でまとめて見たい。部署は枝分かれ�
   巨大化 or 部署単位の DB subtree クエリが要るなら **materialized path を GSI に載せる**拡張が必要。
 - **削除の繰り上げは「人が黙って上の部署へ移動」する**ため、UI で確認を出さないと驚く。
 - adjacency list は木を都度 client/server で再構築する (フラットな item 群から組む)。
+- **循環防止・兄弟名一意の検証は read → write 間に TOCTOU の窓がある**。`listDepartments` で読んだ
+  スナップショットで検証してから `Put`/`Update` するため、その間に他リクエストが木を変えると理論上は
+  不整合 (例: 2 つの move が同時に互いを親にして循環) が成立しうる。条件式 (`attribute_exists(sk)`)
+  はノード存在しか守らない。**部署の書き込みは低頻度・少人数**なので許容し、Assignment のような
+  version 楽観ロック ([ADR 0012](0012-assignment-stable-key-and-optimistic-locking.md)) は今は入れない。
+  競合が現実問題になったら version 属性 + 条件付き書き込みへ拡張する。
 
 ### Neutral
 

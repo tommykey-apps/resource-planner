@@ -34,7 +34,7 @@ const { AssignmentVersionConflictError, DepartmentTreeError } = vi.hoisted(() =>
 		}
 	}
 	class DepartmentTreeError extends Error {
-		constructor(public readonly code: 'cycle' | 'nameConflict' | 'parentNotFound') {
+		constructor(public readonly code: 'cycle' | 'nameConflict' | 'parentNotFound' | 'notFound') {
 			super(`department tree violation: ${code}`);
 			this.name = 'DepartmentTreeError';
 		}

@@ -123,6 +123,12 @@ describe('moveDepartment (ADR 0013 / #240)', () => {
 		});
 	});
 
+	it('move 対象自体が存在しない → notFound、 書き込まない (直 POST 対策)', async () => {
+		mockDepartments(tree);
+		await expect(moveDepartment(TEAM, 'ghost', 'r')).rejects.toMatchObject({ code: 'notFound' });
+		expect(ddbMock.commandCalls(UpdateCommand)).toHaveLength(0);
+	});
+
 	it('移動先で兄弟名が衝突 → nameConflict', async () => {
 		// s 配下に既に「バックエンド課」がある状態で a(バックエンド課) を s へ移すと衝突
 		mockDepartments([...tree, { id: 'dup', name: 'バックエンド課', parentId: 's' }]);

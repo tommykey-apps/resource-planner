@@ -198,6 +198,7 @@
 		"nameConflict": "同じ親の下に同名の部署があります",
 		"parentNotFound": "指定した親部署が見つかりません",
 		"cycle": "部署を自分自身またはその配下には移動できません",
+		"notFound": "対象の部署が見つかりません",
 		"authRequired": "認証が必要です"
 	},
 	"fields": {

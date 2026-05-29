@@ -277,7 +277,7 @@
 			>
 				<option value="">{t('departments.unassigned')}</option>
 				{#each flatTree as { dept, depth } (dept.id)}
-					<option value={dept.id}>{'　'.repeat(depth)}{dept.name}</option>
+					<option value={dept.id}>{'\u00A0\u00A0'.repeat(depth)}{dept.name}</option>
 				{/each}
 			</select>
 		</label>

@@ -42,7 +42,7 @@ import type { Actions } from './$types';
 
 /** DepartmentTreeError を ServerErrors wire format (#179) の fail(400) に map する (#240)。 */
 function departmentTreeFail(action: string, e: DepartmentTreeError) {
-	// nameConflict は name フィールド、 cycle / parentNotFound は parentId フィールドに紐づける。
+	// nameConflict は name フィールド、 cycle / parentNotFound / notFound は parentId フィールドに紐づける。
 	const field = e.code === 'nameConflict' ? 'name' : 'parentId';
 	return fail(400, { action, errors: { [field]: { code: e.code, field } } });
 }

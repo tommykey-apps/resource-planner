@@ -11,9 +11,10 @@ import type { DepartmentCreateInput } from '$lib/schemas';
  * - cycle:          自分自身 / 子孫を親に指定 (move)
  * - nameConflict:   兄弟内で名前重複 (create / move)
  * - parentNotFound: 指定した親 Department が存在しない
+ * - notFound:       move 対象の Department 自体が存在しない (UI 経由では起きないが直 POST 対策)
  */
 export class DepartmentTreeError extends Error {
-	constructor(public readonly code: 'cycle' | 'nameConflict' | 'parentNotFound') {
+	constructor(public readonly code: 'cycle' | 'nameConflict' | 'parentNotFound' | 'notFound') {
 		super(`department tree violation: ${code}`);
 		this.name = 'DepartmentTreeError';
 	}
@@ -36,7 +37,8 @@ export async function listDepartments(teamId: string): Promise<Department[]> {
 			departments.push({
 				id: item.id as string,
 				name: item.name as string,
-				parentId: (item.parentId as string | undefined) ?? null
+				// ルートは parentId 属性なし。 型安全のため typeof で取り出す (ADR 0010 read-path 規約)。
+				parentId: typeof item.parentId === 'string' ? item.parentId : null
 			});
 		}
 		lastKey = out.LastEvaluatedKey;
@@ -53,6 +55,7 @@ export async function createDepartment(
 	input: DepartmentCreateInput
 ): Promise<Department> {
 	const parentId = input.parentId ?? null;
+	// 検証のため毎回 listDepartments する read コストは ADR 0013 の「組織は小さい」前提で許容。
 	const existing = await listDepartments(teamId);
 	if (parentId !== null && !existing.some((d) => d.id === parentId)) {
 		throw new DepartmentTreeError('parentNotFound');
@@ -90,14 +93,18 @@ export async function moveDepartment(
 	newParentId: string | null
 ): Promise<void> {
 	const existing = await listDepartments(teamId);
+	// move 対象が無いと条件付き Update が ConditionalCheckFailed → 500 に化けるので先に弾く (直 POST 対策)。
+	const node = existing.find((d) => d.id === id);
+	if (!node) {
+		throw new DepartmentTreeError('notFound');
+	}
 	if (newParentId !== null && !existing.some((d) => d.id === newParentId)) {
 		throw new DepartmentTreeError('parentNotFound');
 	}
 	if (wouldCreateCycle(existing, id, newParentId)) {
 		throw new DepartmentTreeError('cycle');
 	}
-	const node = existing.find((d) => d.id === id);
-	if (node && siblingNameConflict(existing, newParentId, node.name, id)) {
+	if (siblingNameConflict(existing, newParentId, node.name, id)) {
 		throw new DepartmentTreeError('nameConflict');
 	}
 

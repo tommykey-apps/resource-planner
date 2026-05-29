@@ -198,6 +198,7 @@
 		"nameConflict": "A sibling department with this name already exists",
 		"parentNotFound": "The specified parent department was not found",
 		"cycle": "A department cannot be moved under itself or its descendants",
+		"notFound": "The target department was not found",
 		"authRequired": "Authentication required"
 	},
 	"fields": {

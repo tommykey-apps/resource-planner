@@ -22,7 +22,10 @@
 	/** DFS 平坦化 (depth 付き、 名前順、 dangling はルート扱い) — indent 表示用。 */
 	const flatTree = $derived(flattenDepartmentTree(departments));
 
-	/** move の選択肢: 自分自身と子孫を除く (= 循環になる先を UI から除外。 server も検証)。 */
+	/**
+	 * move の選択肢: 自分自身と子孫を除く (= 循環になる先を UI から除外。 server も検証)。
+	 * 各行で呼ぶため全体は O(N^2) だが組織ツリーは小さい (ADR 0013) ので許容。
+	 */
 	function moveOptions(dept: Department): Department[] {
 		const desc = descendantIds(departments, dept.id);
 		return departments
@@ -154,7 +157,7 @@
 			>
 				<option value="">{t('departments.rootOption')}</option>
 				{#each flatTree as { dept, depth } (dept.id)}
-					<option value={dept.id}>{' '.repeat(depth * 2)}{dept.name}</option>
+					<option value={dept.id}>{'\u00A0\u00A0'.repeat(depth)}{dept.name}</option>
 				{/each}
 			</select>
 		</label>
