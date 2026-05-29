@@ -45,6 +45,7 @@
 		"empty": "まだ部署が登録されていません。",
 		"unassigned": "未所属",
 		"field": "部署",
+		"allOption": "すべての部署",
 		"addChild": "子部署を追加",
 		"parent": "親部署",
 		"rootOption": "(ルート)",

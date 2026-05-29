@@ -39,6 +39,11 @@ describe('parseTimelineParams', () => {
 			expect(zoom?.id).toBe(id);
 		}
 	});
+
+	it('reads department filter from dept param (#242)', () => {
+		expect(parseTimelineParams(new URLSearchParams('dept=d1')).departmentId).toBe('d1');
+		expect(parseTimelineParams(new URLSearchParams('')).departmentId).toBe('');
+	});
 });
 
 describe('buildTimelineSearch', () => {
@@ -78,5 +83,21 @@ describe('applyTimelineParams', () => {
 		applyTimelineParams(url, { viewportStart: new Date(2026, 0, 1), zoom: ZOOMS.month });
 		expect(url.searchParams.get('z')).toBe('day');
 		expect(url.searchParams.get('d')).toBeNull();
+	});
+
+	it('sets dept when departmentId given, deletes it when empty (#242)', () => {
+		const withDept = applyTimelineParams(new URL('http://localhost/'), {
+			viewportStart: new Date(2026, 0, 1),
+			zoom: ZOOMS.day,
+			departmentId: 'd1'
+		});
+		expect(withDept.searchParams.get('dept')).toBe('d1');
+
+		const cleared = applyTimelineParams(new URL('http://localhost/?dept=d1'), {
+			viewportStart: new Date(2026, 0, 1),
+			zoom: ZOOMS.day,
+			departmentId: ''
+		});
+		expect(cleared.searchParams.get('dept')).toBeNull();
 	});
 });

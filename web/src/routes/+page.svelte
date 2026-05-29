@@ -9,6 +9,11 @@
 	import { page } from '$app/state';
 	import { toTimelineAssignment, fromTimelineAssignment } from '$lib/timeline-adapter';
 	import { applyTimelineParams, parseTimelineParams } from '$lib/timeline-url-state';
+	import {
+		flattenDepartmentTree,
+		resourceIdsForDepartmentFilter,
+		DEPARTMENT_FILTER_UNASSIGNED
+	} from '$lib/repository/department-tree';
 	import AppHeader from '$lib/components/AppHeader.svelte';
 	import AssignmentEditor from '$lib/components/AssignmentEditor.svelte';
 	import EmptyStateGuide from '$lib/components/EmptyStateGuide.svelte';
@@ -65,7 +70,23 @@
 	const initialUrlState = parseTimelineParams(page.url.searchParams);
 	let viewportStart = $state(initialUrlState.viewportStart ?? new Date());
 	let zoom = $state(initialUrlState.zoom ?? ZOOMS.day);
-	syncStateToUrl(() => ({ viewportStart, zoom }), applyTimelineParams);
+	// #242: 部署フィルタ (子孫含む) も URL (`?dept=`) と同期。
+	let departmentId = $state(initialUrlState.departmentId);
+	syncStateToUrl(() => ({ viewportStart, zoom, departmentId }), applyTimelineParams);
+
+	// #242: 部署 (子孫含む) で resource 行と帯を絞り込む。 null = フィルタなし (全件)。
+	const departmentOptions = $derived(flattenDepartmentTree(data.departments));
+	const deptResourceIds = $derived(
+		resourceIdsForDepartmentFilter(data.departments, resources, departmentId)
+	);
+	const visibleResources = $derived(
+		deptResourceIds ? resources.filter((r) => deptResourceIds.has(r.id)) : resources
+	);
+	const visibleAssignments = $derived(
+		deptResourceIds
+			? timelineAssignments.filter((a) => deptResourceIds.has(a.resourceId))
+			: timelineAssignments
+	);
 
 	/**
 	 * UC-04 ドラッグ移動 / リサイズ。
@@ -174,6 +195,18 @@
 			ariaLabels={{ prev: t('timeline.prevAria'), next: t('timeline.nextAria') }}
 		/>
 
+		<!-- #242: 部署フィルタ (子孫含む)。 選ぶと resource 行 + 帯が絞り込まれ、 URL `?dept=` に同期。 -->
+		<div class="dept-filter">
+			<label for="timeline-dept-filter">{t('departments.field')}</label>
+			<select id="timeline-dept-filter" bind:value={departmentId}>
+				<option value="">{t('departments.allOption')}</option>
+				<option value={DEPARTMENT_FILTER_UNASSIGNED}>{t('departments.unassigned')}</option>
+				{#each departmentOptions as { dept, depth } (dept.id)}
+					<option value={dept.id}>{'\u00A0\u00A0'.repeat(depth)}{dept.name}</option>
+				{/each}
+			</select>
+		</div>
+
 		<!--
 			ui-components 0.9.3 で resourceColWidth='auto' が **Canvas measureText** で
 			再実装され、 sticky 衝突問題 (旧 #34 / 本番事故 #162) を解消。 長名 resource は
@@ -183,8 +216,8 @@
 			貼り付くようになった。 旧 tooltip 関連 E2E spec は home-layout.spec.ts で削除済。
 		-->
 		<ResourceTimeline
-			{resources}
-			assignments={timelineAssignments}
+			resources={visibleResources}
+			assignments={visibleAssignments}
 			bind:viewportStart
 			{zoom}
 			resourceColWidth="auto"
@@ -234,5 +267,21 @@
 
 	main :global(.toolbar) {
 		margin-bottom: 1rem;
+	}
+
+	.dept-filter {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-bottom: 1rem;
+		font-size: 0.875rem;
+	}
+
+	.dept-filter select {
+		height: 2.25rem;
+		border: 1px solid var(--input);
+		background: var(--background);
+		padding: 0 0.5rem;
+		border-radius: calc(var(--radius) * 0.6);
 	}
 </style>

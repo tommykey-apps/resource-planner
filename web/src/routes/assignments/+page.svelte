@@ -14,6 +14,11 @@
 		parseAssignmentParams,
 		type AssignmentFilters
 	} from '$lib/assignments-url-state';
+	import {
+		flattenDepartmentTree,
+		resourceIdsForDepartmentFilter,
+		DEPARTMENT_FILTER_UNASSIGNED
+	} from '$lib/repository/department-tree';
 	import { syncStateToUrl } from '$lib/state/url-state.svelte';
 	import type { Assignment, ProjectWithRenderedDescription } from '$lib/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
@@ -24,6 +29,9 @@
 	const resources = $derived(data.resources);
 	const projects = $derived(data.projects);
 	const assignments = $derived(data.assignments);
+	const departments = $derived(data.departments);
+	// #242: 部署フィルタ用の indent 付き選択肢。
+	const departmentOptions = $derived(flattenDepartmentTree(departments));
 
 	const resourceMap = $derived(new Map(resources.map((r) => [r.id, r])));
 	const projectMap = $derived(new Map(projects.map((p) => [p.id, p])));
@@ -46,12 +54,18 @@
 		return Math.max(1, Math.round((end - start) / 86_400_000));
 	}
 
+	// #242: 部署フィルタ (子孫含む) にマッチする resource id 集合。 null = フィルタなし。
+	const deptResourceIds = $derived(
+		resourceIdsForDepartmentFilter(departments, resources, filters.departmentId)
+	);
+
 	const filtered = $derived.by(() => {
 		const q = filters.q.toLowerCase();
 		return assignments
 			.filter((a) => {
 				if (filters.resourceId && a.resourceId !== filters.resourceId) return false;
 				if (filters.projectId && a.projectId !== filters.projectId) return false;
+				if (deptResourceIds && !deptResourceIds.has(a.resourceId)) return false;
 				if (filters.from && a.startDate < filters.from) return false;
 				if (filters.to && a.startDate > filters.to) return false;
 				if (q) {
@@ -86,7 +100,7 @@
 	}
 
 	function clearFilters() {
-		filters = { q: '', resourceId: '', projectId: '', from: '', to: '' };
+		filters = { q: '', resourceId: '', projectId: '', departmentId: '', from: '', to: '' };
 	}
 
 	// PR-N4: project 名 button click で詳細 modal を開く。
@@ -116,7 +130,7 @@
 <main class="mx-auto max-w-[1200px] px-4 py-6">
 	<h1 class="mb-4 text-xl font-semibold">{t('assignments.listTitle')}</h1>
 
-	<div class="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-5">
+	<div class="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-6">
 		<input
 			type="search"
 			bind:value={filters.q}
@@ -124,6 +138,17 @@
 			aria-label={t('assignments.searchPlaceholder')}
 			class="h-9 rounded border border-input bg-background px-2 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 		/>
+		<select
+			bind:value={filters.departmentId}
+			aria-label={t('departments.field')}
+			class="h-9 rounded border border-input bg-background px-2 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+		>
+			<option value="">{t('departments.allOption')}</option>
+			<option value={DEPARTMENT_FILTER_UNASSIGNED}>{t('departments.unassigned')}</option>
+			{#each departmentOptions as { dept, depth } (dept.id)}
+				<option value={dept.id}>{'\u00A0\u00A0'.repeat(depth)}{dept.name}</option>
+			{/each}
+		</select>
 		<select
 			bind:value={filters.resourceId}
 			aria-label={t('assignments.resource')}

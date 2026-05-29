@@ -16,6 +16,7 @@ describe('parseAssignmentParams', () => {
 			q: '',
 			resourceId: '',
 			projectId: '',
+			departmentId: '',
 			from: '',
 			to: ''
 		});
@@ -23,12 +24,15 @@ describe('parseAssignmentParams', () => {
 
 	it('returns filters from valid params', () => {
 		const f = parseAssignmentParams(
-			new URLSearchParams('q=alice&resourceId=r1&projectId=p1&from=2026-05-01&to=2026-05-31')
+			new URLSearchParams(
+				'q=alice&resourceId=r1&projectId=p1&departmentId=d1&from=2026-05-01&to=2026-05-31'
+			)
 		);
 		expect(f).toEqual({
 			q: 'alice',
 			resourceId: 'r1',
 			projectId: 'p1',
+			departmentId: 'd1',
 			from: '2026-05-01',
 			to: '2026-05-31'
 		});
@@ -53,6 +57,7 @@ describe('applyAssignmentParams', () => {
 			q: 'alice',
 			resourceId: 'r1',
 			projectId: '',
+			departmentId: 'd1',
 			from: '2026-05-01',
 			to: ''
 		};
@@ -61,6 +66,7 @@ describe('applyAssignmentParams', () => {
 		expect(next.searchParams.get('q')).toBe('alice');
 		expect(next.searchParams.get('resourceId')).toBe('r1');
 		expect(next.searchParams.get('projectId')).toBeNull();
+		expect(next.searchParams.get('departmentId')).toBe('d1');
 		expect(next.searchParams.get('from')).toBe('2026-05-01');
 		expect(next.searchParams.get('to')).toBeNull();
 	});
@@ -71,6 +77,7 @@ describe('applyAssignmentParams', () => {
 			q: '',
 			resourceId: '',
 			projectId: '',
+			departmentId: '',
 			from: '',
 			to: ''
 		});
@@ -83,17 +90,19 @@ describe('applyAssignmentParams', () => {
 			q: 'after',
 			resourceId: '',
 			projectId: '',
+			departmentId: '',
 			from: '',
 			to: ''
 		});
 		expect(url.searchParams.get('q')).toBe('before');
 	});
 
-	it('roundtrips through parse → apply → parse', () => {
+	it('roundtrips through parse → apply → parse (未所属 sentinel 含む)', () => {
 		const original: AssignmentFilters = {
 			q: 'meeting',
 			resourceId: 'r1',
 			projectId: 'p1',
+			departmentId: '__unassigned__',
 			from: '2026-05-01',
 			to: '2026-05-31'
 		};
