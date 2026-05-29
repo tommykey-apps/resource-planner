@@ -48,7 +48,9 @@
 		"addChild": "子部署を追加",
 		"parent": "親部署",
 		"rootOption": "(ルート)",
-		"moveAria": "{name} の親部署を変更"
+		"moveAria": "{name} の親部署を変更",
+		"confirmDelete": "「{name}」を削除しますか?\n子部署と所属者は親「{parent}」へ移動します。",
+		"confirmDeleteRoot": "「{name}」を削除しますか?\n子部署はルートに、所属者は未所属になります。"
 	},
 	"resources": {
 		"manage": "人を管理",

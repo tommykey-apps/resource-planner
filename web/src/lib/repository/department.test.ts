@@ -1,8 +1,20 @@
-import { DynamoDBDocumentClient, PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import {
+	DynamoDBDocumentClient,
+	PutCommand,
+	QueryCommand,
+	UpdateCommand,
+	TransactWriteCommand
+} from '@aws-sdk/lib-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 import 'aws-sdk-client-mock-vitest';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createDepartment, moveDepartment, listDepartments, DepartmentTreeError } from './department';
+import {
+	createDepartment,
+	moveDepartment,
+	deleteDepartment,
+	listDepartments,
+	DepartmentTreeError
+} from './department';
 
 const ddbMock = mockClient(DynamoDBDocumentClient);
 const TEAM = 'team-test';
@@ -147,5 +159,132 @@ describe('listDepartments', () => {
 		const input = ddbMock.commandCalls(QueryCommand)[0].args[0].input;
 		expect(input.KeyConditionExpression).toBe('pk = :pk AND begins_with(sk, :dept)');
 		expect(input.ExpressionAttributeValues).toMatchObject({ ':pk': `TEAM#${TEAM}`, ':dept': 'DEPT#' });
+	});
+});
+
+describe('deleteDepartment (ADR 0013 / #241 reparent)', () => {
+	/**
+	 * deleteDepartment は 2 query (DEPT# / RES#) → 1 TransactWrite を出す。
+	 * 部署一覧と「departmentId が一致する Resource の SK」を別々に mock する。
+	 */
+	function mockDeleteScene(opts: {
+		departments: { id: string; name: string; parentId?: string }[];
+		resourceSks: string[];
+	}) {
+		ddbMock
+			.on(QueryCommand, { KeyConditionExpression: 'pk = :pk AND begins_with(sk, :dept)' })
+			.resolves({
+				Items: opts.departments.map((d) => ({
+					pk: `TEAM#${TEAM}`,
+					sk: `DEPT#${d.id}`,
+					id: d.id,
+					name: d.name,
+					...(d.parentId ? { parentId: d.parentId } : {})
+				}))
+			});
+		ddbMock
+			.on(QueryCommand, { KeyConditionExpression: 'pk = :pk AND begins_with(sk, :res)' })
+			.resolves({ Items: opts.resourceSks.map((sk) => ({ sk })) });
+		ddbMock.on(TransactWriteCommand).resolves({});
+	}
+
+	/** 削除ツリー: r(root) > a > a1、 別ルート s。 */
+	const tree = [
+		{ id: 'r', name: '開発本部' },
+		{ id: 'a', name: 'バックエンド課', parentId: 'r' },
+		{ id: 'a1', name: 'API 班', parentId: 'a' },
+		{ id: 's', name: '営業本部' }
+	];
+
+	function transactItems() {
+		return ddbMock.commandCalls(TransactWriteCommand)[0].args[0].input.TransactItems!;
+	}
+
+	it('非ルート削除: 子部署と所属 Resource を親へ繰り上げ + 本体 Delete', async () => {
+		// a(親 r) を削除 → 子 a1 と所属 Resource は親 r へ。
+		mockDeleteScene({ departments: tree, resourceSks: [`RES#u1`, `RES#u2`] });
+		await deleteDepartment(TEAM, 'a');
+
+		const items = transactItems();
+		// a1 の parentId を r に SET
+		expect(items).toContainEqual({
+			Update: {
+				TableName: TABLE,
+				Key: { pk: `TEAM#${TEAM}`, sk: `DEPT#a1` },
+				UpdateExpression: 'SET parentId = :p',
+				ExpressionAttributeValues: { ':p': 'r' }
+			}
+		});
+		// Resource の departmentId を r に SET
+		for (const sk of ['RES#u1', 'RES#u2']) {
+			expect(items).toContainEqual({
+				Update: {
+					TableName: TABLE,
+					Key: { pk: `TEAM#${TEAM}`, sk },
+					UpdateExpression: 'SET departmentId = :p',
+					ExpressionAttributeValues: { ':p': 'r' }
+				}
+			});
+		}
+		// 本体 Delete (存在確認付き)
+		expect(items).toContainEqual({
+			Delete: {
+				TableName: TABLE,
+				Key: { pk: `TEAM#${TEAM}`, sk: `DEPT#a` },
+				ConditionExpression: 'attribute_exists(sk)'
+			}
+		});
+		// Assignment (ASN#) は無傷 — 一切触れない
+		expect(items.some((i) => JSON.stringify(i).includes('ASN#'))).toBe(false);
+	});
+
+	it('ルート削除: 子 → ルート (REMOVE parentId)、 Resource → 未所属 (REMOVE departmentId)', async () => {
+		// r(ルート) を削除 → 子 a は parentId 削除、 所属 Resource は departmentId 削除。
+		mockDeleteScene({ departments: tree, resourceSks: [`RES#u9`] });
+		await deleteDepartment(TEAM, 'r');
+
+		const items = transactItems();
+		expect(items).toContainEqual({
+			Update: {
+				TableName: TABLE,
+				Key: { pk: `TEAM#${TEAM}`, sk: `DEPT#a` },
+				UpdateExpression: 'REMOVE parentId'
+			}
+		});
+		expect(items).toContainEqual({
+			Update: {
+				TableName: TABLE,
+				Key: { pk: `TEAM#${TEAM}`, sk: `RES#u9` },
+				UpdateExpression: 'REMOVE departmentId'
+			}
+		});
+		expect(items).toContainEqual({
+			Delete: {
+				TableName: TABLE,
+				Key: { pk: `TEAM#${TEAM}`, sk: `DEPT#r` },
+				ConditionExpression: 'attribute_exists(sk)'
+			}
+		});
+	});
+
+	it('子なし・所属なし → 本体 Delete のみ', async () => {
+		mockDeleteScene({ departments: tree, resourceSks: [] });
+		await deleteDepartment(TEAM, 's');
+		const items = transactItems();
+		expect(items).toHaveLength(1);
+		expect(items[0]).toMatchObject({ Delete: { Key: { sk: `DEPT#s` } } });
+	});
+
+	it('存在しないノード → no-op (TransactWrite を出さない、 idempotent)', async () => {
+		mockDeleteScene({ departments: tree, resourceSks: [] });
+		await deleteDepartment(TEAM, 'ghost');
+		expect(ddbMock.commandCalls(TransactWriteCommand)).toHaveLength(0);
+	});
+
+	it('TransactWriteItems の上限 (100) を超える → throw、 書き込まない', async () => {
+		const many = Array.from({ length: 100 }, (_, i) => `RES#u${i}`);
+		mockDeleteScene({ departments: tree, resourceSks: many }); // 100 + delete 1 = 101 > 100
+		await expect(deleteDepartment(TEAM, 's')).rejects.toThrow(/exceeds/);
+		expect(ddbMock.commandCalls(TransactWriteCommand)).toHaveLength(0);
 	});
 });

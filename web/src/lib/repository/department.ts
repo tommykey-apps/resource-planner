@@ -1,10 +1,19 @@
-import { PutCommand, UpdateCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import {
+	PutCommand,
+	UpdateCommand,
+	QueryCommand,
+	TransactWriteCommand
+} from '@aws-sdk/lib-dynamodb';
 import { ddb, TABLE } from '$lib/db/client';
 import { newId } from '$lib/id';
 import { pk, departmentSk, SK_PREFIX } from './keys';
 import { wouldCreateCycle, siblingNameConflict } from './department-tree';
+import { queryResourceSkByDepartment } from './resource';
 import type { Department } from '$lib/types';
 import type { DepartmentCreateInput } from '$lib/schemas';
+
+/** DynamoDB の `TransactWriteItems` 1 トランザクションの上限。 超えたら原子性が崩れるので throw。 */
+const TRANSACT_MAX_ITEMS = 100;
 
 /**
  * ツリー整合性違反 (ADR 0013)。 form action / API が catch して 400/409 + code に map する。
@@ -124,5 +133,70 @@ export async function moveDepartment(
 					UpdateExpression: 'REMOVE parentId',
 					ConditionExpression: 'attribute_exists(sk)'
 				})
+	);
+}
+
+/**
+ * Department を削除し、 配下を **親へ繰り上げる** (ADR 0013、 #241)。 ADR 0006 のカスケードとは逆方針:
+ * 部署はグルーピングにすぎず、 配下の人・下位部署は独立実体なので消さない。
+ *
+ * - 子 Department の parentId を削除ノードの親へ (ルート削除なら REMOVE = ルート化)
+ * - 所属 Resource の departmentId を削除ノードの親へ (ルート削除なら REMOVE = 未所属)
+ * - これらと本体 Delete を **1 つの TransactWriteItems で原子的に** 実行
+ * - Assignment は department を参照しないので無関係 (一切触れない)
+ *
+ * 対象が既に無ければ no-op (idempotent)。 繰り上げ + 本体で上限 100 items を超えたら throw
+ * (組織は小さい前提、 BatchWrite フォールバックは YAGNI)。
+ */
+export async function deleteDepartment(teamId: string, id: string): Promise<void> {
+	const teamPk = pk(teamId);
+	const existing = await listDepartments(teamId);
+	const node = existing.find((d) => d.id === id);
+	if (!node) return; // 既に無ければ何もしない (idempotent)
+
+	const newParentId = node.parentId; // 繰り上げ先 (ルート削除なら null)
+	const childSks = existing.filter((d) => d.parentId === id).map((d) => departmentSk(d.id));
+	const resourceSks = await queryResourceSkByDepartment(teamId, id);
+
+	const total = childSks.length + resourceSks.length + 1; // 繰り上げ + 本体 Delete
+	if (total > TRANSACT_MAX_ITEMS) {
+		throw new Error(
+			`department delete exceeds ${TRANSACT_MAX_ITEMS} items (children: ${childSks.length}, resources: ${resourceSks.length})`
+		);
+	}
+
+	// 親があれば SET、 ルート削除 (newParentId=null) なら属性を REMOVE する。
+	const reparent = (sk: string, attr: 'parentId' | 'departmentId') =>
+		newParentId !== null
+			? {
+					Update: {
+						TableName: TABLE,
+						Key: { pk: teamPk, sk },
+						UpdateExpression: `SET ${attr} = :p`,
+						ExpressionAttributeValues: { ':p': newParentId }
+					}
+				}
+			: {
+					Update: {
+						TableName: TABLE,
+						Key: { pk: teamPk, sk },
+						UpdateExpression: `REMOVE ${attr}`
+					}
+				};
+
+	await ddb.send(
+		new TransactWriteCommand({
+			TransactItems: [
+				...childSks.map((sk) => reparent(sk, 'parentId')),
+				...resourceSks.map((sk) => reparent(sk, 'departmentId')),
+				{
+					Delete: {
+						TableName: TABLE,
+						Key: { pk: teamPk, sk: departmentSk(id) },
+						ConditionExpression: 'attribute_exists(sk)'
+					}
+				}
+			]
+		})
 	);
 }

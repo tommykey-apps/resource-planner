@@ -9,7 +9,12 @@ import {
 import { mockClient } from 'aws-sdk-client-mock';
 import 'aws-sdk-client-mock-vitest';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { createResource, deleteResource, updateResource } from './resource';
+import {
+	createResource,
+	deleteResource,
+	updateResource,
+	queryResourceSkByDepartment
+} from './resource';
 
 const ddbMock = mockClient(DynamoDBDocumentClient);
 const TEAM = 'team-test';
@@ -156,6 +161,36 @@ describe('deleteResource (cascade)', () => {
 		expect(txInput.TransactItems).toEqual([
 			{ Delete: { TableName: TABLE, Key: { pk: `TEAM#${TEAM}`, sk: 'RES#res-1' } } }
 		]);
+	});
+});
+
+describe('queryResourceSkByDepartment (#241 部署削除の繰り上げ対象)', () => {
+	it('queries RES# with departmentId filter and returns SK list', async () => {
+		ddbMock.on(QueryCommand).resolves({ Items: [{ sk: 'RES#u1' }, { sk: 'RES#u2' }] });
+
+		const sks = await queryResourceSkByDepartment(TEAM, 'd1');
+
+		expect(sks).toEqual(['RES#u1', 'RES#u2']);
+		const input = ddbMock.commandCalls(QueryCommand)[0].args[0].input;
+		expect(input.KeyConditionExpression).toBe('pk = :pk AND begins_with(sk, :res)');
+		expect(input.FilterExpression).toBe('departmentId = :v');
+		expect(input.ProjectionExpression).toBe('sk');
+		expect(input.ExpressionAttributeValues).toMatchObject({
+			':pk': `TEAM#${TEAM}`,
+			':res': 'RES#',
+			':v': 'd1'
+		});
+	});
+
+	it('paginates when LastEvaluatedKey is returned', async () => {
+		ddbMock
+			.on(QueryCommand)
+			.resolvesOnce({ Items: [{ sk: 'RES#u1' }], LastEvaluatedKey: { sk: 'RES#u1' } })
+			.resolvesOnce({ Items: [{ sk: 'RES#u2' }] });
+
+		const sks = await queryResourceSkByDepartment(TEAM, 'd1');
+		expect(sks).toEqual(['RES#u1', 'RES#u2']);
+		expect(ddbMock.commandCalls(QueryCommand)).toHaveLength(2);
 	});
 });
 

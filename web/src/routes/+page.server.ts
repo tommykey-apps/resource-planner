@@ -28,6 +28,7 @@ import {
 	createProject,
 	createResource,
 	deleteAssignment,
+	deleteDepartment,
 	deleteProject,
 	deleteResource,
 	moveDepartment,
@@ -129,6 +130,15 @@ export const actions: Actions = {
 		}
 		return { action: 'moveDepartment', success: true };
 	},
+
+	// ADR 0013 / #241: 部署削除 = 配下を親へ繰り上げ (reparent)。 ツリー検証不要なので makeFormAction で十分。
+	deleteDepartment: makeFormAction({
+		action: 'deleteDepartment',
+		schema: deleteByIdSchema,
+		run: async (session, parsed) => {
+			await deleteDepartment(session.teamId, parsed.id);
+		}
+	}),
 
 	createAssignment: makeFormAction({
 		action: 'createAssignment',

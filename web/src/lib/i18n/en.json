@@ -48,7 +48,9 @@
 		"addChild": "Add sub-department",
 		"parent": "Parent department",
 		"rootOption": "(root)",
-		"moveAria": "Change parent of {name}"
+		"moveAria": "Change parent of {name}",
+		"confirmDelete": "Delete \"{name}\"?\nSub-departments and members will move to the parent \"{parent}\".",
+		"confirmDeleteRoot": "Delete \"{name}\"?\nSub-departments become roots and members become unassigned."
 	},
 	"resources": {
 		"manage": "Manage people",
