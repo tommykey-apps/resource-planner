@@ -90,14 +90,12 @@
 	 */
 	function makeDeleteSubmit(dept: Department): SubmitFunction {
 		return async ({ cancel }) => {
+			// 親が見つかれば親名へ、 ルート or dangling 親なら「ルート / 未所属」へ
+			// (server も dangling 親はルートに正規化するので表示と挙動が一致する)。
 			const parent = dept.parentId ? departments.find((d) => d.id === dept.parentId) : undefined;
-			const message =
-				dept.parentId != null
-					? t('departments.confirmDelete', {
-							name: dept.name,
-							parent: parent?.name ?? dept.parentId
-						})
-					: t('departments.confirmDeleteRoot', { name: dept.name });
+			const message = parent
+				? t('departments.confirmDelete', { name: dept.name, parent: parent.name })
+				: t('departments.confirmDeleteRoot', { name: dept.name });
 			const ok = await confirmDialog({
 				title: t('common.confirm'),
 				message,

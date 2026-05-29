@@ -11,7 +11,7 @@ import { queryRelatedAssignmentSk } from './assignment';
 import type { Resource } from '$lib/types';
 import type { ResourceCreateInput, ResourceUpdateInput } from '$lib/schemas';
 
-const TRANSACT_MAX_ITEMS = 100;
+export const TRANSACT_MAX_ITEMS = 100;
 
 export async function createResource(teamId: string, input: ResourceCreateInput): Promise<Resource> {
 	const id = newId();
@@ -70,6 +70,29 @@ export async function updateResource(teamId: string, input: ResourceUpdateInput)
  * (BatchWriteItem) は YAGNI として未実装 (1 リソースが 100 件以上アサインされる運用は
  * 想定外、社内 100 ユーザー / 月単位アサイン)。
  */
+export async function deleteResource(teamId: string, id: string): Promise<void> {
+	const teamPk = pk(teamId);
+	const related = await queryRelatedAssignmentSk(teamId, 'resourceId', id);
+
+	const totalItems = related.length + 1;
+	if (totalItems > TRANSACT_MAX_ITEMS) {
+		throw new Error(
+			`cascade delete exceeds ${TRANSACT_MAX_ITEMS} items (related assignments: ${related.length})`
+		);
+	}
+
+	await ddb.send(
+		new TransactWriteCommand({
+			TransactItems: [
+				{ Delete: { TableName: TABLE, Key: { pk: teamPk, sk: resourceSk(id) } } },
+				...related.map((sk) => ({
+					Delete: { TableName: TABLE, Key: { pk: teamPk, sk } }
+				}))
+			]
+		})
+	);
+}
+
 /**
  * `departmentId` が一致する Resource の SK 一覧を返す (#241 部署削除の繰り上げ対象)。
  * `pk = TEAM#X AND begins_with(sk, "RES#")` を Query して `departmentId` で post-filter。
@@ -102,27 +125,4 @@ export async function queryResourceSkByDepartment(
 		lastKey = out.LastEvaluatedKey;
 	} while (lastKey);
 	return skList;
-}
-
-export async function deleteResource(teamId: string, id: string): Promise<void> {
-	const teamPk = pk(teamId);
-	const related = await queryRelatedAssignmentSk(teamId, 'resourceId', id);
-
-	const totalItems = related.length + 1;
-	if (totalItems > TRANSACT_MAX_ITEMS) {
-		throw new Error(
-			`cascade delete exceeds ${TRANSACT_MAX_ITEMS} items (related assignments: ${related.length})`
-		);
-	}
-
-	await ddb.send(
-		new TransactWriteCommand({
-			TransactItems: [
-				{ Delete: { TableName: TABLE, Key: { pk: teamPk, sk: resourceSk(id) } } },
-				...related.map((sk) => ({
-					Delete: { TableName: TABLE, Key: { pk: teamPk, sk } }
-				}))
-			]
-		})
-	);
 }

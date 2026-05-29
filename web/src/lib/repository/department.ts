@@ -8,12 +8,9 @@ import { ddb, TABLE } from '$lib/db/client';
 import { newId } from '$lib/id';
 import { pk, departmentSk, SK_PREFIX } from './keys';
 import { wouldCreateCycle, siblingNameConflict } from './department-tree';
-import { queryResourceSkByDepartment } from './resource';
+import { queryResourceSkByDepartment, TRANSACT_MAX_ITEMS } from './resource';
 import type { Department } from '$lib/types';
 import type { DepartmentCreateInput } from '$lib/schemas';
-
-/** DynamoDB の `TransactWriteItems` 1 トランザクションの上限。 超えたら原子性が崩れるので throw。 */
-const TRANSACT_MAX_ITEMS = 100;
 
 /**
  * ツリー整合性違反 (ADR 0013)。 form action / API が catch して 400/409 + code に map する。
@@ -154,7 +151,10 @@ export async function deleteDepartment(teamId: string, id: string): Promise<void
 	const node = existing.find((d) => d.id === id);
 	if (!node) return; // 既に無ければ何もしない (idempotent)
 
-	const newParentId = node.parentId; // 繰り上げ先 (ルート削除なら null)
+	// 繰り上げ先 = 削除ノードの親。 親が dangling (存在しない id) ならルート扱い (null) に正規化する
+	// (flattenDepartmentTree が dangling をルートとして描画するのと整合。 壊れた id を子へ伝播させない)。
+	const newParentId =
+		node.parentId !== null && existing.some((d) => d.id === node.parentId) ? node.parentId : null;
 	const childSks = existing.filter((d) => d.parentId === id).map((d) => departmentSk(d.id));
 	const resourceSks = await queryResourceSkByDepartment(teamId, id);
 

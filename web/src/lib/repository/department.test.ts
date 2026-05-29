@@ -179,7 +179,7 @@ describe('deleteDepartment (ADR 0013 / #241 reparent)', () => {
 					sk: `DEPT#${d.id}`,
 					id: d.id,
 					name: d.name,
-					...(d.parentId ? { parentId: d.parentId } : {})
+					...(d.parentId !== undefined ? { parentId: d.parentId } : {})
 				}))
 			});
 		ddbMock
@@ -273,6 +273,33 @@ describe('deleteDepartment (ADR 0013 / #241 reparent)', () => {
 		const items = transactItems();
 		expect(items).toHaveLength(1);
 		expect(items[0]).toMatchObject({ Delete: { Key: { sk: `DEPT#s` } } });
+	});
+
+	it('親が dangling (存在しない id) のノード削除 → 子・所属はルート化 (REMOVE)', async () => {
+		// x の親 'ghost' は存在しない → 繰り上げ先はルート (null) に正規化される。
+		mockDeleteScene({
+			departments: [
+				{ id: 'x', name: '孤立本部', parentId: 'ghost' },
+				{ id: 'xc', name: '配下課', parentId: 'x' }
+			],
+			resourceSks: ['RES#m1']
+		});
+		await deleteDepartment(TEAM, 'x');
+		const items = transactItems();
+		expect(items).toContainEqual({
+			Update: {
+				TableName: TABLE,
+				Key: { pk: `TEAM#${TEAM}`, sk: `DEPT#xc` },
+				UpdateExpression: 'REMOVE parentId'
+			}
+		});
+		expect(items).toContainEqual({
+			Update: {
+				TableName: TABLE,
+				Key: { pk: `TEAM#${TEAM}`, sk: `RES#m1` },
+				UpdateExpression: 'REMOVE departmentId'
+			}
+		});
 	});
 
 	it('存在しないノード → no-op (TransactWrite を出さない、 idempotent)', async () => {
