@@ -17,3 +17,16 @@ export const departmentCreateSchema = z.object({
 });
 
 export type DepartmentCreateInput = z.infer<typeof departmentCreateSchema>;
+
+/**
+ * 部署の付け替え (#240)。 `parentId` 空文字 / 未指定 = ルート化 (undefined → action で null)。
+ */
+export const departmentMoveSchema = z.object({
+	id: z.string().min(1, 'required'),
+	parentId: z.preprocess(
+		(v) => (typeof v === 'string' && v.trim() === '' ? undefined : v),
+		z.string().min(1, 'required').optional()
+	)
+});
+
+export type DepartmentMoveInput = z.infer<typeof departmentMoveSchema>;

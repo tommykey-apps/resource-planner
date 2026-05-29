@@ -38,7 +38,8 @@ resource-planner の DynamoDB 単一テーブルに対するクエリパター�
 | 7b | アサイン更新 | `updateAssignment(teamId, payload)` | `PutItem` | SK=`ASN#{id}` 安定キーへ単一 atomic Put。 `attribute_exists(sk) AND version = :expected` で楽観ロック、 version +1。 不一致は `AssignmentVersionConflictError` → API 409 ([ADR 0012](../adr/0012-assignment-stable-key-and-optimistic-locking.md)) |
 | 8 | アサイン削除 | `deleteAssignment(teamId, id)` | `DeleteItem` | SK=`ASN#{id}`。 なし (idempotent) |
 | 9 | リソース削除 + カスケード | `deleteResource(teamId, resourceId)` | `TransactWriteItems` (Resource 1 件 + 関連 Assignment 複数) | app 層で先に `listAssignments(...)` で対象 SK を集める |
-| 10 | 部署作成 | `createDepartment(teamId, { name, parentId? })` | `PutItem` | SK=`DEPT#{id}`、 `attribute_not_exists(sk)`。 ルートは `parentId` 属性なし (adjacency list、 [ADR 0013](../adr/0013-department-grouping-tree.md))。 一覧は UC #1 (`queryAllByTeam`) に同梱、 ツリーは in-memory 構築 |
+| 10 | 部署作成 | `createDepartment(teamId, { name, parentId? })` | `PutItem` | SK=`DEPT#{id}`、 `attribute_not_exists(sk)`。 ルートは `parentId` 属性なし (adjacency list、 [ADR 0013](../adr/0013-department-grouping-tree.md))。 作成前に `listDepartments` で **親存在 + 兄弟名一意** を検証。 一覧は UC #1 (`queryAllByTeam`) に同梱、 ツリーは in-memory 構築 |
+| 10b | 部署の付け替え | `moveDepartment(teamId, id, newParentId)` | `UpdateItem` | `listDepartments` を読んで **循環 (自分/子孫を親に) と兄弟名衝突を in-memory 検証** → `SET parentId` / ルート化は `REMOVE parentId` (`attribute_exists(sk)`)。 違反は `DepartmentTreeError` → form action が 400 (#240) |
 
 ## Anti-patterns / Known concerns
 

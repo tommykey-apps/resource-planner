@@ -44,7 +44,11 @@
 		"name": "部署名",
 		"empty": "まだ部署が登録されていません。",
 		"unassigned": "未所属",
-		"field": "部署"
+		"field": "部署",
+		"addChild": "子部署を追加",
+		"parent": "親部署",
+		"rootOption": "(ルート)",
+		"moveAria": "{name} の親部署を変更"
 	},
 	"resources": {
 		"manage": "人を管理",
@@ -191,6 +195,9 @@
 		"invalidVersion": "更新の競合を検出しました。再読み込みしてください",
 		"tooMany": "{field} は {max} 件以内で入力してください",
 		"invalidUrl": "{field} は http / https の URL を入力してください",
+		"nameConflict": "同じ親の下に同名の部署があります",
+		"parentNotFound": "指定した親部署が見つかりません",
+		"cycle": "部署を自分自身またはその配下には移動できません",
 		"authRequired": "認証が必要です"
 	},
 	"fields": {
