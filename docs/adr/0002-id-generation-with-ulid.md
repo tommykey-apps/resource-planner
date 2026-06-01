@@ -13,7 +13,7 @@ resource-planner の domain entity (Resource / Project / Assignment) は DynamoD
 - nanoid (任意長 URL-safe ランダム、デフォルト 21 文字 = 126 bit エントロピー)
 
 検討事項:
-- Assignment SK は `ASN#{startDate}#{id}` で startDate を SK 先頭に置くため、id 自体の sortable 性は不要
+- ~~Assignment SK は `ASN#{startDate}#{id}` で startDate を SK 先頭に置くため、id 自体の sortable 性は不要~~ (この前提は [ADR 0012](0012-assignment-stable-key-and-optimistic-locking.md) で改訂: SK は `ASN#{id}` の安定キーになり、ULID の sortable 性が物理順を担う)
 - Resource SK / Project SK は `RES#{id}` / `PRJ#{id}` で **id がそのまま辞書順で並ぶ** → sortable id だと List 時に作成順、debug 時に時刻情報が即わかる
 - TS 単一言語、依存サイズの差は小さい
 

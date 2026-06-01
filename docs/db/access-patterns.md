@@ -3,13 +3,12 @@
 resource-planner の DynamoDB 単一テーブルに対するクエリパターン一覧。
 **前提**: app 層は常に Auth.js session から `teamId` を取得し、PK を `TEAM#{teamId}` で固定する。
 
-> **Note**: 現時点で app 側の DB アクセスコードは未着手。本表は将来 CRUD を実装する際の
-> 設計仕様。実装が入ったら "API" / "Source" 列に handler / repository への行番号リンクを
-> 追記する (TODO)。
+> **Note**: 下表の API はいずれも `web/src/lib/repository/` 配下に実装済み。
+> 関数名は実装と対応する (例: `listResources` / `createAssignment` / `deleteResource`)。
 
 ## 一覧
 
-| # | Use case | API (将来予定) | KeyCondition | Filter / Condition | 備考 |
+| # | Use case | API | KeyCondition | Filter / Condition | 備考 |
 |---|---|---|---|---|---|
 | 1 | 組織内全データ取得 (タイムライン初期表示) | `load(teamId)` (SvelteKit `+page.server.ts`) | `pk = TEAM#{teamId}` (Query) | なし | Resource / Project / Assignment が 1 query で混在取得。app 層で SK プレフィックスを見て振り分ける |
 | 2 | リソース一覧 | `listResources(teamId)` | `pk = TEAM#{teamId} AND begins_with(sk, "RES#")` | なし | 組織内の人を全件 |
@@ -28,7 +27,7 @@ resource-planner の DynamoDB 単一テーブルに対するクエリパター�
 個別取得するときは順序を意識する必要は無いが、将来 `BETWEEN "PRJ#" AND "RES#"` のような
 複合範囲を組む場合はこの順序を考慮する。
 
-## CRUD オペレーション (将来実装)
+## CRUD オペレーション
 
 | # | Use case | API | Operation | ConditionExpression |
 |---|---|---|---|---|

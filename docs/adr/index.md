@@ -9,7 +9,7 @@ resource-planner の設計判断を Michael Nygard 形式で記録する。
 |---|---|---|---|
 | [0001](0001-typescript-types-as-api-spec.md) | TypeScript 型を API 仕様の正本とする | Accepted | 2026-05-08 |
 | [0002](0002-id-generation-with-ulid.md) | ID 生成戦略を ULID に統一する | Accepted | 2026-05-08 |
-| [0003](0003-end-date-inclusive-storage.md) | endDate は inclusive で保存する | **Superseded by 0004** | 2026-05-08 |
+| [0003](0003-end-date-inclusive-storage.md) | ~~endDate は inclusive で保存する~~ | **Superseded by 0004** | 2026-05-08 |
 | [0004](0004-end-date-exclusive-with-form-transform.md) | endDate は exclusive 半開区間 + フォーム境界で Zod transform | Accepted | 2026-05-08 |
 | [0005](0005-assignment-drag-resize-transport.md) | Assignment ドラッグ / リサイズは `+server.ts` API + Optimistic UI | Accepted | 2026-05-08 |
 | [0006](0006-cascade-delete-strategy.md) | Resource / Project の削除は cascade (TransactWriteItems) | Accepted | 2026-05-08 |
@@ -18,6 +18,8 @@ resource-planner の設計判断を Michael Nygard 形式で記録する。
 | [0009](0009-org-to-team-redesign.md) | マルチテナント単位を Clerk Org → 自前 Team モデルに再設計する | Accepted | 2026-05-09 |
 | [0010](0010-project-metadata.md) | Project に詳細情報 (description / tags / links) を同 item 内 attribute で追加する | Accepted | 2026-05-13 |
 | [0011](0011-defer-better-auth-migration.md) | Better Auth への移行は当面据え置く (DynamoDB primary 不適合) | Accepted | 2026-05-26 |
+| [0012](0012-assignment-stable-key-and-optimistic-locking.md) | Assignment の SK を安定キー化し version 楽観ロックで同時編集を扱う | Accepted | 2026-05-28 |
+| [0013](0013-department-grouping-tree.md) | Department を Team 内のグルーピング用ツリー (adjacency list) として追加する | Accepted | 2026-05-29 |
 
 ## テンプレ
 

@@ -24,6 +24,7 @@ SvelteKit form actions / `+page.server.ts` load の動的振る舞い (画面 �
 | UC-04 | [アサインの期間を変更する (ドラッグ / リサイズ)](#uc-04-アサインの期間を変更する-ドラッグ--リサイズ) | 実装済 (PR-F) |
 | UC-05 | [アサインを削除する](#uc-05-アサインを削除する) | 実装済 (PR-G) |
 | UC-06 | [人 / 案件を削除する (cascade)](#uc-06-人--案件を削除する-cascade) | 実装済 (PR-H) |
+| UC-07 | [部署 (Department) でリソースをグルーピングする](#uc-07-部署-department-でリソースをグルーピングする) | 実装済 (#238–#247) |
 
 > CRUD 実装の進捗に応じて UC を追記する運用 ([#31](https://github.com/tommykey-apps/resource-planner/issues/31), [`docs/adr/0001-typescript-types-as-api-spec.md`](adr/0001-typescript-types-as-api-spec.md) 参照)。
 
@@ -232,8 +233,8 @@ sequenceDiagram
         Server-->>SK: fail(400, { errors })
         SK-->>User: 該当フィールドにエラー
     else 検証成功
-        Server->>Server: id = ulid()<br/>sk = ASN#{startDate}#{id}
-        Server->>DDB: PutItem<br/>pk=TEAM#{teamId}, sk=ASN#...,<br/>{ id, resourceId, projectId,<br/>startDate, endDateExclusive }<br/>ConditionExpression: attribute_not_exists(sk)
+        Server->>Server: id = ulid()<br/>sk = ASN#{id} (安定キー、ADR 0012)
+        Server->>DDB: PutItem<br/>pk=TEAM#{teamId}, sk=ASN#{id},<br/>{ id, resourceId, projectId,<br/>startDate, endDateExclusive, version: 1 }<br/>ConditionExpression: attribute_not_exists(sk)
         DDB-->>Server: 200
         Server-->>SK: success
         SK->>SK: invalidate → load 再実行
@@ -284,8 +285,8 @@ sequenceDiagram
 
 - 画面: [`web/src/routes/+page.svelte`](../web/src/routes/+page.svelte) の `handleUpdate` (`onMove` / `onResize` から呼ばれる)
 - API endpoint: [`web/src/routes/api/assignments/[id]/+server.ts`](../web/src/routes/api/assignments/[id]/+server.ts) (PATCH)
-- 検証 schema: [`web/src/lib/schemas/index.ts`](../web/src/lib/schemas/index.ts) の `assignmentApiUpdateSchema` (transform なし、ADR 0005)
-- DB アクセス: [`web/src/lib/repository/assignment.ts`](../web/src/lib/repository/assignment.ts) の `updateAssignment` (SK 変更時は TransactWriteItems で旧 Delete + 新 Put)
+- 検証 schema: [`web/src/lib/schemas/index.ts`](../web/src/lib/schemas/index.ts) の `assignmentApiUpdateSchema` (transform なし、`expectedVersion` で楽観ロック、ADR 0005 / 0012)
+- DB アクセス: [`web/src/lib/repository/assignment.ts`](../web/src/lib/repository/assignment.ts) の `updateAssignment` (SK 安定キーへ単一 atomic Put、`version` 楽観ロック、ADR 0012)
 - トースト: [`svelte-sonner`](https://github.com/wobsoriano/svelte-sonner)、`<Toaster />` を [`+layout.svelte`](../web/src/routes/+layout.svelte) に配置
 
 ### Mermaid sequence (成功フロー)
@@ -301,13 +302,13 @@ sequenceDiagram
     User->>TL: 帯を mousedown<br/>→ ドラッグ → mouseup
     TL->>SK: onMove(updated: TimelineAssignment)
     SK->>SK: snapshot = dbAssignments<br/>dbAssignments = map(...)<br/>(即時画面反映)
-    SK->>API: PATCH /api/assignments/{id}<br/>{ prevStartDate, resourceId, projectId,<br/>startDate, endDateExclusive }
+    SK->>API: PATCH /api/assignments/{id}<br/>{ expectedVersion, resourceId, projectId,<br/>startDate, endDateExclusive }
     API->>API: await locals.auth() → session.teamId<br/>assignmentApiUpdateSchema.safeParse(body)
-    API->>DDB: updateAssignment(teamId, prevStartDate, payload)
-    note right of DDB: SK 変更あり (startDate 変更時) →<br/>TransactWriteItems<br/>(旧 SK Delete + 新 SK Put)
+    API->>DDB: updateAssignment(teamId, payload)
+    note right of DDB: SK 安定キー (ASN#{id}) →<br/>単一 atomic PutItem<br/>(attribute_exists(sk) AND version = :expected,<br/>成功で version +1)
     DDB-->>API: 200
-    API-->>SK: { success: true }
-    SK-->>User: 帯が新位置のまま (画面変化なし)
+    API-->>SK: { success: true, version }
+    SK-->>User: 帯が新位置のまま (version 同期)
 ```
 
 ### Mermaid sequence (失敗フロー: revert)
@@ -335,8 +336,8 @@ sequenceDiagram
 
 - **Form action ではなく `+server.ts`**: drag/resize は画面遷移を伴わない細粒度操作で JSON body が自然
 - **Optimistic UI + 失敗時 revert**: ドラッグの応答性最優先、Google Calendar と同じパターン
-- **Last-write-wins (楽観ロック未実装)**: 100 ユーザー規模で衝突は稀、必要になったら version 列導入を別 ADR で
-- **`assignmentApiUpdateSchema` は transform なし**: API は app 内部 RPC、`endDateExclusive` を直接受け取る (ADR 0004 の「変換はフォーム境界の 1 箇所」原則と整合)
+- **version 楽観ロック (ADR 0012)**: 当初は last-write-wins (ADR 0005) だったが、SK 安定キー化と同時に `version` 属性 + `attribute_exists(sk) AND version = :expected` 条件付き Put を導入。同時編集の lost update を検知して 409 を返す
+- **`assignmentApiUpdateSchema` は transform なし**: API は app 内部 RPC、`endDateExclusive` を直接受け取る (ADR 0004 の「変換はフォーム境界の 1 箇所」原則と整合)。`expectedVersion` (client が read した version) を含める
 
 ### endDate の取り扱い
 
@@ -348,14 +349,13 @@ sequenceDiagram
 ### エラーケース
 
 - **未認証**: API が 401 / 403 → 画面 revert + toast「保存に失敗しました」
-- **アサインが他で削除されていた**: `updateAssignment` の `ConditionExpression: attribute_exists(sk)` 違反で `TransactionCanceledException` → 500 → revert + toast
-- **SK 衝突 (同 startDate 同 id)**: ULID 衝突は実質ゼロ、`attribute_not_exists(sk)` で防御。発生したら 500 → revert
+- **アサインが他で削除されていた**: `updateAssignment` の `attribute_exists(sk)` 違反 (`ConditionalCheckFailedException`) → revert + toast
+- **同時編集 (version 不一致)**: `version = :expected` 条件違反 → API が **409** + 最新 item を返却。client は最新版に rebase + toast (ADR 0012)
 - **ネットワーク失敗 / タイムアウト**: fetch reject → revert + toast
-- **同時編集 (last-write-wins)**: 別ユーザーが同じ Assignment を後から保存したら上書き。本実装では検知しない (将来 ADR で楽観ロック導入の余地)
 
 ### 既知の制約 (PR-F 時点)
 
-- 楽観ロックなし (last-write-wins)
+- ~~楽観ロックなし (last-write-wins)~~ → ADR 0012 で `version` 楽観ロックを導入済み (同時編集を 409 で検知)
 - ドラッグ中の visual feedback はライブラリ任せ (custom hover/preview UI なし)
 - 「Resize で startDate も同時に変える」「他リソース行へ drop で resourceId 変更」 等の挙動は ResourceTimeline ライブラリの実装に依存
 
@@ -371,7 +371,7 @@ sequenceDiagram
 
 ### 概要
 
-「アサイン一覧」モーダルから個別のアサインを削除する。SK が `ASN#{startDate}#{id}` で構成されるため、フォームから `id` と `startDate` の両方を渡す。
+「アサイン一覧」モーダルから個別のアサインを削除する。SK は `ASN#{id}` の安定キー (ADR 0012) なので、フォームから `id` のみを渡す。
 
 ### アクター / 前提条件
 
@@ -382,10 +382,9 @@ sequenceDiagram
 
 ### 対応コード
 
-- 画面: [`web/src/routes/+page.svelte`](../web/src/routes/+page.svelte) (`<AssignmentManager />` 配置)
-- UI コンポーネント: [`web/src/lib/components/AssignmentManager.svelte`](../web/src/lib/components/AssignmentManager.svelte)
+- 画面: [`web/src/routes/assignments/+page.svelte`](../web/src/routes/assignments/+page.svelte) のテーブル行ごとの「削除」ボタン (`action="/?/deleteAssignment"`)
 - Form action: [`web/src/routes/+page.server.ts`](../web/src/routes/+page.server.ts) の `actions.deleteAssignment`
-- DB アクセス: [`web/src/lib/repository/assignment.ts`](../web/src/lib/repository/assignment.ts) の `deleteAssignment(teamId, startDate, id)`
+- DB アクセス: [`web/src/lib/repository/assignment.ts`](../web/src/lib/repository/assignment.ts) の `deleteAssignment(teamId, id)`
 
 ### Mermaid sequence
 
@@ -397,17 +396,17 @@ sequenceDiagram
     participant DDB as DynamoDB
 
     User->>SK: 「アサイン一覧」 → 行の「削除」クリック
-    SK->>SK: confirm() で「削除しますか?」確認
+    SK->>SK: 確認 dialog で「削除しますか?」確認 (#132)
     alt キャンセル
         SK-->>User: 何もしない
     else OK
-        SK->>Server: POST ?/deleteAssignment<br/>FormData(id, startDate)
+        SK->>Server: POST ?/deleteAssignment<br/>FormData(id)
         Server->>Server: requireSession(event) → session.teamId
-        Server->>Server: id / startDate (YYYY-MM-DD) を validate
-        Server->>DDB: DeleteItem<br/>pk=TEAM#{teamId}, sk=ASN#{startDate}#{id}
+        Server->>Server: id を validate
+        Server->>DDB: DeleteItem<br/>pk=TEAM#{teamId}, sk=ASN#{id}
         DDB-->>Server: 200 (idempotent、存在しなくても OK)
         Server-->>SK: success → invalidate
-        SK->>SK: load 再実行 → AssignmentManager の dbAssignments 更新
+        SK->>SK: load 再実行 → assignments ページの一覧更新
         SK-->>User: 行が消える + timeline からも帯が消える
     end
 ```
@@ -415,14 +414,14 @@ sequenceDiagram
 ### 設計判断
 
 - **Form action 採用** (`+server.ts` API ではない): UC-04 (drag/resize) は API 採用したが、本 UC は一覧 UI からのクリック削除のため form action + `use:enhance` のほうが自然 (Resource / Project の delete と同じパターン)
-- **`startDate` を hidden input で送る**: SK が `ASN#{startDate}#{id}` 構成のため必要。ULID だけでは SK 再構築できない
-- **`confirm()` で警告**: ブラウザネイティブで MVP として十分。将来 cascade UI に置き換える可能性 (PR-H で Resource/Project cascade、本 UC では Assignment 単体削除)
+- **`id` のみ送る**: SK が `ASN#{id}` の安定キー (ADR 0012) なので削除に `id` だけで足りる (旧 `ASN#{startDate}#{id}` 設計では startDate も必要だった)
+- **確認 dialog で警告** (#132): `window.confirm` 代替の dialog。本 UC では Assignment 単体削除 (Resource/Project の cascade は UC-06)
 - **idempotent**: DeleteItem は item 不在でもエラーにならない。Resource/Project が先に削除されて orphan になっていた Assignment も問題なく削除可能
 
 ### エラーケース
 
 - **未認証**: `requireSession(event)` が `error(401|403)`
-- **id / startDate が空 or 不正**: `fail(400, { errors })` で UI に表示 (通常は hidden input なので発生しない)
+- **id が空 or 不正**: `fail(400, { errors })` で UI に表示 (通常は hidden input なので発生しない)
 - **既に削除済**: DeleteItem は idempotent → 200。invalidate で正しい状態に追従
 
 ### 既知の制約 (PR-G 時点)
@@ -510,6 +509,78 @@ Project 削除も同形 (FilterExpression が `projectId == id` に変わるだ�
 - 取り消し (undo) 不可、確認モーダル通過後は復元できない
 - 削除と同時に他ユーザーが Assignment 追加 → orphan 化 (実害低)
 - バックグラウンド job ではなく synchronous: 100 件削除で数秒待つ可能性 (TransactWriteItems の通常応答時間)
+
+---
+
+## UC-07: 部署 (Department) でリソースをグルーピングする
+
+### 概要
+
+Team 内のリソースを **部署ツリー** (本部 / 部 / 課 …) でグルーピングし、timeline / assignments 画面を部署で絞り込む。部署は adjacency list (`parentId`) のネスト構造で、作成・付け替え (move)・削除 (繰り上げ) ができる。Department は隔離境界ではなく **表示用グルーピング** ([ADR 0013](adr/0013-department-grouping-tree.md))。
+
+### アクター / 前提条件
+
+- アクター: 認証済みユーザー (team_default に自動 join)
+- 前提条件: 部署管理 UI (`DepartmentManager`) は AppHeader から開く
+
+### 対応コード
+
+- UI コンポーネント: [`web/src/lib/components/DepartmentManager.svelte`](../web/src/lib/components/DepartmentManager.svelte) ([`AppHeader.svelte`](../web/src/lib/components/AppHeader.svelte) から起動)
+- Form action: [`web/src/routes/+page.server.ts`](../web/src/routes/+page.server.ts) の `createDepartment` / `moveDepartment` / `deleteDepartment`
+- 検証 schema: [`web/src/lib/schemas/department.ts`](../web/src/lib/schemas/department.ts) の `departmentCreateSchema` / `departmentMoveSchema`
+- DB アクセス: [`web/src/lib/repository/department.ts`](../web/src/lib/repository/department.ts) の `createDepartment` / `moveDepartment` / `deleteDepartment` / `DepartmentTreeError`
+- リソースの所属: Resource の `departmentId` 属性 (#239)。timeline / assignments の部署フィルタは子孫含む (#242 / #247)
+
+### Mermaid sequence (作成 / 付け替え / 削除)
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant SK as DepartmentManager
+    participant Server as +page.server.ts
+    participant Repo as repository/department.ts
+    participant DDB as DynamoDB
+
+    User->>SK: 部署を作成 / 親へ付け替え / 削除
+    SK->>Server: POST ?/createDepartment | ?/moveDepartment | ?/deleteDepartment
+    Server->>Server: requireSession(event) → session.teamId<br/>departmentCreateSchema / departmentMoveSchema.safeParse
+    Server->>Repo: createDepartment / moveDepartment / deleteDepartment
+    Repo->>DDB: listDepartments (queryAllByTeam で取得済みツリーを in-memory 検証)
+    note right of Repo: 親存在 / 兄弟名一意 / 循環 を検証<br/>違反は DepartmentTreeError
+    alt 検証 NG
+        Repo-->>Server: throw DepartmentTreeError(code)
+        Server-->>SK: fail(400, { errors })  ※ #240 で wire format に map
+        SK-->>User: エラー表示 (親不在 / 名前重複 / 循環)
+    else 検証 OK
+        Repo->>DDB: PutItem (create) / UpdateItem (move: SET/REMOVE parentId) /<br/>TransactWriteItems (delete: 配下を親へ繰り上げ + 本体 Delete)
+        DDB-->>Repo: 200
+        Repo-->>Server: void
+        Server-->>SK: success → invalidate
+        SK-->>User: ツリー更新
+    end
+```
+
+### 設計判断 (ADR 0013)
+
+- **adjacency list (`parentId`)**: materialized path / GSI は導入せず、`queryAllByTeam` が返すフラットな `DEPT#` item 群から in-memory でツリーを組む (組織は小規模前提)
+- **削除は cascade ではなく reparent (繰り上げ)**: 削除ノードの子 Department と所属 Resource の親を削除ノードの親へ付け替える ([ADR 0006](adr/0006-cascade-delete-strategy.md) の Resource/Project cascade とは逆の方針)。Assignment は Department を参照しないため無関係
+- **兄弟名一意 / 循環防止**: `createDepartment` は親存在 + 兄弟名一意、`moveDepartment` は加えて循環 (自分や子孫を親にする) を検証。`DepartmentTreeError` を fail(400) に map (#240)
+- **隔離境界ではない**: マルチテナント分離は `pk = TEAM#{teamId}` が担う。Department はあくまで Team 内の表示用グルーピング
+
+### エラーケース
+
+- **未認証**: `requireSession(event)` が `error(401|403)`
+- **親が存在しない**: `DepartmentTreeError('parentNotFound')` → fail(400)
+- **兄弟内で名前重複**: `DepartmentTreeError('nameConflict')` → fail(400)
+- **循環 (move で自分 / 子孫を親に指定)**: `DepartmentTreeError('cycle')` → fail(400)
+- **削除対象が存在しない (move)**: `DepartmentTreeError('notFound')` → fail(400)
+- **繰り上げ対象が 100 件超**: `TransactWriteItems` 上限で throw (フォールバックなし、ADR 0013)
+
+### 既知の制約
+
+- ツリー検証のたびに `listDepartments` で全 Department を読む (小規模前提、ADR 0013)
+- 削除繰り上げの子 Department + 所属 Resource が 100 件超で throw (UC-06 の cascade と同じ上限)
+- ルートは 1 Team 内に複数可 (フォレスト)
 
 ---
 

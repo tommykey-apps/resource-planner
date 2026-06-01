@@ -52,7 +52,7 @@
         </mxCell>
 
         <!-- SSM Parameter Store -->
-        <mxCell id="ssm" value="SSM Parameter Store&#xa;/resource-planner/auth/secret&#xa;(SecureString)" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.systems_manager;labelBackgroundColor=none;sketch=0;fontStyle=1;fontSize=10;fillColor=#4D72F3;fontColor=#000000;strokeColor=#4D72F3;" vertex="1" parent="1">
+        <mxCell id="ssm" value="SSM Parameter Store&#xa;/resource-planner/auth-secret&#xa;(SecureString)" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.systems_manager;labelBackgroundColor=none;sketch=0;fontStyle=1;fontSize=10;fillColor=#4D72F3;fontColor=#000000;strokeColor=#4D72F3;" vertex="1" parent="1">
           <mxGeometry x="960" y="380" width="60" height="60" as="geometry" />
         </mxCell>
 
@@ -62,7 +62,7 @@
         </mxCell>
 
         <!-- Amazon SES (Magic Link delivery + bounce/complaint handling) -->
-        <mxCell id="ses_box" value="Amazon SES&#10;Magic Link delivery (DKIM, SPF)&#10;App side: allowed domain check&#10;Bounce / Complaint via SNS topic&#10;→ Lambda subscriber → suppression DDB" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.simple_email_service;labelBackgroundColor=none;sketch=0;fontStyle=1;fontSize=10;fillColor=#DD344C;fontColor=#000000;strokeColor=#DD344C;align=left;verticalAlign=top;spacing=10;" vertex="1" parent="1">
+        <mxCell id="ses_box" value="Amazon SES&#10;Magic Link delivery (DKIM)&#10;App side: allowed domain check&#10;Bounce / Complaint via SNS topic&#10;→ Lambda subscriber → suppression DDB" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.simple_email_service;labelBackgroundColor=none;sketch=0;fontStyle=1;fontSize=10;fillColor=#DD344C;fontColor=#000000;strokeColor=#DD344C;align=left;verticalAlign=top;spacing=10;" vertex="1" parent="1">
           <mxGeometry x="1100" y="320" width="240" height="120" as="geometry" />
         </mxCell>
 

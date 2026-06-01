@@ -1,12 +1,35 @@
 # Entities
 
-DynamoDB シングルテーブル `resource-planner` には 3 種類のエンティティが格納される。
+DynamoDB シングルテーブル `resource-planner` に格納される全エンティティを定義する。
 全アイテムは `pk = TEAM#{teamId}` で組織ごとにパーティション分割され、
 `sk` のプレフィックスで entity 種別を表現する。
 
-> **Note**: 現時点で app 側の DB アクセスコード (CRUD 実装) は未着手。本ファイルは
-> 将来 entity を実装するときの設計仕様として参照する。実装が入ったら各 entity の
-> Source 列に Go / TypeScript の関数リンクを追記する。
+## ドメインの地図 (assign 中心)
+
+このアプリの中核の事実は **Assignment** (「いつ・誰を・どの案件に」割り当てたか)。
+Resource / Project / Department は Assignment が参照する **マスタ** であり、
+timeline 画面と assignments 一覧画面はどちらも同じ Assignment を投影した **ビュー** にすぎない。
+
+```mermaid
+erDiagram
+    Resource   ||--o{ Assignment : "resourceId で参照される"
+    Project    ||--o{ Assignment : "projectId で参照される"
+    Department ||--o{ Resource   : "departmentId でグルーピング"
+    Department ||--o{ Department  : "parentId (adjacency list)"
+
+    Assignment {
+        string id "ULID (= SK)"
+        string resourceId "FK → Resource (DDB に制約なし)"
+        string projectId "FK → Project (DDB に制約なし)"
+        string startDate "inclusive"
+        string endDateExclusive "exclusive (ADR 0004)"
+        number version "楽観ロック (ADR 0012)"
+    }
+```
+
+- **中核 = Assignment**: マスタを参照して初めて意味を持つ従属側。機能追加は基本ここを太らせる方向。
+- **マスタ = Resource / Project / Department**: Assignment より先に独立して存在 (アサイン 0 件でも存在)。
+- **ビュー = timeline (`/`) / assignments (`/assignments`)**: DB エンティティではない。同じ Assignment の見せ方違い。
 
 ## マルチテナント分離
 
@@ -56,8 +79,9 @@ DynamoDB シングルテーブル `resource-planner` には 3 種類のエンテ
 
 | Field | Type | 説明 |
 |---|---|---|
-| `id` | str (UUID 想定) | resource の主キー (sk と内部 attribute の二重保持) |
+| `id` | str (ULID) | resource の主キー (sk と内部 attribute の二重保持) |
 | `name` | str | 表示名 |
+| `departmentId` | str (optional) | 所属 [Department](#department) の `id` (#239)。 属性なし = 未所属 |
 
 サンプルアイテム:
 ```json
@@ -80,7 +104,7 @@ DynamoDB シングルテーブル `resource-planner` には 3 種類のエンテ
 
 | Field | Type | 説明 |
 |---|---|---|
-| `id` | str (UUID 想定) | project の主キー |
+| `id` | str (ULID) | project の主キー |
 | `name` | str | プロジェクト名 |
 | `color` | str (`#RRGGBB`) | タイムラインでの表示色 |
 | `description` | str (optional) | 案件説明 markdown raw (最大 10,000 文字、 ADR 0010)。 未設定なら attribute なし |
@@ -185,4 +209,4 @@ DynamoDB シングルテーブル `resource-planner` には 3 種類のエンテ
 - **`pk = TEAM#...` で固定**: マルチテナント isolation を物理的に強制 (PK が違えば物理的に到達不能)
 - **`ASN` の SK は `ASN#{id}` 安定キー (ADR 0012)**: startDate は頻繁更新属性なので SK に入れない (キー rename を避ける)。 現状 assignment の期間 range query は無く全件取得 + client ソートで足りるため、 startDate を SK から外しても支障はない。 将来 DB 側で期間 range query が要るなら startDate を載せた GSI を新設する。 更新は `version` 属性 + 条件付き書き込み (楽観ロック) で同時編集の lost update を検出する
 - **半開区間 `[start, end)` 規約**: 業界標準 (RFC 5545 / Google Calendar / PostgreSQL daterange / Java / Rust / Python) に整合。隣接区間 (5/1〜5/3 と 5/3〜5/5) が境界で接して重ならない。詳細 [ADR 0004](../adr/0004-end-date-exclusive-with-form-transform.md)
-- **FK 整合性は app 層で担保**: DynamoDB は外部キー制約を持たないため、Resource / Project の delete 時に Assignment を残骸として残さないようカスケード削除を app 層で実装する (将来要件)
+- **FK 整合性は app 層で担保**: DynamoDB は外部キー制約を持たないため、Resource / Project の delete 時に Assignment を残骸として残さないようカスケード削除を app 層で `TransactWriteItems` で実装している ([ADR 0006](../adr/0006-cascade-delete-strategy.md))
