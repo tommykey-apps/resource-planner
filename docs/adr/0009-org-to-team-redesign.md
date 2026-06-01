@@ -32,7 +32,7 @@ pk = TEAM#{teamId}  sk = META                    (Team metadata)
 pk = TEAM#{teamId}  sk = MEMBER#{userId}         (Team-centric membership)
 pk = TEAM#{teamId}  sk = RES#{resourceId}        (既存 Resource、pk のみ rename)
 pk = TEAM#{teamId}  sk = PRJ#{projectId}         (既存 Project、pk のみ rename)
-pk = TEAM#{teamId}  sk = ASN#{startDate}#{id}    (既存 Assignment、pk のみ rename)
+pk = TEAM#{teamId}  sk = ASN#{startDate}#{id}    (既存 Assignment、pk のみ rename) ← 後に ADR 0012 で ASN#{id} に変更
 
 === Auth.js entities (DDB adapter 管理) ===
 pk = USER#{userId}        sk = META                          (User base)
@@ -45,6 +45,8 @@ GSI1PK = USER#email#{email}    GSI1SK = USER#email#{email}     (Auth.js: User by
 GSI1PK = ACCOUNT#{provider}    GSI1SK = ACCOUNT#{providerAccountId} (Auth.js: User by account)
 GSI1PK = USER#{userId}         GSI1SK = TEAM#{teamId}          (App: user → team 一覧)
 ```
+
+> **Note (ADR 0012)**: 上記 Assignment の `sk = ASN#{startDate}#{id}` は当時の設計。[ADR 0012](0012-assignment-stable-key-and-optimistic-locking.md) で **`sk = ASN#{id}` の安定キー**に変更され、`startDate` は通常属性に降格した (本 ADR の Team rename 判断自体には影響なし)。
 
 実装方針:
 - 初期は **`team_default` の単一 team** で運用 (`getOrCreateDefaultTeam` を `events.signIn`

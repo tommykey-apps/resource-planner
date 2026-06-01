@@ -1,8 +1,12 @@
-# 0005. Assignment のドラッグ / リサイズは `+server.ts` API + Optimistic UI + Last-write-wins
+# 0005. Assignment のドラッグ / リサイズは `+server.ts` API + Optimistic UI + ~~Last-write-wins~~ (→ 楽観ロック, ADR 0012)
 
-- **Status**: Accepted
+- **Status**: Accepted (一部 [ADR 0012](0012-assignment-stable-key-and-optimistic-locking.md) で改訂)
 - **Date**: 2026-05-08
 - **Deciders**: @tommykey0925
+
+> **更新 (ADR 0012、2026-05-28)**: 本 ADR の transport (`PATCH /api/assignments/[id]` + Optimistic UI) という大枠は現在も有効。ただし以下の 2 点は ADR 0012 で改訂済みで、本文中の該当記述は**当時のもの**として読むこと:
+> - **body schema の `prevStartDate` は廃止** → `expectedVersion` に置換 (SK を `ASN#{id}` 安定キー化したため旧 SK 再構築が不要に)
+> - **「楽観ロックは未実装 (last-write-wins)」も覆された** → `version` 属性 + 条件付き Put で楽観ロックを導入し、同時編集を 409 で検知する
 
 ## Context
 
@@ -45,7 +49,7 @@ UC-04 (アサインの期間を変更する) で、ResourceTimeline 上で帯を
 `assignmentApiUpdateSchema` (`web/src/lib/schemas/index.ts`):
 ```ts
 {
-  prevStartDate: DateString,    // SK 再計算用 (旧 SK Delete に必要)
+  prevStartDate: DateString,    // [ADR 0012 で廃止] 旧 SK 再計算用。現在は expectedVersion に置換
   resourceId: string,
   projectId: string,
   startDate: DateString,        // inclusive
@@ -78,12 +82,12 @@ async function handleUpdate(updated: TimelineAssignment) {
 
 UI 通知は `svelte-sonner` の `toast.error()`。`<Toaster />` を `+layout.svelte` に 1 個配置。
 
-### 楽観ロックは未実装 (last-write-wins)
+### ~~楽観ロックは未実装 (last-write-wins)~~ → ADR 0012 で導入済み
 
-- Assignment item に `version` 列を持たない
-- `If-Match` header / ConditionExpression による衝突検知なし
-- 100 ユーザー規模では同時編集衝突は実害低い → YAGNI
-- 将来必要になったら別 ADR (例: 0007) で導入
+- ~~Assignment item に `version` 列を持たない~~
+- ~~`If-Match` header / ConditionExpression による衝突検知なし~~
+- ~~100 ユーザー規模では同時編集衝突は実害低い → YAGNI~~
+- ~~将来必要になったら別 ADR (例: 0007) で導入~~ (実際には [ADR 0012](0012-assignment-stable-key-and-optimistic-locking.md) で `version` 属性 + 条件付き Put を導入)
 
 ## Consequences
 
@@ -96,8 +100,8 @@ UI 通知は `svelte-sonner` の `toast.error()`。`<Toaster />` を `+layout.sv
 
 ### Negative
 
-- **同時編集衝突を検知できない**: A さんと B さんが同時に同じアサインをドラッグして両方保存できる (last-write-wins、後の人が勝ち)。社内 100 ユーザーで実害低いが、将来 SLA 要件が出たら 0007 で導入
-- **`prevStartDate` を body に含めるダサさ**: SK が startDate を含む設計の副作用。GSI 化すれば不要になるが、現状の SK 設計のメリット (時系列順) を維持する判断
+- ~~**同時編集衝突を検知できない**: A さんと B さんが同時に同じアサインをドラッグして両方保存できる (last-write-wins、後の人が勝ち)。社内 100 ユーザーで実害低いが、将来 SLA 要件が出たら 0007 で導入~~ ([ADR 0012](0012-assignment-stable-key-and-optimistic-locking.md) で `version` 楽観ロックを導入し 409 で検知するようになった)
+- ~~**`prevStartDate` を body に含めるダサさ**: SK が startDate を含む設計の副作用。GSI 化すれば不要になるが、現状の SK 設計のメリット (時系列順) を維持する判断~~ ([ADR 0012](0012-assignment-stable-key-and-optimistic-locking.md) で SK を `ASN#{id}` 安定キーにして `prevStartDate` は廃止)
 - **Toast 通知に依存**: `svelte-sonner` を導入。代替案 (アクセシブルな inline error 表示) は次フェーズで検討可能
 
 ### Neutral
