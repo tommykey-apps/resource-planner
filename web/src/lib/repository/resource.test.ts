@@ -13,7 +13,10 @@ import {
 	createResource,
 	deleteResource,
 	updateResource,
-	queryResourceSkByDepartment
+	queryResourceSkByDepartment,
+	moveResourcesToDepartment,
+	deleteResources,
+	BulkTargetMissingError
 } from './resource';
 
 const ddbMock = mockClient(DynamoDBDocumentClient);
@@ -200,4 +203,74 @@ it('does not send raw DeleteCommand (delete is via TransactWrite)', async () => 
 	ddbMock.on(TransactWriteCommand).resolves({});
 	await deleteResource(TEAM, 'res-1');
 	expect(ddbMock.commandCalls(DeleteCommand)).toHaveLength(0);
+});
+
+/**
+ * 一括操作: 部署の一括変更は 1 回の TransactWriteItems で原子的に行う (全員変わるか、 誰も変わらない)。
+ * 削除したメンバーが混ざっていたら ConditionExpression で全体が失敗する。
+ */
+describe('moveResourcesToDepartment', () => {
+	it('全員の departmentId を 1 トランザクションで SET する', async () => {
+		ddbMock.on(TransactWriteCommand).resolves({});
+		await moveResourcesToDepartment(TEAM, ['r1', 'r2'], 'd1');
+		const calls = ddbMock.commandCalls(TransactWriteCommand);
+		expect(calls).toHaveLength(1);
+		const items = calls[0].args[0].input.TransactItems ?? [];
+		expect(items).toHaveLength(2);
+		expect(items[0].Update).toMatchObject({
+			TableName: TABLE,
+			Key: { pk: `TEAM#${TEAM}`, sk: 'RES#r1' },
+			UpdateExpression: 'SET departmentId = :departmentId',
+			ExpressionAttributeValues: { ':departmentId': 'd1' },
+			ConditionExpression: 'attribute_exists(sk)'
+		});
+	});
+
+	it('未所属にするときは departmentId を REMOVE する', async () => {
+		ddbMock.on(TransactWriteCommand).resolves({});
+		await moveResourcesToDepartment(TEAM, ['r1'], undefined);
+		const item = ddbMock.commandCalls(TransactWriteCommand)[0].args[0].input.TransactItems?.[0];
+		expect(item?.Update?.UpdateExpression).toBe('REMOVE departmentId');
+		expect(item?.Update?.ExpressionAttributeValues).toBeUndefined();
+	});
+
+	it('削除済みのメンバーが混ざって取り消されたら BulkTargetMissingError', async () => {
+		ddbMock
+			.on(TransactWriteCommand)
+			.rejects(Object.assign(new Error('canceled'), { name: 'TransactionCanceledException' }));
+		await expect(moveResourcesToDepartment(TEAM, ['r1'], 'd1')).rejects.toBeInstanceOf(
+			BulkTargetMissingError
+		);
+	});
+
+	it('100 件を超えたら送らずに throw (TransactWriteItems の上限)', async () => {
+		const ids = Array.from({ length: 101 }, (_, i) => `r${i}`);
+		await expect(moveResourcesToDepartment(TEAM, ids, 'd1')).rejects.toThrow(/100/);
+		expect(ddbMock.commandCalls(TransactWriteCommand)).toHaveLength(0);
+	});
+});
+
+/**
+ * 一括削除: メンバー 1 人ごとに既存の原子的な cascade delete を行う。
+ * 関連アサインを含めると 100 項目 (TransactWriteItems の上限) を超えうるため、 全体を 1 トランザクションにしない。
+ * 一部が失敗しても残りは続け、 成功 / 失敗の id を返す。
+ */
+describe('deleteResources', () => {
+	it('1 人ずつ cascade delete し、 削除できた id を返す', async () => {
+		ddbMock.on(QueryCommand).resolves({ Items: [] });
+		ddbMock.on(TransactWriteCommand).resolves({});
+		const result = await deleteResources(TEAM, ['r1', 'r2']);
+		expect(result).toEqual({ deleted: ['r1', 'r2'], failed: [] });
+		expect(ddbMock.commandCalls(TransactWriteCommand)).toHaveLength(2);
+	});
+
+	it('失敗した id は failed に入れ、 残りは続ける', async () => {
+		ddbMock.on(QueryCommand).resolves({ Items: [] });
+		ddbMock
+			.on(TransactWriteCommand)
+			.rejectsOnce(new Error('TransactionCanceledException'))
+			.resolves({});
+		const result = await deleteResources(TEAM, ['r1', 'r2']);
+		expect(result).toEqual({ deleted: ['r2'], failed: ['r1'] });
+	});
 });

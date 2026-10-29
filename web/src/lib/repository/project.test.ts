@@ -8,7 +8,7 @@ import {
 import { mockClient } from 'aws-sdk-client-mock';
 import 'aws-sdk-client-mock-vitest';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createProject, deleteProject, updateProject } from './project';
+import { createProject, deleteProject, updateProject, deleteProjects } from './project';
 
 const ddbMock = mockClient(DynamoDBDocumentClient);
 const TEAM = 'team-test';
@@ -207,5 +207,18 @@ describe('deleteProject (cascade)', () => {
 
 		await expect(deleteProject(TEAM, 'prj-1')).rejects.toThrow(/exceeds 100 items/);
 		expect(ddbMock.commandCalls(TransactWriteCommand)).toHaveLength(0);
+	});
+});
+
+/** 一括削除: 案件 1 件ごとに既存の原子的な cascade delete を行う (deleteResources と同じ方針)。 */
+describe('deleteProjects', () => {
+	it('1 件ずつ cascade delete し、 成功 / 失敗の id を返す', async () => {
+		ddbMock.on(QueryCommand).resolves({ Items: [] });
+		ddbMock
+			.on(TransactWriteCommand)
+			.resolvesOnce({})
+			.rejectsOnce(new Error('TransactionCanceledException'));
+		const result = await deleteProjects(TEAM, ['p1', 'p2']);
+		expect(result).toEqual({ deleted: ['p1'], failed: ['p2'] });
 	});
 });

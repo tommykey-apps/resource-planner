@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { bulkIdsSchema } from './shared';
 
 // ── Resource ────────────────────────────────────────────────────────
 
@@ -17,3 +18,10 @@ export const resourceUpdateSchema = resourceCreateSchema.extend({
 
 export type ResourceCreateInput = z.infer<typeof resourceCreateSchema>;
 export type ResourceUpdateInput = z.infer<typeof resourceUpdateSchema>;
+
+/** 選んだメンバーの所属部署を一括で変える。 空の departmentId は未所属 (attribute REMOVE)。 */
+export const resourcesMoveSchema = bulkIdsSchema.extend({
+	departmentId: resourceCreateSchema.shape.departmentId
+});
+
+export type ResourcesMoveInput = z.infer<typeof resourcesMoveSchema>;

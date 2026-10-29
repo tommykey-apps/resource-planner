@@ -20,7 +20,15 @@
 		"nextPage": "Next page",
 		"clearFilters": "Clear filters",
 		"filterByName": "Filter by name",
-		"assignmentCount": "Assignments"
+		"assignmentCount": "Assignments",
+		"selectRows": "Select rows",
+		"selectAllRows": "Select all rows",
+		"selectedCount": "{count} selected",
+		"clearSelection": "Clear selection",
+		"bulkActions": "Bulk actions",
+		"deleteSelected": "Delete selected",
+		"change": "Change",
+		"bulkDeleteFailed": "Couldn't delete {count} items. Reload the page to check."
 	},
 	"timeline": {
 		"today": "Today",
@@ -69,7 +77,13 @@
 		"confirmDelete": "Delete \"{name}\"?",
 		"confirmDeleteWithAssignments": "Delete \"{name}\" and {count} related assignments?\nThis can't be undone.",
 		"createFailed": "Couldn't add the person. Try again.",
-		"noMatches": "No people match the filters"
+		"noMatches": "No people match the filters",
+		"moveSelected": "Change department",
+		"confirmBulkDelete": "Delete {count} selected people?\nThis can't be undone.",
+		"confirmBulkDeleteWithAssignments": "Delete {count} selected people and {assignments} related assignments?\nThis can't be undone.",
+		"bulkDeleted": "Deleted {count} people",
+		"bulkMoved": "Changed the department of {count} people",
+		"bulkMoveFailed": "Couldn't change the department. Reload the page and try again."
 	},
 	"projects": {
 		"add": "+ Add project",
@@ -98,7 +112,10 @@
 		"viewDetail": "View detail",
 		"detailTitle": "{name} detail",
 		"noMatches": "No projects match the filters",
-		"filterLabel": "Filter by name or tag"
+		"filterLabel": "Filter by name or tag",
+		"confirmBulkDelete": "Delete {count} selected projects?\nThis can't be undone.",
+		"confirmBulkDeleteWithAssignments": "Delete {count} selected projects and {assignments} related assignments?\nThis can't be undone.",
+		"bulkDeleted": "Deleted {count} projects"
 	},
 	"nav": {
 		"label": "Main menu",

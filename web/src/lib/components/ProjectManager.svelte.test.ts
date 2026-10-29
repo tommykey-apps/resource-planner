@@ -313,7 +313,10 @@ describe('ProjectManager の表', () => {
 
 	it('列は 案件名 / 使用技術 / アサイン数 / 操作。 案件名は行見出し', () => {
 		const { getAllByRole, container } = renderTable();
-		expect(getAllByRole('columnheader').map((h) => h.textContent?.trim())).toEqual([
+		const headers = getAllByRole('columnheader');
+		// 先頭は行選択 (全選択のチェックボックス) の列
+		expect(headers[0].querySelector('input[type="checkbox"]')).not.toBeNull();
+		expect(headers.slice(1).map((h) => h.textContent?.trim())).toEqual([
 			'案件名',
 			'使用技術',
 			'アサイン数',
@@ -343,5 +346,21 @@ describe('ProjectManager の表', () => {
 		setQuery('?q=存在しない');
 		const { getByText } = renderTable();
 		expect(getByText('条件に一致する案件はありません')).toBeInTheDocument();
+	});
+});
+
+/** 一括操作は ResourceManager と同じ部品なので、 案件では削除 form に id が入ることだけ見る。 */
+describe('ProjectManager の一括操作', () => {
+	it('行を選ぶと一括削除の form に id が入る', async () => {
+		const { getByRole, container } = render(ProjectManager, {
+			props: { projects: [{ id: 'p1', name: 'Project A', color: '#ff0000' }], assignments: [] }
+		});
+		await fireEvent.click(getByRole('checkbox', { name: 'Project A' }));
+		const form = container.querySelector('form[action="/?/deleteProjects"]');
+		expect(
+			Array.from(form?.querySelectorAll('input[name="ids"]') ?? []).map(
+				(i) => (i as HTMLInputElement).value
+			)
+		).toEqual(['p1']);
 	});
 });

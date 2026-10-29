@@ -6,7 +6,7 @@
  * 直接 import する。 barrel には公開対象 (`deleteByIdSchema`) のみ再エクスポートして
  * 公開面を分割前と揃える。
  */
-export { deleteByIdSchema } from './shared';
+export { BULK_MAX_IDS, bulkIdsSchema, deleteByIdSchema } from './shared';
 export * from './resource';
 export * from './project';
 export * from './assignment';

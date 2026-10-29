@@ -25,24 +25,35 @@ const createDepartmentMock = vi.fn();
 const moveDepartmentMock = vi.fn();
 const renameDepartmentMock = vi.fn();
 const deleteDepartmentMock = vi.fn();
+const deleteResourcesMock = vi.fn();
+const deleteProjectsMock = vi.fn();
+const moveResourcesToDepartmentMock = vi.fn();
 
 // ADR 0012/0013: 競合系を instanceof で判定するため mock でも実クラスを export。 vi.mock factory は
 // 巻き上げられるので vi.hoisted で先に初期化。
-const { AssignmentVersionConflictError, DepartmentTreeError } = vi.hoisted(() => {
-	class AssignmentVersionConflictError extends Error {
-		constructor(public readonly assignmentId: string) {
-			super(`assignment ${assignmentId} version conflict`);
-			this.name = 'AssignmentVersionConflictError';
+const { AssignmentVersionConflictError, DepartmentTreeError, BulkTargetMissingError } = vi.hoisted(
+	() => {
+		class AssignmentVersionConflictError extends Error {
+			constructor(public readonly assignmentId: string) {
+				super(`assignment ${assignmentId} version conflict`);
+				this.name = 'AssignmentVersionConflictError';
+			}
 		}
-	}
-	class DepartmentTreeError extends Error {
-		constructor(public readonly code: 'cycle' | 'nameConflict' | 'parentNotFound' | 'notFound') {
-			super(`department tree violation: ${code}`);
-			this.name = 'DepartmentTreeError';
+		class DepartmentTreeError extends Error {
+			constructor(public readonly code: 'cycle' | 'nameConflict' | 'parentNotFound' | 'notFound') {
+				super(`department tree violation: ${code}`);
+				this.name = 'DepartmentTreeError';
+			}
 		}
+		class BulkTargetMissingError extends Error {
+			constructor() {
+				super('bulk target missing');
+				this.name = 'BulkTargetMissingError';
+			}
+		}
+		return { AssignmentVersionConflictError, DepartmentTreeError, BulkTargetMissingError };
 	}
-	return { AssignmentVersionConflictError, DepartmentTreeError };
-});
+);
 
 vi.mock('$lib/session', () => ({
 	requireSession: (event: unknown) => requireSessionMock(event)
@@ -62,8 +73,12 @@ vi.mock('$lib/repository', () => ({
 	moveDepartment: (...args: unknown[]) => moveDepartmentMock(...args),
 	renameDepartment: (...args: unknown[]) => renameDepartmentMock(...args),
 	deleteDepartment: (...args: unknown[]) => deleteDepartmentMock(...args),
+	deleteResources: (...args: unknown[]) => deleteResourcesMock(...args),
+	deleteProjects: (...args: unknown[]) => deleteProjectsMock(...args),
+	moveResourcesToDepartment: (...args: unknown[]) => moveResourcesToDepartmentMock(...args),
 	AssignmentVersionConflictError,
-	DepartmentTreeError
+	DepartmentTreeError,
+	BulkTargetMissingError
 }));
 
 import { actions } from './+page.server';
@@ -71,6 +86,15 @@ import { actions } from './+page.server';
 function makeEvent(form: Record<string, string>) {
 	const data = new FormData();
 	for (const [k, v] of Object.entries(form)) data.append(k, v);
+	return {
+		request: { formData: async () => data }
+	} as unknown as Parameters<NonNullable<typeof actions.updateAssignment>>[0];
+}
+
+/** 同じ key を繰り返す form (一括操作の ids) 用。 */
+function makeEntriesEvent(entries: [string, string][]) {
+	const data = new FormData();
+	for (const [k, v] of entries) data.append(k, v);
 	return {
 		request: { formData: async () => data }
 	} as unknown as Parameters<NonNullable<typeof actions.updateAssignment>>[0];
@@ -221,9 +245,10 @@ describe('#139 server error wire format (code, no localized strings)', () => {
 	});
 
 	it('createProject: 不正 color → { code: invalidColorFormat, field: color }', async () => {
-		const r = (await actions.createProject!(
-			makeEvent({ name: 'P', color: 'red' })
-		)) as { status: number; data: { errors: Record<string, ServerError> } };
+		const r = (await actions.createProject!(makeEvent({ name: 'P', color: 'red' }))) as {
+			status: number;
+			data: { errors: Record<string, ServerError> };
+		};
 		expect(r.status).toBe(400);
 		expect(r.data.errors.color).toEqual({
 			code: 'invalidColorFormat',
@@ -232,9 +257,10 @@ describe('#139 server error wire format (code, no localized strings)', () => {
 	});
 
 	it('createResource: name 超過 → { code: tooLong, field: name, max: 100 }', async () => {
-		const r = (await actions.createResource!(
-			makeEvent({ name: 'a'.repeat(101) })
-		)) as { status: number; data: { errors: Record<string, ServerError> } };
+		const r = (await actions.createResource!(makeEvent({ name: 'a'.repeat(101) }))) as {
+			status: number;
+			data: { errors: Record<string, ServerError> };
+		};
 		expect(r.status).toBe(400);
 		expect(r.data.errors.name).toEqual({ code: 'tooLong', field: 'name', max: 100 });
 	});
@@ -338,9 +364,10 @@ describe('?/createProject action', () => {
 	});
 
 	it('rejects color not matching #RRGGBB', async () => {
-		const r = (await actions.createProject!(
-			makeEvent({ name: 'X', color: 'red' })
-		)) as { status: number; data: { errors: Record<string, ServerError> } };
+		const r = (await actions.createProject!(makeEvent({ name: 'X', color: 'red' }))) as {
+			status: number;
+			data: { errors: Record<string, ServerError> };
+		};
 		expect(r.status).toBe(400);
 		expect(r.data.errors.color).toBeTruthy();
 		expect(createProjectMock).not.toHaveBeenCalled();
@@ -384,9 +411,7 @@ describe('?/updateProject action', () => {
 	beforeEach(resetAllMocks);
 
 	it('calls updateProject(teamId, { id, name, color, ...empty detail })', async () => {
-		await actions.updateProject!(
-			makeEvent({ id: 'p1', name: 'Beta', color: '#10B981' })
-		);
+		await actions.updateProject!(makeEvent({ id: 'p1', name: 'Beta', color: '#10B981' }));
 		// #187: schema 拡張で description/tags/links が transform output に含まれる。
 		expect(updateProjectMock).toHaveBeenCalledWith('team_default', {
 			id: 'p1',
@@ -518,7 +543,9 @@ describe('?/deleteAssignment action (ADR 0012: SK = ASN#{id} なので id のみ
 describe('?/createDepartment action (#238)', () => {
 	beforeEach(() => {
 		requireSessionMock.mockReset().mockResolvedValue({ teamId: 'team_default', userId: 'u1' });
-		createDepartmentMock.mockReset().mockResolvedValue({ id: 'd-1', name: '開発本部', parentId: null });
+		createDepartmentMock
+			.mockReset()
+			.mockResolvedValue({ id: 'd-1', name: '開発本部', parentId: null });
 	});
 
 	it('calls createDepartment(teamId, parsed) on valid name', async () => {
@@ -624,7 +651,9 @@ describe('?/renameDepartment action (#250)', () => {
 
 	it('DepartmentTreeError 以外は再 throw', async () => {
 		renameDepartmentMock.mockRejectedValueOnce(new Error('boom'));
-		await expect(actions.renameDepartment!(makeEvent({ id: 'a', name: 'X' }))).rejects.toThrow('boom');
+		await expect(actions.renameDepartment!(makeEvent({ id: 'a', name: 'X' }))).rejects.toThrow(
+			'boom'
+		);
 	});
 });
 
@@ -644,5 +673,104 @@ describe('?/deleteDepartment action (#241)', () => {
 		const r = (await actions.deleteDepartment!(makeEvent({}))) as { status: number };
 		expect(r.status).toBe(400);
 		expect(deleteDepartmentMock).not.toHaveBeenCalled();
+	});
+});
+
+/**
+ * 一括操作 (表で選んだ行)。 ids は同じ key を繰り返して送る (`formData.getAll('ids')`)。
+ * 削除は 1 件ごとに原子的なので、 一部失敗しても成功分の件数と失敗した id を返す。
+ */
+describe('?/deleteResources action (一括削除)', () => {
+	beforeEach(() => {
+		resetAllMocks();
+		deleteResourcesMock.mockReset();
+	});
+
+	it('繰り返した ids をまとめて deleteResources(teamId, ids) に渡し、 結果を返す', async () => {
+		deleteResourcesMock.mockResolvedValue({ deleted: ['r1', 'r2'], failed: [] });
+		const r = (await actions.deleteResources!(
+			makeEntriesEvent([
+				['ids', 'r1'],
+				['ids', 'r2']
+			])
+		)) as { success: boolean; deleted: string[]; failed: string[] };
+		expect(deleteResourcesMock).toHaveBeenCalledWith('team_default', ['r1', 'r2']);
+		expect(r).toMatchObject({ success: true, deleted: ['r1', 'r2'], failed: [] });
+	});
+
+	it('一部失敗したら fail(500) で成功分と失敗した id を返す', async () => {
+		deleteResourcesMock.mockResolvedValue({ deleted: ['r1'], failed: ['r2'] });
+		const r = (await actions.deleteResources!(
+			makeEntriesEvent([
+				['ids', 'r1'],
+				['ids', 'r2']
+			])
+		)) as { status: number; data: { deleted: string[]; failed: string[] } };
+		expect(r.status).toBe(500);
+		expect(r.data).toMatchObject({ deleted: ['r1'], failed: ['r2'] });
+	});
+
+	it('ids が無ければ 400 (repository を呼ばない)', async () => {
+		const r = (await actions.deleteResources!(makeEntriesEvent([]))) as {
+			status: number;
+			data: { errors: Record<string, ServerError> };
+		};
+		expect(r.status).toBe(400);
+		expect(r.data.errors.ids).toMatchObject({ code: 'required', field: 'ids' });
+		expect(deleteResourcesMock).not.toHaveBeenCalled();
+	});
+});
+
+describe('?/deleteProjects action (一括削除)', () => {
+	beforeEach(() => {
+		resetAllMocks();
+		deleteProjectsMock.mockReset();
+	});
+
+	it('繰り返した ids をまとめて deleteProjects(teamId, ids) に渡す', async () => {
+		deleteProjectsMock.mockResolvedValue({ deleted: ['p1'], failed: [] });
+		await actions.deleteProjects!(makeEntriesEvent([['ids', 'p1']]));
+		expect(deleteProjectsMock).toHaveBeenCalledWith('team_default', ['p1']);
+	});
+});
+
+describe('?/moveResources action (部署の一括変更)', () => {
+	beforeEach(() => {
+		resetAllMocks();
+		moveResourcesToDepartmentMock.mockReset().mockResolvedValue(undefined);
+	});
+
+	it('moveResourcesToDepartment(teamId, ids, departmentId) を呼ぶ', async () => {
+		const r = (await actions.moveResources!(
+			makeEntriesEvent([
+				['ids', 'r1'],
+				['ids', 'r2'],
+				['departmentId', 'd1']
+			])
+		)) as { success: boolean; moved: number };
+		expect(moveResourcesToDepartmentMock).toHaveBeenCalledWith('team_default', ['r1', 'r2'], 'd1');
+		expect(r).toMatchObject({ success: true, moved: 2 });
+	});
+
+	it('削除済みのメンバーが混ざっていたら 409 (誰も変わらない)', async () => {
+		moveResourcesToDepartmentMock.mockRejectedValue(new BulkTargetMissingError());
+		const r = (await actions.moveResources!(
+			makeEntriesEvent([
+				['ids', 'r1'],
+				['departmentId', 'd1']
+			])
+		)) as { status: number; data: { errors: Record<string, ServerError> } };
+		expect(r.status).toBe(409);
+		expect(r.data.errors.ids).toMatchObject({ code: 'notFound', field: 'ids' });
+	});
+
+	it('空の departmentId は未所属 (undefined)', async () => {
+		await actions.moveResources!(
+			makeEntriesEvent([
+				['ids', 'r1'],
+				['departmentId', '']
+			])
+		);
+		expect(moveResourcesToDepartmentMock).toHaveBeenCalledWith('team_default', ['r1'], undefined);
 	});
 });

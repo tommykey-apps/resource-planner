@@ -3,6 +3,7 @@ import { ddb, TABLE } from '$lib/db/client';
 import { newId } from '$lib/id';
 import { pk, projectSk } from './keys';
 import { queryRelatedAssignmentSk } from './assignment';
+import { deleteEach, type BulkDeleteResult } from './bulk';
 import type { Project } from '$lib/types';
 import type { ProjectCreateInput, ProjectUpdateInput } from '$lib/schemas';
 
@@ -108,4 +109,9 @@ export async function deleteProject(teamId: string, id: string): Promise<void> {
 			]
 		})
 	);
+}
+
+/** 選んだ案件をまとめて削除する (1 件ごとに原子的な cascade、 詳細は ./bulk.ts)。 */
+export async function deleteProjects(teamId: string, ids: string[]): Promise<BulkDeleteResult> {
+	return deleteEach(ids, (id) => deleteProject(teamId, id));
 }

@@ -99,3 +99,40 @@ describe('makeFormAction (#171)', () => {
 		expect(result.data.errors.id?.code).toBe('required');
 	});
 });
+
+/**
+ * 一括操作: ids のように同じ key を繰り返す form は Object.fromEntries だと最後の値しか残らない。
+ * readInput で formData の読み方を差し替えられるようにする。
+ * また run が fail() を返したら (一括削除の一部失敗など) そのまま返す。
+ */
+describe('makeFormAction: readInput / run からの fail', () => {
+	it('readInput で読んだ値を schema に渡す', async () => {
+		const run = vi.fn().mockResolvedValue(undefined);
+		const action = makeFormAction({
+			action: 'deleteResources',
+			schema: z.object({ ids: z.array(z.string()) }),
+			readInput: (fd) => ({ ids: fd.getAll('ids') }),
+			run
+		});
+		const fd = new FormData();
+		fd.append('ids', 'a');
+		fd.append('ids', 'b');
+		await action({ request: { formData: async () => fd } } as unknown as RequestEvent);
+		expect(run).toHaveBeenCalledWith(SESSION, { ids: ['a', 'b'] });
+	});
+
+	it('run が fail() を返したらそのまま返す', async () => {
+		const { fail } = await import('@sveltejs/kit');
+		const action = makeFormAction({
+			action: 'deleteResources',
+			schema: z.object({ name: z.string() }),
+			run: async () => fail(500, { failed: ['x'] })
+		});
+		const result = (await action(makeEvent({ name: 'a' }))) as {
+			status: number;
+			data: { failed: string[] };
+		};
+		expect(result.status).toBe(500);
+		expect(result.data).toEqual({ failed: ['x'] });
+	});
+});

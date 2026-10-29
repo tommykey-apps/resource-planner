@@ -14,6 +14,11 @@
 	import SortHeader from './table/SortHeader.svelte';
 	import PageNavigation from './table/PageNavigation.svelte';
 	import ScrollShadow from './table/ScrollShadow.svelte';
+	import SelectAllHeader from './table/SelectAllHeader.svelte';
+	import RowSelectCell from './table/RowSelectCell.svelte';
+	import BulkActionBar from './table/BulkActionBar.svelte';
+	import { createRowSelection } from '$lib/state/row-selection.svelte';
+	import { makeBulkDeleteSubmit } from '$lib/forms/bulk-delete-submit';
 	import type { Project, ProjectLink, Assignment } from '$lib/types';
 	import {
 		PROJECT_DESCRIPTION_MAX_LENGTH,
@@ -94,6 +99,24 @@
 	}
 
 	const tableId = $props.id();
+
+	/** 一括操作 (ResourceManager と同じ方針: 全選択は表示中のページだけ、 状態が変わったら解除)。 */
+	const selection = createRowSelection(
+		() => paged.items.map((p) => p.id),
+		() => [query.q, query.sort, query.dir, query.page].join('|')
+	);
+	const batchMode = $derived(selection.ids.length > 0);
+	const bulkDeleteSubmit = makeBulkDeleteSubmit({
+		getIds: () => selection.ids,
+		assignmentCountOf: (id) => assignmentCountByProject.get(id) ?? 0,
+		messages: {
+			confirm: (count) => t('projects.confirmBulkDelete', { count }),
+			confirmWithAssignments: (count, assignments) =>
+				t('projects.confirmBulkDeleteWithAssignments', { count, assignments }),
+			deleted: (count) => t('projects.bulkDeleted', { count })
+		},
+		onDone: () => selection.clear()
+	});
 
 	let formOpen = $state(false);
 	let editing = $state<Project | null>(null);
@@ -234,11 +257,21 @@
 		{#if filtered.length === 0}
 			<p class="py-4 text-sm text-muted-foreground">{t('projects.noMatches')}</p>
 		{:else}
+			<BulkActionBar count={selection.ids.length} onClear={selection.clear}>
+				<form method="POST" action="/?/deleteProjects" use:enhance={bulkDeleteSubmit}>
+					{#each selection.ids as id (id)}
+						<input type="hidden" name="ids" value={id} />
+					{/each}
+					<Button size="xs" variant="destructive" type="submit">{t('common.deleteSelected')}</Button
+					>
+				</form>
+			</BulkActionBar>
 			<ScrollShadow labelledby="{tableId}-caption">
 				<table class="w-full border-collapse text-sm">
 					<caption id="{tableId}-caption" class="sr-only">{t('nav.projectsLink')}</caption>
 					<thead class="border-b-2 border-foreground">
 						<tr>
+							<SelectAllHeader state={selection.state} onToggle={selection.toggleAll} />
 							<SortHeader
 								label={t('projects.name')}
 								active={query.sort === 'name'}
@@ -259,8 +292,21 @@
 					<tbody>
 						{#each paged.items as p (p.id)}
 							{@const count = assignmentCountByProject.get(p.id) ?? 0}
-							<tr class="border-b border-border align-top">
-								<th scope="row" class="px-3 py-2 text-left font-normal whitespace-nowrap">
+							{@const rowHeaderId = `${tableId}-row-${p.id}`}
+							<tr
+								class="border-b border-border align-top"
+								class:bg-muted={selection.isSelected(p.id)}
+							>
+								<RowSelectCell
+									checked={selection.isSelected(p.id)}
+									labelledby={rowHeaderId}
+									onToggle={() => selection.toggle(p.id)}
+								/>
+								<th
+									id={rowHeaderId}
+									scope="row"
+									class="px-3 py-2 text-left font-normal whitespace-nowrap"
+								>
 									<span class="inline-flex items-center gap-2">
 										<span
 											class="inline-block h-4 w-4 shrink-0 border border-black/10"
@@ -274,8 +320,12 @@
 								<td class="px-3 py-2 text-right tabular-nums">{count}</td>
 								<td class="px-3 py-2">
 									<div class="flex justify-end gap-1">
-										<Button size="xs" variant="outline" onclick={() => startEdit(p)}
-											>{t('common.edit')}</Button
+										<!-- Carbon: 一括操作中は行ごとの操作を無効にする -->
+										<Button
+											size="xs"
+											variant="outline"
+											disabled={batchMode}
+											onclick={() => startEdit(p)}>{t('common.edit')}</Button
 										>
 										<form
 											method="POST"
@@ -283,7 +333,7 @@
 											use:enhance={makeDeleteSubmit({ name: p.name, count })}
 										>
 											<input type="hidden" name="id" value={p.id} />
-											<Button size="xs" variant="destructive" type="submit">
+											<Button size="xs" variant="destructive" type="submit" disabled={batchMode}>
 												{t('common.delete')}
 											</Button>
 										</form>

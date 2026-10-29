@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { toast } from 'svelte-sonner';
 	import { Button } from './ui/button';
 	import { Input } from './ui/input';
 	import Dialog from './Dialog.svelte';
@@ -18,6 +19,11 @@
 	import SortHeader from './table/SortHeader.svelte';
 	import PageNavigation from './table/PageNavigation.svelte';
 	import ScrollShadow from './table/ScrollShadow.svelte';
+	import SelectAllHeader from './table/SelectAllHeader.svelte';
+	import RowSelectCell from './table/RowSelectCell.svelte';
+	import BulkActionBar from './table/BulkActionBar.svelte';
+	import { createRowSelection } from '$lib/state/row-selection.svelte';
+	import { makeBulkDeleteSubmit } from '$lib/forms/bulk-delete-submit';
 	import type { Resource, Assignment, Department } from '$lib/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
 
@@ -92,6 +98,42 @@
 	}
 
 	const tableId = $props.id();
+
+	/**
+	 * 一括操作 (デジタル庁「テーブル」行の選択 + Carbon Data table batch actions)。
+	 * 全選択の対象は表示中のページの行だけ。 絞り込み・並び替え・ページが変わったら選択を解除する。
+	 */
+	const selection = createRowSelection(
+		() => paged.items.map((r) => r.id),
+		() => [query.q, query.sort, query.dir, query.page, deptFilter].join('|')
+	);
+	const batchMode = $derived(selection.ids.length > 0);
+	let bulkDepartmentId = $state('');
+
+	const bulkDeleteSubmit = makeBulkDeleteSubmit({
+		getIds: () => selection.ids,
+		assignmentCountOf: (id) => assignmentCountByResource.get(id) ?? 0,
+		messages: {
+			confirm: (count) => t('resources.confirmBulkDelete', { count }),
+			confirmWithAssignments: (count, assignments) =>
+				t('resources.confirmBulkDeleteWithAssignments', { count, assignments }),
+			deleted: (count) => t('resources.bulkDeleted', { count })
+		},
+		onDone: () => selection.clear()
+	});
+
+	const bulkMoveSubmit: SubmitFunction = () => {
+		return async ({ result, update }) => {
+			if (result.type === 'success') {
+				const moved = (result.data as { moved?: number })?.moved ?? 0;
+				toast.success(t('resources.bulkMoved', { count: moved }));
+			} else {
+				toast.error(t('resources.bulkMoveFailed'));
+			}
+			selection.clear();
+			await update();
+		};
+	};
 
 	let formOpen = $state(false);
 	let editing = $state<Resource | null>(null);
@@ -258,11 +300,45 @@
 		{#if filtered.length === 0}
 			<p class="py-4 text-sm text-muted-foreground">{t('resources.noMatches')}</p>
 		{:else}
+			<BulkActionBar count={selection.ids.length} onClear={selection.clear}>
+				<form
+					method="POST"
+					action="/?/moveResources"
+					use:enhance={bulkMoveSubmit}
+					class="flex items-center gap-2"
+				>
+					{#each selection.ids as id (id)}
+						<input type="hidden" name="ids" value={id} />
+					{/each}
+					<label for="{tableId}-bulk-dept">{t('resources.moveSelected')}</label>
+					<select
+						id="{tableId}-bulk-dept"
+						name="departmentId"
+						bind:value={bulkDepartmentId}
+						class="h-8 border border-input bg-background px-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+						style="border-radius: calc(var(--radius) * 0.6)"
+					>
+						<option value="">{t('departments.unassigned')}</option>
+						{#each flatTree as { dept, depth } (dept.id)}
+							<option value={dept.id}>{'\u00A0\u00A0'.repeat(depth)}{dept.name}</option>
+						{/each}
+					</select>
+					<Button size="xs" variant="outline" type="submit">{t('common.change')}</Button>
+				</form>
+				<form method="POST" action="/?/deleteResources" use:enhance={bulkDeleteSubmit}>
+					{#each selection.ids as id (id)}
+						<input type="hidden" name="ids" value={id} />
+					{/each}
+					<Button size="xs" variant="destructive" type="submit">{t('common.deleteSelected')}</Button
+					>
+				</form>
+			</BulkActionBar>
 			<ScrollShadow labelledby="{tableId}-caption">
 				<table class="w-full border-collapse text-sm">
 					<caption id="{tableId}-caption" class="sr-only">{t('nav.resourcesLink')}</caption>
 					<thead class="border-b-2 border-foreground">
 						<tr>
+							<SelectAllHeader state={selection.state} onToggle={selection.toggleAll} />
 							<SortHeader
 								label={t('resources.name')}
 								active={query.sort === 'name'}
@@ -288,16 +364,33 @@
 					<tbody>
 						{#each paged.items as r (r.id)}
 							{@const count = assignmentCountByResource.get(r.id) ?? 0}
-							<tr class="border-b border-border align-top">
-								<th scope="row" class="px-3 py-2 text-left font-normal whitespace-nowrap">
+							{@const rowHeaderId = `${tableId}-row-${r.id}`}
+							<tr
+								class="border-b border-border align-top"
+								class:bg-muted={selection.isSelected(r.id)}
+							>
+								<RowSelectCell
+									checked={selection.isSelected(r.id)}
+									labelledby={rowHeaderId}
+									onToggle={() => selection.toggle(r.id)}
+								/>
+								<th
+									id={rowHeaderId}
+									scope="row"
+									class="px-3 py-2 text-left font-normal whitespace-nowrap"
+								>
 									{r.name}
 								</th>
 								<td class="px-3 py-2 whitespace-nowrap">{departmentLabel(r)}</td>
 								<td class="px-3 py-2 text-right tabular-nums">{count}</td>
 								<td class="px-3 py-2">
 									<div class="flex justify-end gap-1">
-										<Button size="xs" variant="outline" onclick={() => startEdit(r)}
-											>{t('common.edit')}</Button
+										<!-- Carbon: 一括操作中は行ごとの操作を無効にする -->
+										<Button
+											size="xs"
+											variant="outline"
+											disabled={batchMode}
+											onclick={() => startEdit(r)}>{t('common.edit')}</Button
 										>
 										<form
 											method="POST"
@@ -305,7 +398,7 @@
 											use:enhance={makeDeleteSubmit({ name: r.name, count })}
 										>
 											<input type="hidden" name="id" value={r.id} />
-											<Button size="xs" variant="destructive" type="submit">
+											<Button size="xs" variant="destructive" type="submit" disabled={batchMode}>
 												{t('common.delete')}
 											</Button>
 										</form>
