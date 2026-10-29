@@ -1,53 +1,44 @@
 // @vitest-environment jsdom
-import { render } from '@testing-library/svelte';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render } from '@testing-library/svelte';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AppHeader from './AppHeader.svelte';
-import type { Resource, Project, Assignment, Department } from '$lib/types';
 
 /**
- * #136 / #146: 共通 Header の振る舞い契約。
+ * #136 / #146 / header 標準化: 共通 Header の振る舞い契約。
  *
- * AppHeader は `/` と `/assignments` から共通で mount する。 子コンポーネントの内部は
- * 個別 spec があるので、本ファイルは AppHeader 固有の責務 (logo a11y / branding nav /
- * active state / 子の mount + user.email pass-through) だけを TDD で守る。
+ * デジタル庁デザインシステム「ヘッダーコンテナ」の構成に揃える:
+ *   ロゴ (左) + 水平メニュー (グローバルナビ) + ヘッダーコンテナアイテム (言語切替 / アカウント) +
+ *   狭い画面ではハンバーガーメニューボタン。
+ * 画面固有の操作 (アサイン追加など) と master 管理の起動ボタンはヘッダーに置かない。
+ * 現在地は `page.url.pathname` から判定するので `$app/state` を mock する。
  */
 
-const SAMPLE_RESOURCES: Resource[] = [{ id: 'r1', name: 'Alice' }];
-const SAMPLE_PROJECTS: Project[] = [{ id: 'p1', name: 'Project A', color: '#0EA5E9' }];
-const SAMPLE_DEPARTMENTS: Department[] = [{ id: 'd1', name: '開発本部', parentId: null }];
-const SAMPLE_ASSIGNMENTS: Assignment[] = [
-	{
-		id: 'a1',
-		resourceId: 'r1',
-		projectId: 'p1',
-		startDate: '2026-05-01',
-		endDateExclusive: '2026-05-08',
-		version: 1
-	}
-];
+const pageState = vi.hoisted(() => ({ url: new URL('http://localhost/') }));
+vi.mock('$app/state', () => ({ page: pageState }));
 
-type StubOverrides = {
-	isAssignmentsActive?: boolean;
-	isHomeActive?: boolean;
-	email?: string;
-	csrfToken?: string;
-};
-
-const stubProps = (overrides: StubOverrides = {}) => ({
+const stubProps = (overrides: { email?: string } = {}) => ({
 	props: {
-		resources: SAMPLE_RESOURCES,
-		projects: SAMPLE_PROJECTS,
-		assignments: SAMPLE_ASSIGNMENTS,
-		departments: SAMPLE_DEPARTMENTS,
 		user: { email: overrides.email ?? 'alice@example.com' },
-		isAssignmentsActive: overrides.isAssignmentsActive ?? false,
-		isHomeActive: overrides.isHomeActive ?? false,
-		csrfToken: overrides.csrfToken ?? 'test-csrf-token'
+		csrfToken: 'test-csrf-token'
 	}
 });
 
+function setPath(path: string) {
+	pageState.url = new URL(`http://localhost${path}`);
+}
+
+const NAV_ITEMS = [
+	{ href: '/', label: /タイムライン/ },
+	{ href: '/assignments', label: /アサイン一覧/ },
+	{ href: '/resources', label: /^メンバー$/ },
+	{ href: '/projects', label: /^案件$/ },
+	{ href: '/departments', label: /^部署$/ }
+];
+
+beforeEach(() => setPath('/'));
+
 describe('AppHeader — branding logo (#146)', () => {
-	it('logo img は alt="" (隣 h1 と同じ意味なので装飾扱い、 SR 重複読み回避)', () => {
+	it('logo img は alt="" (隣のアプリ名と同じ意味なので装飾扱い、 SR 重複読み回避)', () => {
 		const { container } = render(AppHeader, stubProps());
 		const img = container.querySelector('img');
 		expect(img).toBeTruthy();
@@ -61,67 +52,65 @@ describe('AppHeader — branding logo (#146)', () => {
 		expect(img?.getAttribute('height')).toBe('32');
 	});
 
-	it('logo + アプリ名 h1 は <a href="/"> で wrap して home へ navigation', () => {
+	it('logo + アプリ名は <a href="/"> で wrap して home へ navigation', () => {
 		const { container } = render(AppHeader, stubProps());
-		const anchor = container.querySelector('a[href="/"]');
-		expect(anchor).toBeTruthy();
-		expect(anchor?.querySelector('img')).toBeTruthy();
-		expect(anchor?.querySelector('h1')).toBeTruthy();
+		const anchor = container.querySelector('img')?.closest('a');
+		expect(anchor?.getAttribute('href')).toBe('/');
 	});
 });
 
-describe('AppHeader — assignments link active state (#136)', () => {
-	it('isAssignmentsActive=false → /assignments link に aria-current 無し', () => {
-		const { container } = render(AppHeader, stubProps({ isAssignmentsActive: false }));
-		const link = container.querySelector('a[href="/assignments"]');
-		expect(link).toBeTruthy();
-		expect(link?.getAttribute('aria-current')).toBeNull();
+describe('AppHeader — 水平メニュー (グローバルナビ)', () => {
+	it('nav landmark に 5 つの上位区画 link を並べる', () => {
+		const { getByRole } = render(AppHeader, stubProps());
+		const nav = getByRole('navigation', { name: 'メインメニュー' });
+		const links = Array.from(nav.querySelectorAll('a'));
+		expect(links.map((a) => a.getAttribute('href'))).toEqual(NAV_ITEMS.map((i) => i.href));
+		NAV_ITEMS.forEach((item, i) => expect(links[i].textContent?.trim()).toMatch(item.label));
 	});
 
-	it('isAssignmentsActive=true → /assignments link に aria-current="page"', () => {
-		const { container } = render(AppHeader, stubProps({ isAssignmentsActive: true }));
-		const link = container.querySelector('a[href="/assignments"]');
-		expect(link?.getAttribute('aria-current')).toBe('page');
-	});
-});
-
-/**
- * Timeline nav button (home へ named button)。 /assignments → home (ガント) への
- * 双方向 navigation 対称化。 logo (左上) も href="/" だが、 ListChecks ボタンと
- * 並ぶ named button が無いと nav 構造が非対称で発見性が低い。
- */
-describe('AppHeader — Timeline (home) named nav button', () => {
-	it('Timeline button (a[href="/"]) が右側 nav に存在 + named label', () => {
-		const { container } = render(AppHeader, stubProps());
-		// 右側 nav cluster (logo の a[href="/"] とは別) に href="/" の named button
-		const navLinks = container.querySelectorAll('a[href="/"]');
-		// logo + Timeline button の 2 つあるはず
-		expect(navLinks.length).toBeGreaterThanOrEqual(2);
-		// Timeline label を持つ link が存在
-		const timelineBtn = Array.from(navLinks).find((a) =>
-			a.textContent?.match(/タイムライン|Timeline/i)
-		);
-		expect(timelineBtn).toBeTruthy();
+	it.each(NAV_ITEMS)('pathname=$href のとき該当 link だけ aria-current="page"', ({ href }) => {
+		setPath(href);
+		const { getByRole } = render(AppHeader, stubProps());
+		const nav = getByRole('navigation', { name: 'メインメニュー' });
+		const current = nav.querySelectorAll('a[aria-current="page"]');
+		expect(current).toHaveLength(1);
+		expect(current[0].getAttribute('href')).toBe(href);
 	});
 
-	it('isHomeActive=false → Timeline link に aria-current 無し', () => {
-		const { container } = render(AppHeader, stubProps({ isHomeActive: false }));
-		const timelineBtn = Array.from(container.querySelectorAll('a[href="/"]')).find((a) =>
-			a.textContent?.match(/タイムライン|Timeline/i)
-		);
-		expect(timelineBtn?.getAttribute('aria-current')).toBeNull();
+	it('配下の path (/resources/x) でも上位区画を現在地にする', () => {
+		setPath('/resources/x');
+		const { getByRole } = render(AppHeader, stubProps());
+		const nav = getByRole('navigation', { name: 'メインメニュー' });
+		expect(nav.querySelector('a[aria-current="page"]')?.getAttribute('href')).toBe('/resources');
 	});
 
-	it('isHomeActive=true → Timeline link に aria-current="page"', () => {
-		const { container } = render(AppHeader, stubProps({ isHomeActive: true }));
-		const timelineBtn = Array.from(container.querySelectorAll('a[href="/"]')).find((a) =>
-			a.textContent?.match(/タイムライン|Timeline/i)
-		);
-		expect(timelineBtn?.getAttribute('aria-current')).toBe('page');
+	it('ナビ項目は link で、 button や件数付きラベルを持たない', () => {
+		const { getByRole } = render(AppHeader, stubProps());
+		const nav = getByRole('navigation', { name: 'メインメニュー' });
+		expect(nav.querySelectorAll('button')).toHaveLength(0);
+		expect(nav.textContent).not.toMatch(/\(\d+\)/);
 	});
 });
 
-describe('AppHeader — child component composition (#136)', () => {
+describe('AppHeader — ヘッダーに置かないもの', () => {
+	it('master 管理の起動 button / アサイン追加 button を持たない', () => {
+		const { queryByRole } = render(AppHeader, stubProps());
+		expect(queryByRole('button', { name: /管理/ })).toBeNull();
+		expect(queryByRole('button', { name: /アサインを追加/ })).toBeNull();
+	});
+
+	it('テーマ切替 button はヘッダーに直接置かない (アバターメニューへ集約)', () => {
+		const { queryByRole } = render(AppHeader, stubProps());
+		expect(queryByRole('button', { name: /テーマ/ })).toBeNull();
+	});
+});
+
+describe('AppHeader — ヘッダーコンテナアイテム', () => {
+	it('言語切替を置く', () => {
+		const { getByRole } = render(AppHeader, stubProps());
+		expect(getByRole('button', { name: '言語' })).toBeInTheDocument();
+	});
+
 	it('AvatarDropdown は user.email を受け取り、 trigger に email 先頭文字を表示', () => {
 		const { container } = render(AppHeader, stubProps({ email: 'bob@example.com' }));
 		const avatar = container.querySelector(
@@ -133,12 +122,34 @@ describe('AppHeader — child component composition (#136)', () => {
 
 	it('header 内に sticky bar が 1 つだけ (重複 header を防ぐ)', () => {
 		const { container } = render(AppHeader, stubProps());
-		const headers = container.querySelectorAll('header');
-		expect(headers.length).toBe(1);
+		expect(container.querySelectorAll('header')).toHaveLength(1);
+	});
+});
+
+describe('AppHeader — ハンバーガーメニューボタン (狭い画面)', () => {
+	it('aria-expanded=false + aria-controls で水平メニューを指す', () => {
+		const { getByRole } = render(AppHeader, stubProps());
+		const toggle = getByRole('button', { name: 'メニュー' });
+		const nav = getByRole('navigation', { name: 'メインメニュー' });
+		expect(toggle.getAttribute('aria-expanded')).toBe('false');
+		expect(toggle.getAttribute('aria-controls')).toBe(nav.id);
 	});
 
-	// #166 csrfToken pass-through の assert は AvatarDropdown / SignOutForm 層へ委譲。
-	// bits-ui DropdownMenu.Portal は trigger click 前に Content を render しないため
-	// AppHeader 単体テストでは hidden input を直接 DOM から拾えない。 SignOutForm.test
-	// が hidden csrfToken の存在 / 値を guard、 E2E spec が flow 全体を guard する。
+	it('click で aria-expanded が切り替わる', async () => {
+		const { getByRole } = render(AppHeader, stubProps());
+		const toggle = getByRole('button', { name: 'メニュー' });
+		await fireEvent.click(toggle);
+		expect(toggle.getAttribute('aria-expanded')).toBe('true');
+		await fireEvent.click(toggle);
+		expect(toggle.getAttribute('aria-expanded')).toBe('false');
+	});
+
+	it('開いた状態でナビ link を押すとメニューを閉じる', async () => {
+		const { getByRole } = render(AppHeader, stubProps());
+		const toggle = getByRole('button', { name: 'メニュー' });
+		await fireEvent.click(toggle);
+		const nav = getByRole('navigation', { name: 'メインメニュー' });
+		await fireEvent.click(nav.querySelector('a[href="/projects"]') as HTMLElement);
+		expect(toggle.getAttribute('aria-expanded')).toBe('false');
+	});
 });

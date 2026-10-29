@@ -1,7 +1,13 @@
 // @vitest-environment jsdom
-import { render } from '@testing-library/svelte';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/svelte';
+import { describe, expect, it, vi } from 'vitest';
 import AvatarDropdown from './AvatarDropdown.svelte';
+
+const { setMode } = vi.hoisted(() => ({ setMode: vi.fn() }));
+vi.mock('mode-watcher', async (importOriginal) => ({
+	...(await importOriginal<typeof import('mode-watcher')>()),
+	setMode
+}));
 
 /**
  * AvatarDropdown smoke test (#96)。
@@ -36,5 +42,31 @@ describe('AvatarDropdown (smoke)', () => {
 		});
 		const trigger = getByRole('button');
 		expect(trigger.textContent).toMatch(/\?/);
+	});
+});
+
+/**
+ * header 標準化: テーマ切替をヘッダー直置きの button からアバターメニュー内の
+ * 選択肢 (ライト / ダーク / システム) へ移す。 現在値は menuitemradio の aria-checked で示す。
+ */
+describe('AvatarDropdown — テーマ選択', () => {
+	async function openMenu() {
+		const utils = render(AvatarDropdown, {
+			props: { email: 'alice@example.com', csrfToken: 'tok' }
+		});
+		await fireEvent.keyDown(utils.getByRole('button'), { key: 'Enter' });
+		return utils;
+	}
+
+	it('メニューにテーマの選択肢 3 つ (ライト / ダーク / システム) を出す', async () => {
+		await openMenu();
+		const radios = await screen.findAllByRole('menuitemradio');
+		expect(radios.map((r) => r.textContent?.trim())).toEqual(['ライト', 'ダーク', 'システム']);
+	});
+
+	it('選択肢を押すと mode-watcher の setMode に渡す', async () => {
+		await openMenu();
+		await fireEvent.click(await screen.findByRole('menuitemradio', { name: 'ダーク' }));
+		expect(setMode).toHaveBeenCalledWith('dark');
 	});
 });

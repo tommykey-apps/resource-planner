@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { DropdownMenu } from 'bits-ui';
+	import { setMode, userPrefersMode } from 'mode-watcher';
+	import Check from 'phosphor-svelte/lib/Check';
 	import { t } from '$lib/i18n/index.svelte';
+	import { pickTheme } from '$lib/theme';
 	import SignOutForm from './SignOutForm.svelte';
 
 	let { email = '', csrfToken }: { email?: string; csrfToken: string } = $props();
@@ -9,6 +12,9 @@
 	const ariaLabel = $derived(
 		email.length > 0 ? t('avatar.labelWithEmail', { email }) : t('avatar.label')
 	);
+
+	// header 標準化: テーマは利用頻度の低い個人設定なのでアバターメニューの選択肢に置く。
+	const THEMES = ['light', 'dark', 'system'] as const;
 </script>
 
 <DropdownMenu.Root>
@@ -34,6 +40,28 @@
 				</DropdownMenu.Item>
 				<DropdownMenu.Separator class="my-1 h-px bg-border" />
 			{/if}
+			<DropdownMenu.RadioGroup
+				value={userPrefersMode.current}
+				onValueChange={(v) => setMode(pickTheme(v))}
+			>
+				<DropdownMenu.GroupHeading class="px-2 py-1.5 text-xs text-muted-foreground">
+					{t('theme.heading')}
+				</DropdownMenu.GroupHeading>
+				{#each THEMES as theme (theme)}
+					<DropdownMenu.RadioItem
+						value={theme}
+						class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none data-highlighted:bg-accent"
+					>
+						{#snippet children({ checked })}
+							<span class="inline-flex w-4 justify-center" aria-hidden="true">
+								{#if checked}<Check size={14} />{/if}
+							</span>
+							{t(`theme.${theme}`)}
+						{/snippet}
+					</DropdownMenu.RadioItem>
+				{/each}
+			</DropdownMenu.RadioGroup>
+			<DropdownMenu.Separator class="my-1 h-px bg-border" />
 			<DropdownMenu.Item class="p-0">
 				<SignOutForm {csrfToken} label={t('avatar.signout')} />
 			</DropdownMenu.Item>

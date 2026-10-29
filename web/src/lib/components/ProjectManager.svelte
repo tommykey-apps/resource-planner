@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import Folder from 'phosphor-svelte/lib/Folder';
 	import { Button } from './ui/button';
 	import { Input } from './ui/input';
 	import { Textarea } from './ui/textarea';
@@ -57,7 +56,6 @@
 
 	const DEFAULT_COLOR = '#4D72F3';
 
-	let listOpen = $state(false);
 	let formOpen = $state(false);
 	let editing = $state<Project | null>(null);
 	let formName = $state('');
@@ -162,61 +160,52 @@
 	}
 </script>
 
-<Button variant="outline" onclick={() => (listOpen = true)}>
-	<Folder size={18} weight="regular" aria-hidden="true" />
-	<span class="hidden sm:ml-1 sm:inline"
-		>{t('projects.manageWithCount', { count: projects.length })}</span
-	>
-</Button>
+<div class="flex flex-col gap-3">
+	<Button class="self-start" onclick={startCreate}>{t('projects.add')}</Button>
 
-<Dialog bind:open={listOpen} title={t('projects.manage')} description={t('projects.description')}>
-	<div class="flex flex-col gap-3">
-		<Button onclick={startCreate}>{t('projects.add')}</Button>
-
-		{#if projects.length === 0}
-			<p class="py-4 text-center text-sm text-muted-foreground">{t('projects.empty')}</p>
-		{:else}
-			<ul class="divide-y divide-border border border-border">
-				{#each projects as p (p.id)}
-					{@const count = assignmentCountByProject.get(p.id) ?? 0}
-					<li class="flex items-center justify-between gap-2 px-3 py-2">
-						<span class="flex items-center gap-2 text-sm">
-							<span
-								class="inline-block h-4 w-4 border border-black/10"
-								style="background-color: {p.color}; border-radius: calc(var(--radius) * 0.4)"
-								aria-hidden="true"
-							></span>
-							{p.name}
-							<span class="text-xs text-muted-foreground"
-								>{t('projects.assignmentCount', { count })}</span
-							>
-						</span>
-						<div class="flex gap-1">
-							<Button size="xs" variant="outline" onclick={() => startEdit(p)}
-								>{t('common.edit')}</Button
-							>
-							<form
-								method="POST"
-								action="?/deleteProject"
-								use:enhance={makeDeleteSubmit({ name: p.name, count })}
-							>
-								<input type="hidden" name="id" value={p.id} />
-								<Button size="xs" variant="destructive" type="submit">
-									{t('common.delete')}
-								</Button>
-							</form>
-						</div>
-					</li>
-				{/each}
-			</ul>
-		{/if}
-	</div>
-</Dialog>
+	{#if projects.length === 0}
+		<p class="py-4 text-center text-sm text-muted-foreground">{t('projects.empty')}</p>
+	{:else}
+		<ul class="divide-y divide-border border border-border">
+			{#each projects as p (p.id)}
+				{@const count = assignmentCountByProject.get(p.id) ?? 0}
+				<li class="flex items-center justify-between gap-2 px-3 py-2">
+					<span class="flex items-center gap-2 text-sm">
+						<span
+							class="inline-block h-4 w-4 border border-black/10"
+							style="background-color: {p.color}; border-radius: calc(var(--radius) * 0.4)"
+							aria-hidden="true"
+						></span>
+						{p.name}
+						<span class="text-xs text-muted-foreground"
+							>{t('projects.assignmentCount', { count })}</span
+						>
+					</span>
+					<div class="flex gap-1">
+						<Button size="xs" variant="outline" onclick={() => startEdit(p)}
+							>{t('common.edit')}</Button
+						>
+						<form
+							method="POST"
+							action="/?/deleteProject"
+							use:enhance={makeDeleteSubmit({ name: p.name, count })}
+						>
+							<input type="hidden" name="id" value={p.id} />
+							<Button size="xs" variant="destructive" type="submit">
+								{t('common.delete')}
+							</Button>
+						</form>
+					</div>
+				</li>
+			{/each}
+		</ul>
+	{/if}
+</div>
 
 <Dialog bind:open={formOpen} title={editing ? t('projects.editTitle') : t('projects.createTitle')}>
 	<form
 		method="POST"
-		action={editing ? '?/updateProject' : '?/createProject'}
+		action={editing ? '/?/updateProject' : '/?/createProject'}
 		use:enhance={formSubmit}
 		class="flex flex-col gap-3"
 	>
@@ -258,7 +247,7 @@
 
 		<!-- BP B7 (APG Disclosure): 既存値ありなら default open、 なければ closed。 -->
 		<details bind:open={detailOpen} class="mt-2">
-			<summary class="cursor-pointer select-none text-sm font-medium">
+			<summary class="cursor-pointer text-sm font-medium select-none">
 				{t('projects.editDetail')}
 			</summary>
 			<div class="mt-2 flex flex-col gap-3">
@@ -273,7 +262,7 @@
 					<div class="flex items-baseline justify-between gap-2">
 						<span>
 							{t('projects.descriptionLabel')}
-							<small class="text-muted-foreground text-xs">{t('projects.descriptionHint')}</small>
+							<small class="text-xs text-muted-foreground">{t('projects.descriptionHint')}</small>
 						</span>
 						<div
 							role="tablist"
@@ -320,7 +309,7 @@
 						role="tabpanel"
 						aria-labelledby="desc-preview-tab"
 						hidden={descTab !== 'preview'}
-						class="prose prose-sm dark:prose-invert max-w-none rounded border border-input bg-background px-3 py-2 text-sm min-h-[10rem]"
+						class="prose prose-sm min-h-[10rem] max-w-none rounded border border-input bg-background px-3 py-2 text-sm dark:prose-invert"
 					>
 						{#if formDescription.trim()}
 							<!-- markdown.ts: marked + isomorphic-dompurify で sanitize 済 (server / client 共通)。 -->
@@ -386,13 +375,7 @@
 						</div>
 					{/each}
 					{#if formLinks.length < PROJECT_LINK_MAX_COUNT}
-						<Button
-							size="xs"
-							variant="outline"
-							type="button"
-							onclick={addLink}
-							class="self-start"
-						>
+						<Button size="xs" variant="outline" type="button" onclick={addLink} class="self-start">
 							{t('projects.addLink')}
 						</Button>
 					{/if}

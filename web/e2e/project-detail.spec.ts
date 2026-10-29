@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { clearMagicLinks, getMagicLinkUrl } from './fixtures/magic-link';
+import { openSection } from './fixtures/nav';
 
 /**
  * E2E for Project detail modal (PR-N5, refs #187)。
@@ -32,16 +33,15 @@ async function signInAsTestUser(page: Page): Promise<void> {
 }
 
 async function createResource(page: Page, name: string): Promise<void> {
-	await page.getByRole('button', { name: /Manage people/ }).click();
+	await openSection(page, 'People');
 	await page.getByRole('button', { name: /\+ Add person/ }).click();
 	await page.getByLabel('Name').fill(name);
 	await page.getByRole('button', { name: /^Create$/ }).click();
 	await expect(page.locator('li', { hasText: name })).toBeVisible();
-	await page.keyboard.press('Escape');
 }
 
 async function openProjectForm(page: Page): Promise<void> {
-	await page.getByRole('button', { name: /Manage projects/ }).click();
+	await openSection(page, 'Projects');
 	await page.getByRole('button', { name: /\+ Add project/ }).click();
 }
 
@@ -87,7 +87,11 @@ async function createAssignment(
 	opts: { projectName: string; resourceName: string }
 ): Promise<void> {
 	// AssignmentCreator の trigger button (Plus icon + "Add assignment" text、 #142 mobile では icon のみ表示)
-	await page.getByRole('button', { name: /Add assignment/ }).first().click();
+	await openSection(page, 'Timeline');
+	await page
+		.getByRole('button', { name: /Add assignment/ })
+		.first()
+		.click();
 	await page.locator('select[name="resourceId"]').selectOption({ label: opts.resourceName });
 	await page.locator('select[name="projectId"]').selectOption({ label: opts.projectName });
 	const today = new Date().toISOString().slice(0, 10);
@@ -117,7 +121,7 @@ test('Project detail: form CRUD で description/tags/links を save → reload �
 
 	// ── reload: ProjectManager → Edit で値復元
 	await page.reload();
-	await page.getByRole('button', { name: /Manage projects/ }).click();
+	await openSection(page, 'Projects');
 	await page
 		.locator('li', { hasText: projectName })
 		.getByRole('button', { name: /^Edit$/ })
@@ -132,14 +136,12 @@ test('Project detail: form CRUD で description/tags/links を save → reload �
 	await page.locator('textarea[name="description"]').fill('');
 	await page.locator('input[name="tags"]').fill('');
 	// link は remove button 押下
-	await page
-		.getByRole('button', { name: /^Remove 1$/ })
-		.click();
+	await page.getByRole('button', { name: /^Remove 1$/ }).click();
 	await submitProjectForm(page, 'update');
 
 	// ── reload で再確認 → 全部空
 	await page.reload();
-	await page.getByRole('button', { name: /Manage projects/ }).click();
+	await openSection(page, 'Projects');
 	await page
 		.locator('li', { hasText: projectName })
 		.getByRole('button', { name: /^Edit$/ })
@@ -148,9 +150,7 @@ test('Project detail: form CRUD で description/tags/links を save → reload �
 	await page.locator('details > summary', { hasText: /Edit detail/ }).click();
 	await expect(page.locator('textarea[name="description"]')).toHaveValue('');
 	await expect(page.locator('input[name="tags"]')).toHaveValue('');
-	const linksJsonAfter = await page
-		.locator('input[type="hidden"][name="linksJson"]')
-		.inputValue();
+	const linksJsonAfter = await page.locator('input[type="hidden"][name="linksJson"]').inputValue();
 	expect(JSON.parse(linksJsonAfter)).toEqual([]);
 });
 
@@ -180,10 +180,8 @@ test('Project detail modal: assignments page で project click → markdown が 
 		links: [{ label: 'Spec', url: 'https://example.com/spec' }]
 	});
 	await submitProjectForm(page, 'create');
-	// form modal が success で auto-close するのを待ってから manage modal を Escape で閉じる
-	// (form modal の閉じる animation 中に Escape を送ると form 側で吸収されて manage が残る)
+	// form modal が success で auto-close するのを待つ
 	await expect(page.getByRole('dialog', { name: /Add project/i })).toBeHidden();
-	await page.keyboard.press('Escape');
 	await expect(page.locator('[data-dialog-overlay][data-state="open"]')).toHaveCount(0);
 
 	// ── Assignment 作成 (project が /assignments に出てくる前提)
@@ -222,6 +220,6 @@ test('Project detail modal: assignments page で project click → markdown が 
 	const externalLink = modal.locator('a[href="https://example.com/spec"]');
 	await expect(externalLink).toHaveAttribute('target', '_blank');
 	await expect(externalLink).toHaveAttribute('rel', 'noopener noreferrer');
-	// BP B7 sr-only: 「新規 tab で開く」 / "opens in new tab"
-	await expect(externalLink.locator('.sr-only')).toContainText(/(新規 tab|new tab)/i);
+	// BP B7 sr-only: 「新しいタブで開く」 / "opens in a new tab"
+	await expect(externalLink.locator('.sr-only')).toContainText(/(新しいタブ|new tab)/i);
 });

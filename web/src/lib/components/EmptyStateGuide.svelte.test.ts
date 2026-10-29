@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import EmptyStateGuide from './EmptyStateGuide.svelte';
 
 /**
- * #99 item 3: 「① 人を追加 ② 案件を追加 ③ アサインを作成」 の 3 step chip 表示。
+ * #99 item 3: 「① メンバーを追加 ② 案件を追加 ③ アサインを追加」 の 3 step chip 表示。
  *
  * 4 状態 + 完了 (隠す) を確認:
  *   - 両方空: 1 / 2 / 3 すべて未完

@@ -4,6 +4,8 @@
 	import { Toaster } from 'svelte-sonner';
 	import { initLocale } from '$lib/i18n/index.svelte';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
+	import AppHeader from '$lib/components/AppHeader.svelte';
+	import { syncThemeCookie } from '$lib/theme-cookie.svelte';
 	import type { LayoutData } from './$types';
 
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
@@ -12,6 +14,9 @@
 	$effect.pre(() => {
 		initLocale(data.locale);
 	});
+
+	// #141: テーマ変更 (アバターメニュー / sign-in 画面) を cookie にミラー。
+	syncThemeCookie();
 </script>
 
 <!-- favicon / apple-touch-icon / manifest は app.html で全ページに静的 inject (#146)。 -->
@@ -27,5 +32,10 @@
 
 <!-- #132: confirmDialog の root mount。app 全体で 1 つだけ。 -->
 <ConfirmDialog />
+
+<!-- 共通ヘッダ。 認証済みのときだけ (sign-in 系は data.user なし) 全ページで 1 回 mount する。 -->
+{#if data.user}
+	<AppHeader user={data.user} csrfToken={data.csrfToken} />
+{/if}
 
 {@render children()}

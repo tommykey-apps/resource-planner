@@ -9,18 +9,12 @@ import ResourceManager from './ResourceManager.svelte';
  * 主要な submit-disable 挙動 (連打抑制) は `lib/forms/submit-state.svelte.test.ts` で
  * helper レベルで保証済 (#94)。本 test は render が壊れていないことだけ確認する。
  *
- * 詳細な component test (form 編集 / 削除 confirm 等) は #99 で拡充予定。
+ * header 標準化: 一覧はダイアログではなく `/resources` ページの本文に直接出す。
+ * form action は `/` に集約されたままなので、 別ページから送れるよう `/?/...` の絶対パスにする。
  */
 describe('ResourceManager (smoke)', () => {
-	it('renders the trigger button with the resource count', () => {
-		const { getByRole } = render(ResourceManager, {
-			props: { resources: [], assignments: [] }
-		});
-		expect(getByRole('button', { name: /人を管理/ })).toBeInTheDocument();
-	});
-
-	it('shows count of provided resources in the trigger label', () => {
-		const { getByRole } = render(ResourceManager, {
+	it('一覧と追加 button をダイアログを開かずに直接 render する', () => {
+		const { getByRole, getByText } = render(ResourceManager, {
 			props: {
 				resources: [
 					{ id: 'r1', name: 'Alice' },
@@ -29,20 +23,26 @@ describe('ResourceManager (smoke)', () => {
 				assignments: []
 			}
 		});
-		expect(getByRole('button', { name: /\(2\)/ })).toBeInTheDocument();
+		expect(getByRole('button', { name: /メンバーを追加/ })).toBeInTheDocument();
+		expect(getByText('Alice')).toBeInTheDocument();
+		expect(getByText('Bob')).toBeInTheDocument();
 	});
 
-	it('keeps the icon visible (phosphor svg) while wrapping the text label in a sm:inline span (mobile responsive、#96 / #105)', () => {
-		const { getByRole } = render(ResourceManager, {
-			props: { resources: [], assignments: [] }
+	it('起動用の「メンバーを管理」 button を持たない', () => {
+		const { queryByRole } = render(ResourceManager, { props: { resources: [], assignments: [] } });
+		expect(queryByRole('button', { name: /メンバーを管理/ })).toBeNull();
+	});
+
+	it('0 件のときは空状態の文言を出す', () => {
+		const { getByText } = render(ResourceManager, { props: { resources: [], assignments: [] } });
+		expect(getByText('メンバーはいません。')).toBeInTheDocument();
+	});
+
+	it('削除 form は /?/deleteResource に送る (別ページからでも / の action に届く)', () => {
+		const { container } = render(ResourceManager, {
+			props: { resources: [{ id: 'r1', name: 'Alice' }], assignments: [] }
 		});
-		const trigger = getByRole('button', { name: /人を管理/ });
-		// 絵文字ではなく phosphor icon (svg + aria-hidden) を使用 (#105)
-		const icon = trigger.querySelector('svg[aria-hidden="true"]');
-		expect(icon).toBeTruthy();
-		// 絵文字 👥 は使わない
-		expect(trigger.textContent).not.toMatch(/👥/);
-		expect(trigger.querySelector('.hidden.sm\\:inline')?.textContent).toMatch(/人を管理/);
+		expect(container.querySelector('form[action="/?/deleteResource"]')).toBeTruthy();
 	});
 
 	/**
@@ -52,10 +52,7 @@ describe('ResourceManager (smoke)', () => {
 	 */
 	it('accepts optimistic create callbacks as props (#121 contract)', () => {
 		const onOptimisticCreate = (_temp: { id: string; name: string }) => {};
-		const onConfirmCreate = (
-			_temp: { id: string },
-			_real: { id: string; name: string }
-		) => {};
+		const onConfirmCreate = (_temp: { id: string }, _real: { id: string; name: string }) => {};
 		const onRollbackCreate = (_temp: { id: string }) => {};
 		const result = render(ResourceManager, {
 			props: {
@@ -67,6 +64,6 @@ describe('ResourceManager (smoke)', () => {
 			}
 		});
 		// レンダリングが壊れないことを確認 (callback は実行されない)
-		expect(result.getByRole('button', { name: /人を管理/ })).toBeInTheDocument();
+		expect(result.getByRole('button', { name: /メンバーを追加/ })).toBeInTheDocument();
 	});
 });

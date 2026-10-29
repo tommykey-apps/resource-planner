@@ -1,96 +1,98 @@
 <script lang="ts">
-	import ResourceManager from './ResourceManager.svelte';
-	import ProjectManager from './ProjectManager.svelte';
-	import DepartmentManager from './DepartmentManager.svelte';
-	import AssignmentCreator from './AssignmentCreator.svelte';
+	import { page } from '$app/state';
+	import List from 'phosphor-svelte/lib/List';
+	import X from 'phosphor-svelte/lib/X';
 	import AvatarDropdown from './AvatarDropdown.svelte';
-	import ThemeToggle from './ThemeToggle.svelte';
 	import LocaleSwitcher from './LocaleSwitcher.svelte';
-	import { Button } from './ui/button';
-	import ListChecks from 'phosphor-svelte/lib/ListChecks';
-	import Calendar from 'phosphor-svelte/lib/Calendar';
 	import { t } from '$lib/i18n/index.svelte';
-	import type { Resource, Project, Assignment, Department } from '$lib/types';
 
 	/**
-	 * アプリ共通ヘッダ (#136、 #146)。
+	 * アプリ共通ヘッダ (#136、 #146、 header 標準化)。
 	 *
-	 * - logo + アプリ名 + Resource/Project/AssignmentCreator + アサイン一覧 button +
-	 *   LocaleSwitcher + ThemeToggle + AvatarDropdown を一列で並べる
-	 * - `/` と `/assignments` の両方から mount する (sign-in 系は除外、 layout 共有しない)
-	 * - **optimistic create callbacks** はホーム側だけで渡す (#121)。 /assignments 側は省略すると
-	 *   ResourceManager 内で通常 invalidate path (`update()`) に fallback する
-	 * - `isAssignmentsActive` / `isHomeActive` で各 nav の現在地ハイライト
-	 *   (`aria-current="page"`)。 /assignments から home (timeline / Gantt) への
-	 *   named nav button を /assignments 用と対称に配置 (#nav-symmetry)。
+	 * デジタル庁デザインシステム「ヘッダーコンテナ」の構成に揃える:
+	 * - ロゴ (左) / 水平メニュー = グローバルナビ / ヘッダーコンテナアイテム = 言語切替 + アカウント
+	 * - 狭い画面 (< md) では水平メニューをハンバーガーメニューボタンで開閉する
+	 *   (WAI-ARIA APG Disclosure Navigation: button の aria-expanded + aria-controls)
+	 * - 画面固有の操作 (アサイン追加・絞り込み) は各ページ本文に置き、 ヘッダーに載せない
+	 *   (GOV.UK「Help users to navigate a service」: ページだけに効く要素はナビの後ろ)
+	 * - 現在地は `page.url.pathname` で判定する。 root layout で 1 回だけ mount する。
 	 */
 	let {
-		resources,
-		projects,
-		assignments,
-		departments,
 		user,
-		csrfToken,
-		isAssignmentsActive = false,
-		isHomeActive = false,
-		onOptimisticCreateResource,
-		onConfirmCreateResource,
-		onRollbackCreateResource
+		csrfToken
 	}: {
-		resources: Resource[];
-		projects: Project[];
-		assignments: Assignment[];
-		departments: Department[];
 		user: { email?: string | null | undefined } | undefined;
 		csrfToken: string;
-		isAssignmentsActive?: boolean;
-		isHomeActive?: boolean;
-		onOptimisticCreateResource?: (temp: Resource) => void;
-		onConfirmCreateResource?: (temp: Resource, real: Resource) => void;
-		onRollbackCreateResource?: (temp: Resource) => void;
 	} = $props();
+
+	const NAV_ID = 'app-main-nav';
+
+	const navItems = $derived([
+		{ href: '/', label: t('nav.timelineLink') },
+		{ href: '/assignments', label: t('nav.assignmentsLink') },
+		{ href: '/resources', label: t('nav.resourcesLink') },
+		{ href: '/projects', label: t('nav.projectsLink') },
+		{ href: '/departments', label: t('nav.departmentsLink') }
+	]);
+
+	function isCurrent(href: string): boolean {
+		const path = page.url.pathname;
+		if (href === '/') return path === '/';
+		return path === href || path.startsWith(`${href}/`);
+	}
+
+	let menuOpen = $state(false);
 </script>
 
-<header class="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
-	<div class="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-2 px-4 py-3">
-		<a href="/" class="flex items-center gap-2 no-underline">
+<header class="sticky top-0 z-40 border-b border-border bg-background">
+	<div class="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-2 gap-y-2 px-4 py-2 md:gap-x-6">
+		<a href="/" class="flex shrink-0 items-center gap-2 no-underline">
 			<img src="/header-icon.png" alt="" width="32" height="32" class="h-8 w-8 shrink-0" />
-			<h1 class="m-0 text-lg font-semibold tracking-tight sm:text-xl">{t('app.title')}</h1>
+			<span class="text-base font-semibold tracking-tight sm:text-lg">{t('app.title')}</span>
 		</a>
-		<div class="flex flex-wrap items-center gap-2">
-			<ResourceManager
-				{resources}
-				{assignments}
-				{departments}
-				onOptimisticCreate={onOptimisticCreateResource}
-				onConfirmCreate={onConfirmCreateResource}
-				onRollbackCreate={onRollbackCreateResource}
-			/>
-			<ProjectManager {projects} {assignments} />
-			<DepartmentManager {departments} />
-			<AssignmentCreator {resources} {projects} />
-			<!-- Timeline (home / ガント) への named nav button、 /assignments と対称。 -->
-			<Button
-				variant={isHomeActive ? 'default' : 'outline'}
-				href="/"
-				aria-current={isHomeActive ? 'page' : undefined}
-			>
-				<Calendar size={18} weight="regular" aria-hidden="true" />
-				<span class="hidden sm:ml-1 sm:inline">{t('nav.timelineLink')}</span>
-			</Button>
-			<Button
-				variant={isAssignmentsActive ? 'default' : 'outline'}
-				href="/assignments"
-				aria-current={isAssignmentsActive ? 'page' : undefined}
-			>
-				<ListChecks size={18} weight="regular" aria-hidden="true" />
-				<span class="hidden sm:ml-1 sm:inline"
-					>{t('assignments.listWithCount', { count: assignments.length })}</span
-				>
-			</Button>
+
+		<div class="order-2 ml-auto flex items-center gap-2 md:order-3">
 			<LocaleSwitcher />
-			<ThemeToggle />
 			<AvatarDropdown email={user?.email ?? ''} {csrfToken} />
+			<button
+				type="button"
+				class="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-border bg-background hover:bg-accent focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none md:hidden"
+				aria-expanded={menuOpen}
+				aria-controls={NAV_ID}
+				aria-label={t('nav.menuToggle')}
+				onclick={() => (menuOpen = !menuOpen)}
+			>
+				{#if menuOpen}
+					<X size={18} aria-hidden="true" />
+				{:else}
+					<List size={18} aria-hidden="true" />
+				{/if}
+			</button>
 		</div>
+
+		<nav
+			id={NAV_ID}
+			aria-label={t('nav.label')}
+			class="order-3 w-full md:order-2 md:block md:w-auto"
+			class:hidden={!menuOpen}
+		>
+			<ul class="m-0 flex list-none flex-col p-0 md:flex-row md:gap-1">
+				{#each navItems as item (item.href)}
+					{@const current = isCurrent(item.href)}
+					<li>
+						<a
+							href={item.href}
+							aria-current={current ? 'page' : undefined}
+							onclick={() => (menuOpen = false)}
+							class="block border-b-2 px-3 py-3 text-sm no-underline hover:bg-accent focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none md:py-2 {current
+								? 'border-foreground font-semibold text-foreground'
+								: 'border-transparent text-muted-foreground'}"
+						>
+							{item.label}
+						</a>
+					</li>
+				{/each}
+			</ul>
+		</nav>
 	</div>
 </header>

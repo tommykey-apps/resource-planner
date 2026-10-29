@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { clearMagicLinks, getMagicLinkUrl } from './fixtures/magic-link';
+import { openSection } from './fixtures/nav';
 
 /**
  * Home (/) を sign-in 後に開いた時の **visual layout regression** を守る spec。
@@ -35,22 +36,24 @@ async function signIn(page: import('@playwright/test').Page) {
 
 async function bootstrap1Assignment(page: import('@playwright/test').Page, suffix: string) {
 	// crud-flow.spec.ts と同じ pattern (EN locale 前提、 CI default の Accept-Language)
-	await page.getByRole('button', { name: /Manage people/ }).click();
+	await openSection(page, 'People');
 	await page.getByRole('button', { name: /\+ Add person/ }).click();
 	await page.locator('input[name="name"]').fill(`r-${suffix}`);
 	await page.getByRole('button', { name: /^Create$/ }).click();
 	await expect(page.locator('li', { hasText: `r-${suffix}` })).toBeVisible();
-	await page.keyboard.press('Escape');
 
-	await page.getByRole('button', { name: /Manage projects/ }).click();
+	await openSection(page, 'Projects');
 	await page.getByRole('button', { name: /\+ Add project/ }).click();
 	await page.locator('input[name="name"]').fill(`p-${suffix}`);
 	await page.getByRole('button', { name: /^Create$/ }).click();
 	await expect(page.locator('li', { hasText: `p-${suffix}` })).toBeVisible();
-	await page.keyboard.press('Escape');
 
+	await openSection(page, 'Timeline');
 	await page.getByRole('button', { name: /Add assignment/ }).click();
-	await page.getByRole('button', { name: /^Create$/ }).last().click();
+	await page
+		.getByRole('button', { name: /^Create$/ })
+		.last()
+		.click();
 }
 
 test('home: ResourceTimeline の rail が collapse せず、 bar も visible', async ({ page }) => {
@@ -102,13 +105,11 @@ test('home: ResourceTimeline の rail が collapse せず、 bar も visible', a
  * 機能。 過去 (#34, PR #161) は CSS Grid \`minmax(min, fit-content(max))\` で実装したが本番事故
  * (#162) になったため rollback (PR #163)。 今回は Canvas measureText で再実装 (#47)。
  */
-test('home: resource rail が最長名に auto-fit する (ui-components 0.9.3 #43)', async ({
-	page
-}) => {
+test('home: resource rail が最長名に auto-fit する (ui-components 0.9.3 #43)', async ({ page }) => {
 	await signIn(page);
 	// 短名と長名を混ぜて auto-fit が効くか確認
 	const suffix = `autofit-${Date.now()}`;
-	await page.getByRole('button', { name: /Manage people/ }).click();
+	await openSection(page, 'People');
 	await page.getByRole('button', { name: /\+ Add person/ }).click();
 	await page.locator('input[name="name"]').fill('短');
 	await page.getByRole('button', { name: /^Create$/ }).click();
@@ -118,7 +119,6 @@ test('home: resource rail が最長名に auto-fit する (ui-components 0.9.3 #
 	await page.locator('input[name="name"]').fill(longName);
 	await page.getByRole('button', { name: /^Create$/ }).click();
 	await expect(page.locator('li', { hasText: longName })).toBeVisible();
-	await page.keyboard.press('Escape');
 
 	await page.goto('/?d=2026-05-12&z=day');
 

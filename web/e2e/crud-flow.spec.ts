@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { clearMagicLinks, getMagicLinkUrl } from './fixtures/magic-link';
+import { openSection } from './fixtures/nav';
 
 /**
  * CRUD full path E2E (#155 で可視化した P0 coverage の埋め)。
@@ -31,19 +32,16 @@ test('Resource + Project の作成 → delete confirm まで一気通貫で機�
 	const resourceName = `e2e-crud-r-${Date.now()}`;
 	const projectName = `e2e-crud-p-${Date.now()}`;
 
-	// ── Resource 作成 (ヘッダ「Manage people」→ 「+ Add person」)
-	await page.getByRole('button', { name: /Manage people/ }).click();
+	// ── Resource 作成 (ヘッダのナビ「People」→ 「+ Add person」)
+	await openSection(page, 'People');
 	await page.getByRole('button', { name: /\+ Add person/ }).click();
 	await page.getByLabel('Name').fill(resourceName);
 	await page.getByRole('button', { name: /^Create$/ }).click();
 	await expect(page.locator('li', { hasText: resourceName })).toBeVisible();
 
-	// dialog 外側クリックで close (Manage people dialog)
-	await page.keyboard.press('Escape');
+	// ── Project 作成 (ヘッダのナビ「Projects」→ 「+ Add project」)
+	await openSection(page, 'Projects');
 	await expect(page.locator('li', { hasText: resourceName })).toBeHidden();
-
-	// ── Project 作成 (ヘッダ「Manage projects」→ 「+ Add project」)
-	await page.getByRole('button', { name: /Manage projects/ }).click();
 	await page.getByRole('button', { name: /\+ Add project/ }).click();
 	// Project は「Project name」 label
 	await page.getByLabel('Project name').fill(projectName);
@@ -51,8 +49,7 @@ test('Resource + Project の作成 → delete confirm まで一気通貫で機�
 	await expect(page.locator('li', { hasText: projectName })).toBeVisible();
 
 	// ── Resource を delete → ConfirmDialog が出て Confirm
-	await page.keyboard.press('Escape');
-	await page.getByRole('button', { name: /Manage people/ }).click();
+	await openSection(page, 'People');
 	const row = page.locator('li', { hasText: resourceName });
 	await expect(row).toBeVisible();
 	await row.getByRole('button', { name: /^Delete$/ }).click();
