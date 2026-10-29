@@ -41,7 +41,7 @@ SvelteKit form actions / `+page.server.ts` load の動的振る舞い (画面 �
 - アクター: 認証済みユーザー (許可ドメイン制限を通過、team_default に自動 join)
 - 前提条件:
   - サインイン済 (Auth.js session 有効、`session.teamId` 存在)
-  - 「人を管理」モーダルから操作
+  - ヘッダーのナビ「人」(`/resources`) から操作
 
 ### 対応コード
 
@@ -136,7 +136,7 @@ sequenceDiagram
 - アクター: 認証済みユーザー (team_default に自動 join)
 - 前提条件:
   - サインイン済 + `session.teamId` 存在
-  - 「案件を管理」モーダルから操作
+  - ヘッダーのナビ「案件」(`/projects`) から操作
 
 ### 対応コード
 
