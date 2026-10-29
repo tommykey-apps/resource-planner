@@ -24,7 +24,7 @@ SvelteKit form actions / `+page.server.ts` load の動的振る舞い (画面 �
 | UC-04 | [アサインの期間を変更する (ドラッグ / リサイズ)](#uc-04-アサインの期間を変更する-ドラッグ--リサイズ) | 実装済 (PR-F) |
 | UC-05 | [アサインを削除する](#uc-05-アサインを削除する) | 実装済 (PR-G) |
 | UC-06 | [人 / 案件を削除する (cascade)](#uc-06-人--案件を削除する-cascade) | 実装済 (PR-H) |
-| UC-07 | [部署 (Department) でリソースをグルーピングする](#uc-07-部署-department-でリソースをグルーピングする) | 実装済 (#238–#247) |
+| UC-07 | [部署 (Department) でリソースをグルーピングする](#uc-07-部署-department-でリソースをグルーピングする) | 実装済 (#238–#247, #250) |
 
 > CRUD 実装の進捗に応じて UC を追記する運用 ([#31](https://github.com/tommykey-apps/resource-planner/issues/31), [`docs/adr/0001-typescript-types-as-api-spec.md`](adr/0001-typescript-types-as-api-spec.md) 参照)。
 
@@ -516,7 +516,7 @@ Project 削除も同形 (FilterExpression が `projectId == id` に変わるだ�
 
 ### 概要
 
-Team 内のリソースを **部署ツリー** (本部 / 部 / 課 …) でグルーピングし、timeline / assignments 画面を部署で絞り込む。部署は adjacency list (`parentId`) のネスト構造で、作成・付け替え (move)・削除 (繰り上げ) ができる。Department は隔離境界ではなく **表示用グルーピング** ([ADR 0013](adr/0013-department-grouping-tree.md))。
+Team 内のリソースを **部署ツリー** (本部 / 部 / 課 …) でグルーピングし、timeline / assignments 画面を部署で絞り込む。部署は adjacency list (`parentId`) のネスト構造で、作成・改名・付け替え (move)・削除 (繰り上げ) ができる。Department は隔離境界ではなく **表示用グルーピング** ([ADR 0013](adr/0013-department-grouping-tree.md))。
 
 ### アクター / 前提条件
 
@@ -526,9 +526,9 @@ Team 内のリソースを **部署ツリー** (本部 / 部 / 課 …) でグ�
 ### 対応コード
 
 - UI コンポーネント: [`web/src/lib/components/DepartmentManager.svelte`](../web/src/lib/components/DepartmentManager.svelte) ([`AppHeader.svelte`](../web/src/lib/components/AppHeader.svelte) から起動)
-- Form action: [`web/src/routes/+page.server.ts`](../web/src/routes/+page.server.ts) の `createDepartment` / `moveDepartment` / `deleteDepartment`
-- 検証 schema: [`web/src/lib/schemas/department.ts`](../web/src/lib/schemas/department.ts) の `departmentCreateSchema` / `departmentMoveSchema`
-- DB アクセス: [`web/src/lib/repository/department.ts`](../web/src/lib/repository/department.ts) の `createDepartment` / `moveDepartment` / `deleteDepartment` / `DepartmentTreeError`
+- Form action: [`web/src/routes/+page.server.ts`](../web/src/routes/+page.server.ts) の `createDepartment` / `renameDepartment` / `moveDepartment` / `deleteDepartment`
+- 検証 schema: [`web/src/lib/schemas/department.ts`](../web/src/lib/schemas/department.ts) の `departmentCreateSchema` / `departmentRenameSchema` / `departmentMoveSchema`
+- DB アクセス: [`web/src/lib/repository/department.ts`](../web/src/lib/repository/department.ts) の `createDepartment` / `renameDepartment` / `moveDepartment` / `deleteDepartment` / `DepartmentTreeError`
 - リソースの所属: Resource の `departmentId` 属性 (#239)。timeline / assignments の部署フィルタは子孫含む (#242 / #247)
 
 ### Mermaid sequence (作成 / 付け替え / 削除)
@@ -541,10 +541,10 @@ sequenceDiagram
     participant Repo as repository/department.ts
     participant DDB as DynamoDB
 
-    User->>SK: 部署を作成 / 親へ付け替え / 削除
-    SK->>Server: POST ?/createDepartment | ?/moveDepartment | ?/deleteDepartment
-    Server->>Server: requireSession(event) → session.teamId<br/>departmentCreateSchema / departmentMoveSchema.safeParse
-    Server->>Repo: createDepartment / moveDepartment / deleteDepartment
+    User->>SK: 部署を作成 / 改名 / 親へ付け替え / 削除
+    SK->>Server: POST ?/createDepartment | ?/renameDepartment | ?/moveDepartment | ?/deleteDepartment
+    Server->>Server: requireSession(event) → session.teamId<br/>departmentCreateSchema / departmentRenameSchema / departmentMoveSchema.safeParse
+    Server->>Repo: createDepartment / renameDepartment / moveDepartment / deleteDepartment
     Repo->>DDB: listDepartments (queryAllByTeam で取得済みツリーを in-memory 検証)
     note right of Repo: 親存在 / 兄弟名一意 / 循環 を検証<br/>違反は DepartmentTreeError
     alt 検証 NG
@@ -552,7 +552,7 @@ sequenceDiagram
         Server-->>SK: fail(400, { errors })  ※ #240 で wire format に map
         SK-->>User: エラー表示 (親不在 / 名前重複 / 循環)
     else 検証 OK
-        Repo->>DDB: PutItem (create) / UpdateItem (move: SET/REMOVE parentId) /<br/>TransactWriteItems (delete: 配下を親へ繰り上げ + 本体 Delete)
+        Repo->>DDB: PutItem (create) / UpdateItem (rename: SET name / move: SET/REMOVE parentId) /<br/>TransactWriteItems (delete: 配下を親へ繰り上げ + 本体 Delete)
         DDB-->>Repo: 200
         Repo-->>Server: void
         Server-->>SK: success → invalidate
@@ -564,7 +564,7 @@ sequenceDiagram
 
 - **adjacency list (`parentId`)**: materialized path / GSI は導入せず、`queryAllByTeam` が返すフラットな `DEPT#` item 群から in-memory でツリーを組む (組織は小規模前提)
 - **削除は cascade ではなく reparent (繰り上げ)**: 削除ノードの子 Department と所属 Resource の親を削除ノードの親へ付け替える ([ADR 0006](adr/0006-cascade-delete-strategy.md) の Resource/Project cascade とは逆の方針)。Assignment は Department を参照しないため無関係
-- **兄弟名一意 / 循環防止**: `createDepartment` は親存在 + 兄弟名一意、`moveDepartment` は加えて循環 (自分や子孫を親にする) を検証。`DepartmentTreeError` を fail(400) に map (#240)
+- **兄弟名一意 / 循環防止**: `createDepartment` は親存在 + 兄弟名一意、`renameDepartment` は兄弟名一意 (自分自身は除外、#250)、`moveDepartment` は加えて循環 (自分や子孫を親にする) を検証。`DepartmentTreeError` を fail(400) に map (#240)
 - **隔離境界ではない**: マルチテナント分離は `pk = TEAM#{teamId}` が担う。Department はあくまで Team 内の表示用グルーピング
 
 ### エラーケース
@@ -573,7 +573,7 @@ sequenceDiagram
 - **親が存在しない**: `DepartmentTreeError('parentNotFound')` → fail(400)
 - **兄弟内で名前重複**: `DepartmentTreeError('nameConflict')` → fail(400)
 - **循環 (move で自分 / 子孫を親に指定)**: `DepartmentTreeError('cycle')` → fail(400)
-- **削除対象が存在しない (move)**: `DepartmentTreeError('notFound')` → fail(400)
+- **対象が存在しない (move / rename)**: `DepartmentTreeError('notFound')` → fail(400)
 - **繰り上げ対象が 100 件超**: `TransactWriteItems` 上限で throw (フォールバックなし、ADR 0013)
 
 ### 既知の制約

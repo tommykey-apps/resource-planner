@@ -8,8 +8,10 @@ export const DEPARTMENT_NAME_MAX_LENGTH = 100;
  * `parentId` は #240 (子部署作成) で使う — 空文字 / 未指定はルート (undefined)、
  * repository 側で `?? null` に正規化する。
  */
+const departmentName = z.string().min(1, 'required').max(DEPARTMENT_NAME_MAX_LENGTH, 'tooLong');
+
 export const departmentCreateSchema = z.object({
-	name: z.string().min(1, 'required').max(DEPARTMENT_NAME_MAX_LENGTH, 'tooLong'),
+	name: departmentName,
 	parentId: z.preprocess(
 		(v) => (typeof v === 'string' && v.trim() === '' ? undefined : v),
 		z.string().min(1, 'required').optional()
@@ -30,3 +32,9 @@ export const departmentMoveSchema = z.object({
 });
 
 export type DepartmentMoveInput = z.infer<typeof departmentMoveSchema>;
+
+/** 部署名の変更 (#250)。 name の規則は作成と共有。 */
+export const departmentRenameSchema = z.object({
+	id: z.string().min(1, 'required'),
+	name: departmentName
+});

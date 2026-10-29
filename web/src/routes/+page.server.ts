@@ -14,6 +14,7 @@ import {
 	assignmentFormUpdateSchema,
 	departmentCreateSchema,
 	departmentMoveSchema,
+	departmentRenameSchema,
 	deleteByIdSchema,
 	projectCreateSchema,
 	projectUpdateSchema,
@@ -32,6 +33,7 @@ import {
 	deleteProject,
 	deleteResource,
 	moveDepartment,
+	renameDepartment,
 	updateAssignment,
 	updateProject,
 	updateResource
@@ -129,6 +131,23 @@ export const actions: Actions = {
 			throw e;
 		}
 		return { action: 'moveDepartment', success: true };
+	},
+
+	// #250: 部署名の変更 (兄弟名衝突 / 対象不在を DepartmentTreeError → fail)。
+	renameDepartment: async (event) => {
+		const session = await requireSession(event);
+		const input = Object.fromEntries(await event.request.formData());
+		const parsed = departmentRenameSchema.safeParse(input);
+		if (!parsed.success) {
+			return fail(400, { action: 'renameDepartment', errors: formatZodErrors(parsed) });
+		}
+		try {
+			await renameDepartment(session.teamId, parsed.data.id, parsed.data.name);
+		} catch (e) {
+			if (e instanceof DepartmentTreeError) return departmentTreeFail('renameDepartment', e);
+			throw e;
+		}
+		return { action: 'renameDepartment', success: true };
 	},
 
 	// ADR 0013 / #241: 部署削除 = 配下を親へ繰り上げ (reparent)。 ツリー検証不要なので makeFormAction で十分。

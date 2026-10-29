@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { departmentCreateSchema } from './department';
+import { departmentCreateSchema, departmentRenameSchema } from './department';
 
 describe('departmentCreateSchema (ADR 0013)', () => {
 	it('accepts name only (flat = root)', () => {
@@ -33,5 +33,28 @@ describe('departmentCreateSchema (ADR 0013)', () => {
 		expect(r.success).toBe(true);
 		if (!r.success) return;
 		expect(r.data.parentId).toBe('d1');
+	});
+});
+
+describe('departmentRenameSchema (#250)', () => {
+	it('accepts id + name', () => {
+		const r = departmentRenameSchema.safeParse({ id: 'd1', name: '開発部' });
+		expect(r.success).toBe(true);
+		if (!r.success) return;
+		expect(r.data).toEqual({ id: 'd1', name: '開発部' });
+	});
+
+	it('missing id → "required"', () => {
+		const r = departmentRenameSchema.safeParse({ name: '開発部' });
+		expect(r.success).toBe(false);
+	});
+
+	it('empty name → "required"、 too long → "tooLong" (作成と同じ規則)', () => {
+		const empty = departmentRenameSchema.safeParse({ id: 'd1', name: '' });
+		if (!empty.success) expect(empty.error.issues[0].message).toBe('required');
+		expect(empty.success).toBe(false);
+		const long = departmentRenameSchema.safeParse({ id: 'd1', name: 'あ'.repeat(101) });
+		if (!long.success) expect(long.error.issues[0].message).toBe('tooLong');
+		expect(long.success).toBe(false);
 	});
 });

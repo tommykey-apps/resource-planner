@@ -11,6 +11,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
 	createDepartment,
 	moveDepartment,
+	renameDepartment,
 	deleteDepartment,
 	listDepartments,
 	DepartmentTreeError
@@ -145,6 +146,59 @@ describe('moveDepartment (ADR 0013 / #240)', () => {
 		// s 配下に既に「バックエンド課」がある状態で a(バックエンド課) を s へ移すと衝突
 		mockDepartments([...tree, { id: 'dup', name: 'バックエンド課', parentId: 's' }]);
 		await expect(moveDepartment(TEAM, 'a', 's')).rejects.toMatchObject({ code: 'nameConflict' });
+	});
+});
+
+describe('renameDepartment (#250)', () => {
+	beforeEach(() => {
+		mockDepartments([
+			{ id: 'p1', name: '開発本部' },
+			{ id: 'a', name: 'バックエンド課', parentId: 'p1' },
+			{ id: 'b', name: 'フロントエンド課', parentId: 'p1' },
+			{ id: 'r2', name: '営業本部' }
+		]);
+	});
+
+	it('SET #name + attribute_exists(sk)、 他の item は書き換えない', async () => {
+		await renameDepartment(TEAM, 'a', 'サーバ課');
+		const calls = ddbMock.commandCalls(UpdateCommand);
+		expect(calls).toHaveLength(1);
+		const input = calls[0].args[0].input;
+		expect(input.Key).toEqual({ pk: `TEAM#${TEAM}`, sk: 'DEPT#a' });
+		expect(input.UpdateExpression).toBe('SET #name = :name');
+		expect(input.ExpressionAttributeNames).toEqual({ '#name': 'name' });
+		expect(input.ExpressionAttributeValues).toEqual({ ':name': 'サーバ課' });
+		expect(input.ConditionExpression).toBe('attribute_exists(sk)');
+		expect(ddbMock.commandCalls(PutCommand)).toHaveLength(0);
+		expect(ddbMock.commandCalls(TransactWriteCommand)).toHaveLength(0);
+	});
+
+	it('同じ名前のまま → 自分自身は衝突扱いしない', async () => {
+		await renameDepartment(TEAM, 'a', 'バックエンド課');
+		expect(ddbMock.commandCalls(UpdateCommand)).toHaveLength(1);
+	});
+
+	it('兄弟と同名 → nameConflict、 書き込まない', async () => {
+		await expect(renameDepartment(TEAM, 'a', 'フロントエンド課')).rejects.toMatchObject({
+			code: 'nameConflict'
+		});
+		expect(ddbMock.commandCalls(UpdateCommand)).toHaveLength(0);
+	});
+
+	it('ルート同士も兄弟として一意', async () => {
+		await expect(renameDepartment(TEAM, 'r2', '開発本部')).rejects.toMatchObject({
+			code: 'nameConflict'
+		});
+	});
+
+	it('親違いなら同名 OK', async () => {
+		await renameDepartment(TEAM, 'a', '開発本部');
+		expect(ddbMock.commandCalls(UpdateCommand)).toHaveLength(1);
+	});
+
+	it('対象が存在しない → notFound、 書き込まない (直 POST 対策)', async () => {
+		await expect(renameDepartment(TEAM, 'ghost', 'X')).rejects.toMatchObject({ code: 'notFound' });
+		expect(ddbMock.commandCalls(UpdateCommand)).toHaveLength(0);
 	});
 });
 

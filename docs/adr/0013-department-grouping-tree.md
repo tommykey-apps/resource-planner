@@ -33,6 +33,8 @@ Resource (人) を部署単位でまとめて見たい。部署は枝分かれ�
 - **付け替え (move)**: Department は `parentId` 更新、Resource は `departmentId` 更新。
   **循環はサーバ側で必ず拒否** (自分自身・自分の子孫・存在しない親を新親に指定不可)。
 - **部署名は同じ親の下で一意** (兄弟間で重複禁止。Team 全体一意は厳しすぎ、無制約は紛らわしい)。
+- **改名 (rename)**: `name` だけを更新する。Resource は `departmentId` (ID 参照) なので配下の書き換えは
+  不要。兄弟名一意は改名時も検証する (自分自身は除外)。当初の分割から漏れており #250 で追記。
 - **子孫集合の計算は in-memory** (`queryAllByTeam` が DEPT# も 1 query で返し、client/server が
   木を組む)。materialized path / GSI は**今は導入しない**。
 
