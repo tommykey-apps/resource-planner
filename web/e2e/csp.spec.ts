@@ -54,3 +54,26 @@ test('Other security headers (X-Content-Type-Options / Referrer-Policy / Permiss
 	expect(headers['referrer-policy']).toBe('strict-origin-when-cross-origin');
 	expect(headers['permissions-policy']).toContain('camera=()');
 });
+
+/**
+ * mode-watcher の初期化スクリプト (読み込み直後にダークモードを当てる inline script) が
+ * CSP でブロックされず実行されること。 公式手順 (createInitialModeExpression +
+ * app.html の `nonce="%sveltekit.nonce%"`) に従う。
+ * hydration で後から当たる分と区別するため、 /_app/** を止めて inline script だけを動かす。
+ * https://mode-watcher.svecosystem.com/docs/utilities/create-initial-mode-expression
+ */
+test('mode-watcher の初期化スクリプトが CSP を通って実行される', async ({ page }) => {
+	const cspErrors: string[] = [];
+	page.on('console', (m) => {
+		if (m.type() === 'error' && m.text().includes('Content Security Policy')) {
+			cspErrors.push(m.text());
+		}
+	});
+	await page.addInitScript(() => localStorage.setItem('mode-watcher-mode', 'dark'));
+	await page.route('**/_app/**', (route) => route.abort());
+
+	await page.goto('/sign-in');
+
+	await expect(page.locator('html')).toHaveClass(/\bdark\b/);
+	expect(cspErrors).toEqual([]);
+});

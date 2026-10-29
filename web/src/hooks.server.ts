@@ -3,7 +3,7 @@ import type { Handle } from '@sveltejs/kit';
 import { handle as authjsHandle } from './auth';
 import { paraglideMiddleware } from '$lib/paraglide/server';
 import { getTextDirection } from '$lib/paraglide/runtime';
-import { pickTheme, THEME_COOKIE_NAME } from '$lib/theme';
+import { injectInitialModeScript, pickTheme, THEME_COOKIE_NAME } from '$lib/theme';
 
 /**
  * 言語の決定 (Paraglide JS のミドルウェア)。 判定順は paraglide.options.js の strategy
@@ -29,10 +29,14 @@ const paraglideHandle: Handle = ({ event, resolve }) =>
  *
  * SSR で `+layout.server.ts` 経由 `<ModeWatcher defaultMode={data.theme} />` に渡し、
  * client hydration 時の userPrefersMode 初期値が 'system' に戻る race を消す。
+ * 同じ theme を初期化スクリプトの defaultMode にも渡す (app.html の nonce 付き script)。
  */
 const themeHandle: Handle = async ({ event, resolve }) => {
-	event.locals.theme = pickTheme(event.cookies.get(THEME_COOKIE_NAME));
-	return resolve(event);
+	const theme = pickTheme(event.cookies.get(THEME_COOKIE_NAME));
+	event.locals.theme = theme;
+	return resolve(event, {
+		transformPageChunk: ({ html }) => injectInitialModeScript(html, theme)
+	});
 };
 
 /**
