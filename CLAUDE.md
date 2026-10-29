@@ -31,6 +31,18 @@ resource-planner/
 flox activate    # nodejs 22 + pnpm 10 + terraform + awscli
 ```
 
+## 作業ツリー (git worktree)
+
+同じ作業ツリーで複数のセッションが並行して動くことがある。作業は原則 worktree を切って行う:
+
+```bash
+git worktree add ../resource-planner-<topic> -b <branch> origin/main
+cp web/.env.local ../resource-planner-<topic>/web/.env.local   # git 管理外なので複製が必要
+cd ../resource-planner-<topic>/web && pnpm install
+```
+
+共有の作業ツリーでは `git switch` / `git stash` / `git checkout` をしない (他セッションの変更やステージ状態を壊す)。
+
 ## 認証 (private package 取得)
 
 `@tommykey-apps/ui-components` は GitHub Packages の private なので `GITHUB_TOKEN` 必須:
