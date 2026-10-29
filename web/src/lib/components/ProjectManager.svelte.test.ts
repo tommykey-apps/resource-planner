@@ -138,6 +138,30 @@ describe('ProjectManager form (PR-N3, refs #187)', () => {
 		]);
 	});
 
+	it('edit form: 詳細無しの project で summary から開いた 詳細 は Preview / Write の切替で閉じない', async () => {
+		const { form } = await openEditForm({ id: 'p1', name: 'Legacy', color: '#000000' });
+		const details = form.querySelector('details') as HTMLDetailsElement;
+		await fireEvent.click(details.querySelector('summary') as HTMLElement);
+		await waitFor(() => expect(details.open).toBe(true));
+
+		const tabs = form.querySelectorAll('[role="tab"]');
+		await fireEvent.click(tabs[1] as HTMLElement);
+		expect(details.open).toBe(true);
+		await fireEvent.click(tabs[0] as HTMLElement);
+		expect(details.open).toBe(true);
+	});
+
+	it('create form: summary から開いた 詳細 は 色の変更で閉じない', async () => {
+		const { form } = await openCreateForm();
+		const details = form.querySelector('details') as HTMLDetailsElement;
+		await fireEvent.click(details.querySelector('summary') as HTMLElement);
+		await waitFor(() => expect(details.open).toBe(true));
+
+		const color = form.querySelector('input[name="color"]') as HTMLInputElement;
+		await fireEvent.input(color, { target: { value: '#112233' } });
+		expect(details.open).toBe(true);
+	});
+
 	it('edit form: 詳細無しの legacy project では 詳細 section が default closed', async () => {
 		const { form } = await openEditForm({ id: 'p1', name: 'Legacy', color: '#000000' });
 		const details = form.querySelector('details');
