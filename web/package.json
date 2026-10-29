@@ -11,8 +11,8 @@
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && node scripts/compile-paraglide.mjs && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && node scripts/compile-paraglide.mjs && svelte-check --tsconfig ./tsconfig.json --watch",
-		"lint": "prettier --check . && eslint .",
-		"format": "prettier --write .",
+		"lint": "prettier --check . --ignore-path ../.gitignore --ignore-path .prettierignore && eslint .",
+		"format": "prettier --write . --ignore-path ../.gitignore --ignore-path .prettierignore",
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"test:coverage": "vitest run --coverage",
@@ -20,7 +20,6 @@
 		"build:lambda": "node scripts/build-ses-bounce-lambda.mjs"
 	},
 	"devDependencies": {
-		"@eslint/compat": "^2.0.4",
 		"@eslint/js": "^10.0.1",
 		"@fontsource-variable/jetbrains-mono": "^5.2.8",
 		"@inlang/paraglide-js": "^2.18.2",
@@ -38,7 +37,7 @@
 		"aws-sdk-client-mock": "^4.1.0",
 		"aws-sdk-client-mock-vitest": "^7.0.1",
 		"esbuild": "^0.28.0",
-		"eslint": "^10.2.0",
+		"eslint": "^10.13.0",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-svelte": "^3.17.0",
 		"globals": "^17.4.0",
