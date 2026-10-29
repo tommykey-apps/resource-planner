@@ -27,8 +27,8 @@ importers:
         specifier: ^3.1045.0
         version: 3.1045.0(@aws-sdk/client-dynamodb@3.1045.0)
       '@tommykey-apps/ui-components':
-        specifier: ^1.0.0
-        version: 1.0.0(svelte@5.55.5(@typescript-eslint/types@8.59.1))
+        specifier: ^1.1.0
+        version: 1.1.0(svelte@5.55.5(@typescript-eslint/types@8.59.1))
       bits-ui:
         specifier: ^2.18.0
         version: 2.18.0(@internationalized/date@3.12.1)(@sveltejs/kit@2.59.0(@sveltejs/vite-plugin-svelte@7.0.0(svelte@5.55.5(@typescript-eslint/types@8.59.1))(vite@8.0.10(@types/node@22.19.17)(esbuild@0.28.0)(jiti@2.7.0)))(svelte@5.55.5(@typescript-eslint/types@8.59.1))(typescript@6.0.3)(vite@8.0.10(@types/node@22.19.17)(esbuild@0.28.0)(jiti@2.7.0)))(svelte@5.55.5(@typescript-eslint/types@8.59.1))
@@ -1578,8 +1578,8 @@ packages:
       vitest:
         optional: true
 
-  '@tommykey-apps/ui-components@1.0.0':
-    resolution: {integrity: sha512-B2MRfR/OWjEXUfYJcVHOgzvKBYS0cL1Qg3AQ67Uni+jUvlQqfKGxvMeEnbcC1rgI9Ov46kUH7Qow+YhQLHiKjA==, tarball: https://npm.pkg.github.com/download/@tommykey-apps/ui-components/1.0.0/124c3093b6551e3145270a78dc8d029245d95a4f}
+  '@tommykey-apps/ui-components@1.1.0':
+    resolution: {integrity: sha512-le/kboflj4+i8yx8Rz27TIbhefk3gtzjUsVssEwZIlf/Gg4+I61PTZ3j8841TAtMb8GX6xk3sqLsGED1QBVOhQ==, tarball: https://npm.pkg.github.com/download/@tommykey-apps/ui-components/1.1.0/f8573a010e978dfabfa68133fb32b23499b12e93}
     peerDependencies:
       svelte: ^5.0.0
 
@@ -4628,7 +4628,7 @@ snapshots:
       vite: 8.0.10(@types/node@22.19.17)(esbuild@0.28.0)(jiti@2.7.0)
       vitest: 4.1.5(@types/node@22.19.17)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.1)(vite@8.0.10(@types/node@22.19.17)(esbuild@0.28.0)(jiti@2.7.0))
 
-  '@tommykey-apps/ui-components@1.0.0(svelte@5.55.5(@typescript-eslint/types@8.59.1))':
+  '@tommykey-apps/ui-components@1.1.0(svelte@5.55.5(@typescript-eslint/types@8.59.1))':
     dependencies:
       date-fns: 4.1.0
       svelte: 5.55.5(@typescript-eslint/types@8.59.1)
