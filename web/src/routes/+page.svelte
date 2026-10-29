@@ -8,7 +8,12 @@
 	import { toast } from 'svelte-sonner';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import { toTimelineAssignment, fromTimelineAssignment } from '$lib/timeline-adapter';
+	import {
+		toTimelineAssignment,
+		fromTimelineAssignment,
+		timelineDateLocale
+	} from '$lib/timeline-adapter';
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { applyTimelineParams, parseTimelineParams } from '$lib/timeline-url-state';
 	import {
 		flattenDepartmentTree,
@@ -219,6 +224,7 @@
 					keyResizeEnd: (range) => m.timeline_statusKeyResizeEnd({ range })
 				}
 			}}
+			locale={timelineDateLocale(getLocale())}
 			onMove={handleUpdate}
 			onResize={handleUpdate}
 			onActivate={openEditor}

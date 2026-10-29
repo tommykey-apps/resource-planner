@@ -65,6 +65,7 @@
 		"@tommykey-apps/ui-components": "^1.1.0",
 		"bits-ui": "^2.18.0",
 		"clsx": "^2.1.1",
+		"date-fns": "^4.1.0",
 		"isomorphic-dompurify": "^2.36.0",
 		"marked": "^18.0.3",
 		"mode-watcher": "^1.1.0",
