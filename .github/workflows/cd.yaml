@@ -36,6 +36,13 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.infra == 'true'
     runs-on: ubuntu-latest
+    # Terraform の状態ファイルを共有する plan / apply は同時に1本だけ実行する
+    # (HashiCorp 推奨: "allow only one plan to be outstanding at a time")。
+    # 実行中の apply を止めないよう cancel-in-progress は false、待機中の実行も破棄しないよう queue: max。
+    concurrency:
+      group: terraform-state
+      cancel-in-progress: false
+      queue: max
     steps:
       - uses: actions/checkout@v4
 
