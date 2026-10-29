@@ -38,9 +38,10 @@
 	"departments": {
 		"manageWithCount": "Manage departments ({count})",
 		"manage": "Manage departments",
-		"description": "Add and list departments (organization)",
+		"description": "Add, edit and delete departments (organization)",
 		"add": "+ Add department",
 		"createTitle": "Add department",
+		"editTitle": "Rename department",
 		"name": "Department name",
 		"empty": "No departments yet.",
 		"unassigned": "Unassigned",

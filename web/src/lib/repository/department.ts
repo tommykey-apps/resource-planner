@@ -15,9 +15,9 @@ import type { DepartmentCreateInput } from '$lib/schemas';
 /**
  * ツリー整合性違反 (ADR 0013)。 form action / API が catch して 400/409 + code に map する。
  * - cycle:          自分自身 / 子孫を親に指定 (move)
- * - nameConflict:   兄弟内で名前重複 (create / move)
+ * - nameConflict:   兄弟内で名前重複 (create / move / rename)
  * - parentNotFound: 指定した親 Department が存在しない
- * - notFound:       move 対象の Department 自体が存在しない (UI 経由では起きないが直 POST 対策)
+ * - notFound:       move / rename 対象の Department 自体が存在しない (UI 経由では起きないが直 POST 対策)
  */
 export class DepartmentTreeError extends Error {
 	constructor(public readonly code: 'cycle' | 'nameConflict' | 'parentNotFound' | 'notFound') {
@@ -130,6 +130,33 @@ export async function moveDepartment(
 					UpdateExpression: 'REMOVE parentId',
 					ConditionExpression: 'attribute_exists(sk)'
 				})
+	);
+}
+
+/**
+ * Department の名前を変える (#250)。 兄弟名一意だけ検証する (自分自身は除外)。
+ * Resource は departmentId で参照するので他の item は書き換えない。
+ */
+export async function renameDepartment(teamId: string, id: string, name: string): Promise<void> {
+	const existing = await listDepartments(teamId);
+	// 対象が無いと条件付き Update が ConditionalCheckFailed → 500 に化けるので先に弾く (move と同じ)。
+	const node = existing.find((d) => d.id === id);
+	if (!node) {
+		throw new DepartmentTreeError('notFound');
+	}
+	if (siblingNameConflict(existing, node.parentId, name, id)) {
+		throw new DepartmentTreeError('nameConflict');
+	}
+
+	await ddb.send(
+		new UpdateCommand({
+			TableName: TABLE,
+			Key: { pk: pk(teamId), sk: departmentSk(id) },
+			UpdateExpression: 'SET #name = :name',
+			ExpressionAttributeNames: { '#name': 'name' },
+			ExpressionAttributeValues: { ':name': name },
+			ConditionExpression: 'attribute_exists(sk)'
+		})
 	);
 }
 

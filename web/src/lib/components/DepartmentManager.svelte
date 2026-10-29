@@ -15,8 +15,8 @@
 	import type { SubmitFunction } from '@sveltejs/kit';
 
 	/**
-	 * 部署の管理 (ADR 0013)。 ツリー (階層 indent) 表示 + 子部署作成 (親指定) + 付け替え (move) +
-	 * 削除 (#241: 配下を親へ繰り上げ)。 循環 / 兄弟名一意の最終検証は server。
+	 * 部署の管理 (ADR 0013)。 ツリー (階層 indent) 表示 + 子部署作成 (親指定) + 改名 (#250) +
+	 * 付け替え (move) + 削除 (#241: 配下を親へ繰り上げ)。 循環 / 兄弟名一意の最終検証は server。
 	 */
 	let { departments }: { departments: Department[] } = $props();
 
@@ -40,10 +40,13 @@
 	/** 作成時の親 (空文字 = ルート)。 「子部署を追加」 で preset する。 */
 	let formParentId = $state('');
 	let formError = $state<string | null>(null);
+	/** 改名対象 (#250)。 null = 作成モード。 */
+	let editing = $state<Department | null>(null);
 
 	const formSubmitState = createSubmitState();
 
 	function startCreateRoot() {
+		editing = null;
 		formName = '';
 		formParentId = '';
 		formError = null;
@@ -51,8 +54,16 @@
 	}
 
 	function startCreateChild(parent: Department) {
+		editing = null;
 		formName = '';
 		formParentId = parent.id;
+		formError = null;
+		formOpen = true;
+	}
+
+	function startEdit(dept: Department) {
+		editing = dept;
+		formName = dept.name;
 		formError = null;
 		formOpen = true;
 	}
@@ -121,7 +132,11 @@
 	>
 </Button>
 
-<Dialog bind:open={listOpen} title={t('departments.manage')} description={t('departments.description')}>
+<Dialog
+	bind:open={listOpen}
+	title={t('departments.manage')}
+	description={t('departments.description')}
+>
 	<div class="flex flex-col gap-3">
 		<Button onclick={startCreateRoot}>{t('departments.add')}</Button>
 
@@ -130,9 +145,13 @@
 		{:else}
 			<ul class="divide-y divide-border border border-border">
 				{#each flatTree as { dept, depth } (dept.id)}
-					<li class="flex items-center justify-between gap-2 px-3 py-2 text-sm">
+					<!-- 操作が収まらないときは名前を潰さず操作側を次の行へ回す (flex-wrap + shrink-0)。 -->
+					<li class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm">
 						<span style="padding-left: {depth * 16}px">{dept.name}</span>
-						<div class="flex items-center gap-1">
+						<div class="flex shrink-0 items-center gap-1">
+							<Button size="xs" variant="outline" onclick={() => startEdit(dept)}>
+								{t('common.edit')}
+							</Button>
 							<!-- 子部署を追加 -->
 							<Button size="xs" variant="outline" onclick={() => startCreateChild(dept)}>
 								{t('departments.addChild')}
@@ -167,8 +186,19 @@
 	</div>
 </Dialog>
 
-<Dialog bind:open={formOpen} title={t('departments.createTitle')}>
-	<form method="POST" action="/?/createDepartment" use:enhance={formSubmit} class="flex flex-col gap-3">
+<Dialog
+	bind:open={formOpen}
+	title={editing ? t('departments.editTitle') : t('departments.createTitle')}
+>
+	<form
+		method="POST"
+		action={editing ? '/?/renameDepartment' : '/?/createDepartment'}
+		use:enhance={formSubmit}
+		class="flex flex-col gap-3"
+	>
+		{#if editing}
+			<input type="hidden" name="id" value={editing.id} />
+		{/if}
 		<label class="flex flex-col gap-1 text-sm">
 			<span>{t('departments.name')}</span>
 			<Input
@@ -180,22 +210,24 @@
 				autocomplete="off"
 			/>
 		</label>
-		<!-- 親部署 (空 = ルート)。 「子部署を追加」 から開くと preset される。 -->
-		<label class="flex flex-col gap-1 text-sm">
-			<span>{t('departments.parent')}</span>
-			<select
-				name="parentId"
-				aria-label={t('departments.parent')}
-				bind:value={formParentId}
-				class="h-9 border border-input bg-background px-2 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-				style="border-radius: calc(var(--radius) * 0.6)"
-			>
-				<option value="">{t('departments.rootOption')}</option>
-				{#each flatTree as { dept, depth } (dept.id)}
-					<option value={dept.id}>{'\u00A0\u00A0'.repeat(depth)}{dept.name}</option>
-				{/each}
-			</select>
-		</label>
+		<!-- 親部署 (空 = ルート)。 「子部署を追加」 から開くと preset される。 改名時は出さない (付け替えは行内 select)。 -->
+		{#if !editing}
+			<label class="flex flex-col gap-1 text-sm">
+				<span>{t('departments.parent')}</span>
+				<select
+					name="parentId"
+					aria-label={t('departments.parent')}
+					bind:value={formParentId}
+					class="h-9 border border-input bg-background px-2 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+					style="border-radius: calc(var(--radius) * 0.6)"
+				>
+					<option value="">{t('departments.rootOption')}</option>
+					{#each flatTree as { dept, depth } (dept.id)}
+						<option value={dept.id}>{'\u00A0\u00A0'.repeat(depth)}{dept.name}</option>
+					{/each}
+				</select>
+			</label>
+		{/if}
 		{#if formError}
 			<p class="text-xs text-destructive">{formError}</p>
 		{/if}
@@ -209,7 +241,11 @@
 				{t('common.cancel')}
 			</Button>
 			<Button type="submit" disabled={formSubmitState.submitting}>
-				{formSubmitState.submitting ? t('common.submitting') : t('common.create')}
+				{formSubmitState.submitting
+					? t('common.submitting')
+					: editing
+						? t('common.update')
+						: t('common.create')}
 			</Button>
 		</div>
 	</form>

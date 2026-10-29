@@ -23,6 +23,7 @@ const updateAssignmentMock = vi.fn();
 const deleteAssignmentMock = vi.fn();
 const createDepartmentMock = vi.fn();
 const moveDepartmentMock = vi.fn();
+const renameDepartmentMock = vi.fn();
 const deleteDepartmentMock = vi.fn();
 
 // ADR 0012/0013: 競合系を instanceof で判定するため mock でも実クラスを export。 vi.mock factory は
@@ -59,6 +60,7 @@ vi.mock('$lib/repository', () => ({
 	deleteAssignment: (...args: unknown[]) => deleteAssignmentMock(...args),
 	createDepartment: (...args: unknown[]) => createDepartmentMock(...args),
 	moveDepartment: (...args: unknown[]) => moveDepartmentMock(...args),
+	renameDepartment: (...args: unknown[]) => renameDepartmentMock(...args),
 	deleteDepartment: (...args: unknown[]) => deleteDepartmentMock(...args),
 	AssignmentVersionConflictError,
 	DepartmentTreeError
@@ -579,6 +581,50 @@ describe('?/moveDepartment action (#240)', () => {
 		const r = (await actions.moveDepartment!(makeEvent({ parentId: 's' }))) as { status: number };
 		expect(r.status).toBe(400);
 		expect(moveDepartmentMock).not.toHaveBeenCalled();
+	});
+});
+
+describe('?/renameDepartment action (#250)', () => {
+	beforeEach(() => {
+		requireSessionMock.mockReset().mockResolvedValue({ teamId: 'team_default', userId: 'u1' });
+		renameDepartmentMock.mockReset().mockResolvedValue(undefined);
+	});
+
+	it('calls renameDepartment(teamId, id, name) on valid input', async () => {
+		const r = await actions.renameDepartment!(makeEvent({ id: 'a', name: 'サーバ課' }));
+		expect(renameDepartmentMock).toHaveBeenCalledWith('team_default', 'a', 'サーバ課');
+		expect(r).toMatchObject({ action: 'renameDepartment', success: true });
+	});
+
+	it('fails 400 when name is empty', async () => {
+		const r = (await actions.renameDepartment!(makeEvent({ id: 'a', name: '' }))) as {
+			status: number;
+			data: { errors: Record<string, ServerError> };
+		};
+		expect(r.status).toBe(400);
+		expect(r.data.errors.name).toEqual({ code: 'required', field: 'name' });
+		expect(renameDepartmentMock).not.toHaveBeenCalled();
+	});
+
+	it('fails 400 when id is missing', async () => {
+		const r = (await actions.renameDepartment!(makeEvent({ name: 'X' }))) as { status: number };
+		expect(r.status).toBe(400);
+		expect(renameDepartmentMock).not.toHaveBeenCalled();
+	});
+
+	it('DepartmentTreeError(nameConflict) → fail(400) errors.name', async () => {
+		renameDepartmentMock.mockRejectedValueOnce(new DepartmentTreeError('nameConflict'));
+		const r = (await actions.renameDepartment!(makeEvent({ id: 'a', name: '開発本部' }))) as {
+			status: number;
+			data: { errors: Record<string, ServerError> };
+		};
+		expect(r.status).toBe(400);
+		expect(r.data.errors.name).toEqual({ code: 'nameConflict', field: 'name' });
+	});
+
+	it('DepartmentTreeError 以外は再 throw', async () => {
+		renameDepartmentMock.mockRejectedValueOnce(new Error('boom'));
+		await expect(actions.renameDepartment!(makeEvent({ id: 'a', name: 'X' }))).rejects.toThrow('boom');
 	});
 });
 

@@ -38,9 +38,10 @@
 	"departments": {
 		"manageWithCount": "部署を管理 ({count})",
 		"manage": "部署を管理",
-		"description": "部署 (組織) の追加・一覧",
+		"description": "部署 (組織) の追加・編集・削除",
 		"add": "+ 部署を追加",
 		"createTitle": "部署を追加",
+		"editTitle": "部署名を変更",
 		"name": "部署名",
 		"empty": "まだ部署が登録されていません。",
 		"unassigned": "未所属",
