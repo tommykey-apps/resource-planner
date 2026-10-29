@@ -19,8 +19,9 @@
   mode-watcher (#97): light / dark / system theme を <html class> + cookie で同期。
   #141: SSR で cookie から復元した data.theme を defaultMode に渡し、hydration 時の
   userPrefersMode 初期値が 'system' に戻る race を防ぐ。
+  初期化スクリプトは CSP nonce を付けるため app.html 側に置く (disableHeadScriptInjection)。
 -->
-<ModeWatcher defaultMode={data.theme} />
+<ModeWatcher defaultMode={data.theme} disableHeadScriptInjection />
 
 <Toaster richColors closeButton position="top-right" />
 
