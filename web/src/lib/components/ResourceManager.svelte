@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import Users from 'phosphor-svelte/lib/Users';
 	import { Button } from './ui/button';
 	import { Input } from './ui/input';
 	import Dialog from './Dialog.svelte';
@@ -50,7 +49,8 @@
 		const ordered: { id: string; label: string; depth: number; resources: Resource[] }[] = [];
 		for (const { dept, depth } of flatTree) {
 			const rs = byDept.get(dept.id);
-			if (rs && rs.length > 0) ordered.push({ id: dept.id, label: dept.name, depth, resources: rs });
+			if (rs && rs.length > 0)
+				ordered.push({ id: dept.id, label: dept.name, depth, resources: rs });
 		}
 		const unassigned = byDept.get('');
 		if (unassigned && unassigned.length > 0) {
@@ -68,7 +68,6 @@
 		return m;
 	});
 
-	let listOpen = $state(false);
 	let formOpen = $state(false);
 	let editing = $state<Resource | null>(null);
 	let formName = $state('');
@@ -183,63 +182,54 @@
 	}
 </script>
 
-<Button variant="outline" onclick={() => (listOpen = true)}>
-	<Users size={18} weight="regular" aria-hidden="true" />
-	<span class="hidden sm:ml-1 sm:inline"
-		>{t('resources.manageWithCount', { count: resources.length })}</span
-	>
-</Button>
+<div class="flex flex-col gap-3">
+	<Button class="self-start" onclick={startCreate}>{t('resources.add')}</Button>
 
-<Dialog bind:open={listOpen} title={t('resources.manage')} description={t('resources.description')}>
-	<div class="flex flex-col gap-3">
-		<Button onclick={startCreate}>{t('resources.add')}</Button>
-
-		{#if groups.length === 0}
-			<p class="py-4 text-center text-sm text-muted-foreground">{t('resources.empty')}</p>
-		{:else}
-			<!-- #239: 所属部署でグルーピング (見出し + 各部署の resource)。 未所属は最後。 -->
-			{#each groups as g (g.id)}
-				<p
-					class="px-1 pt-2 text-xs font-semibold text-muted-foreground"
-					style="padding-left: {g.depth * 16}px"
-				>
-					{g.label}
-				</p>
-				<ul class="divide-y divide-border border border-border">
-					{#each g.resources as r (r.id)}
-						{@const count = assignmentCountByResource.get(r.id) ?? 0}
-						<li class="flex items-center justify-between gap-2 px-3 py-2">
-							<span class="text-sm">
-								{r.name}
-								<span class="ml-1 text-xs text-muted-foreground"
-									>{t('resources.assignmentCount', { count })}</span
-								>
-							</span>
-							<div class="flex gap-1">
-								<Button size="xs" variant="outline" onclick={() => startEdit(r)}
-									>{t('common.edit')}</Button
-								>
-								<form
-									method="POST"
-									action="?/deleteResource"
-									use:enhance={makeDeleteSubmit({
-										name: r.name,
-										count
-									})}
-								>
-									<input type="hidden" name="id" value={r.id} />
-									<Button size="xs" variant="destructive" type="submit">
-										{t('common.delete')}
-									</Button>
-								</form>
-							</div>
-						</li>
-					{/each}
-				</ul>
-			{/each}
-		{/if}
-	</div>
-</Dialog>
+	{#if groups.length === 0}
+		<p class="py-4 text-center text-sm text-muted-foreground">{t('resources.empty')}</p>
+	{:else}
+		<!-- #239: 所属部署でグルーピング (見出し + 各部署の resource)。 未所属は最後。 -->
+		{#each groups as g (g.id)}
+			<p
+				class="px-1 pt-2 text-xs font-semibold text-muted-foreground"
+				style="padding-left: {g.depth * 16}px"
+			>
+				{g.label}
+			</p>
+			<ul class="divide-y divide-border border border-border">
+				{#each g.resources as r (r.id)}
+					{@const count = assignmentCountByResource.get(r.id) ?? 0}
+					<li class="flex items-center justify-between gap-2 px-3 py-2">
+						<span class="text-sm">
+							{r.name}
+							<span class="ml-1 text-xs text-muted-foreground"
+								>{t('resources.assignmentCount', { count })}</span
+							>
+						</span>
+						<div class="flex gap-1">
+							<Button size="xs" variant="outline" onclick={() => startEdit(r)}
+								>{t('common.edit')}</Button
+							>
+							<form
+								method="POST"
+								action="/?/deleteResource"
+								use:enhance={makeDeleteSubmit({
+									name: r.name,
+									count
+								})}
+							>
+								<input type="hidden" name="id" value={r.id} />
+								<Button size="xs" variant="destructive" type="submit">
+									{t('common.delete')}
+								</Button>
+							</form>
+						</div>
+					</li>
+				{/each}
+			</ul>
+		{/each}
+	{/if}
+</div>
 
 <Dialog
 	bind:open={formOpen}
@@ -247,7 +237,7 @@
 >
 	<form
 		method="POST"
-		action={editing ? '?/updateResource' : '?/createResource'}
+		action={editing ? '/?/updateResource' : '/?/createResource'}
 		use:enhance={formSubmit}
 		class="flex flex-col gap-3"
 	>

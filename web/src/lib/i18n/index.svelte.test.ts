@@ -32,13 +32,13 @@ describe('t (translation lookup)', () => {
 	});
 
 	it('returns the translated string for a known key (ja default)', () => {
-		expect(t('resources.manage')).toBe('人を管理');
+		expect(t('resources.addNew')).toBe('人を追加');
 	});
 
 	it('switches language when localeState changes', () => {
-		expect(t('resources.manage')).toBe('人を管理');
+		expect(t('resources.addNew')).toBe('人を追加');
 		localeState.current = 'en';
-		expect(t('resources.manage')).toBe('Manage people');
+		expect(t('resources.addNew')).toBe('Add person');
 	});
 
 	it('substitutes {name} placeholders with params', () => {

@@ -13,7 +13,8 @@
 		"confirm": "確認",
 		"requiredError": "必須",
 		"maxLengthError": "{n} 文字以内",
-		"opensInNewTab": "新規 tab で開く"
+		"opensInNewTab": "新規 tab で開く",
+		"count": "{count} 件"
 	},
 	"timeline": {
 		"today": "今日",
@@ -36,9 +37,6 @@
 		"statusKeyResizeEnd": "キー終了日変更: {range}"
 	},
 	"departments": {
-		"manageWithCount": "部署を管理 ({count})",
-		"manage": "部署を管理",
-		"description": "部署 (組織) の追加・編集・削除",
 		"add": "+ 部署を追加",
 		"createTitle": "部署を追加",
 		"editTitle": "部署名を変更",
@@ -55,15 +53,12 @@
 		"confirmDeleteRoot": "「{name}」を削除しますか?\n子部署はルートに、所属者は未所属になります。"
 	},
 	"resources": {
-		"manage": "人を管理",
-		"manageWithCount": "人を管理 ({count})",
 		"add": "+ 人を追加",
 		"addNew": "人を追加",
 		"editTitle": "人を編集",
 		"createTitle": "人を追加",
-		"description": "リソース (人) の追加・編集・削除",
 		"empty": "まだ人が登録されていません。",
-		"emptyHint": "右上の「人を管理」ボタンから最初のリソースを追加してください。",
+		"emptyHint": "「人」ページで最初の人を追加してください。",
 		"name": "名前",
 		"assignmentCount": "({count} 件のアサイン)",
 		"confirmDelete": "「{name}」を削除しますか?",
@@ -71,13 +66,10 @@
 		"createFailed": "人の追加に失敗しました。もう一度お試しください。"
 	},
 	"projects": {
-		"manage": "案件を管理",
-		"manageWithCount": "案件を管理 ({count})",
 		"add": "+ 案件を追加",
 		"addNew": "案件を追加",
 		"editTitle": "案件を編集",
 		"createTitle": "案件を追加",
-		"description": "案件 (プロジェクト) の追加・編集・削除",
 		"empty": "まだ案件が登録されていません。",
 		"name": "案件名",
 		"color": "表示色",
@@ -102,7 +94,13 @@
 		"detailTitle": "{name} の詳細"
 	},
 	"nav": {
-		"timelineLink": "タイムライン"
+		"label": "メインメニュー",
+		"menuToggle": "メニュー",
+		"timelineLink": "タイムライン",
+		"assignmentsLink": "アサイン一覧",
+		"resourcesLink": "人",
+		"projectsLink": "案件",
+		"departmentsLink": "部署"
 	},
 	"assignments": {
 		"add": "アサインを追加",
@@ -111,11 +109,10 @@
 		"editTitle": "アサインを編集",
 		"description": "人を案件に期間でアサインする",
 		"list": "アサイン一覧",
-		"listWithCount": "アサイン一覧 ({count})",
 		"listTitle": "アサイン一覧",
 		"listDescription": "登録済みアサインの一覧と削除",
 		"empty": "まだアサインが登録されていません。",
-		"emptyHint": "右上の「+ アサインを追加」から作成できます。",
+		"emptyHint": "「+ アサインを追加」から作成できます。",
 		"resource": "人",
 		"project": "案件",
 		"startDate": "開始日",
@@ -171,7 +168,8 @@
 		"labelSystem": "テーマ: システム ({resolved})",
 		"light": "ライト",
 		"dark": "ダーク",
-		"system": "システム"
+		"system": "システム",
+		"heading": "テーマ"
 	},
 	"locale": {
 		"label": "言語",

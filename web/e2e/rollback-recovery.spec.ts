@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { clearMagicLinks, getMagicLinkUrl } from './fixtures/magic-link';
+import { openSection } from './fixtures/nav';
 
 /**
  * #140: optimistic create が server 400 で失敗したとき、 dialog が再 open して入力値が
@@ -34,7 +35,7 @@ test('Resource create が tooLong で 400 → dialog 再 open + 入力値が保�
 
 	const TOO_LONG = 'a'.repeat(101);
 
-	await page.getByRole('button', { name: /Manage people/ }).click();
+	await openSection(page, 'People');
 	await page.getByRole('button', { name: /\+ Add person/ }).click();
 
 	// HTML5 `maxlength="100"` を一時的に外して 101 文字を入れる (server side の

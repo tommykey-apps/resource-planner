@@ -5,32 +5,33 @@ import ProjectManager from './ProjectManager.svelte';
 import type { Project } from '$lib/types';
 
 describe('ProjectManager (smoke)', () => {
-	it('renders the trigger button with the project count', () => {
-		const { getByRole } = render(ProjectManager, {
-			props: { projects: [], assignments: [] }
-		});
-		expect(getByRole('button', { name: /案件を管理/ })).toBeInTheDocument();
-	});
-
-	it('shows count of provided projects in the trigger label', () => {
-		const { getByRole } = render(ProjectManager, {
+	// header 標準化: 一覧はダイアログではなく `/projects` ページの本文に直接出す。
+	it('一覧と追加 button をダイアログを開かずに直接 render する', () => {
+		const { getByRole, getByText } = render(ProjectManager, {
 			props: {
 				projects: [{ id: 'p1', name: 'Project A', color: '#ff0000' }],
 				assignments: []
 			}
 		});
-		expect(getByRole('button', { name: /\(1\)/ })).toBeInTheDocument();
+		expect(getByRole('button', { name: /案件を追加/ })).toBeInTheDocument();
+		expect(getByText('Project A')).toBeInTheDocument();
 	});
 
-	it('phosphor svg icon visible + text label wrapped in sm:inline span (#96 / #105)', () => {
-		const { getByRole } = render(ProjectManager, {
-			props: { projects: [], assignments: [] }
+	it('起動用の「案件を管理」 button を持たない', () => {
+		const { queryByRole } = render(ProjectManager, { props: { projects: [], assignments: [] } });
+		expect(queryByRole('button', { name: /案件を管理/ })).toBeNull();
+	});
+
+	it('0 件のときは空状態の文言を出す', () => {
+		const { getByText } = render(ProjectManager, { props: { projects: [], assignments: [] } });
+		expect(getByText('まだ案件が登録されていません。')).toBeInTheDocument();
+	});
+
+	it('削除 form は /?/deleteProject に送る (別ページからでも / の action に届く)', () => {
+		const { container } = render(ProjectManager, {
+			props: { projects: [{ id: 'p1', name: 'Project A', color: '#ff0000' }], assignments: [] }
 		});
-		const trigger = getByRole('button', { name: /案件を管理/ });
-		const icon = trigger.querySelector('svg[aria-hidden="true"]');
-		expect(icon).toBeTruthy();
-		expect(trigger.textContent).not.toMatch(/📁/);
-		expect(trigger.querySelector('.hidden.sm\\:inline')?.textContent).toMatch(/案件を管理/);
+		expect(container.querySelector('form[action="/?/deleteProject"]')).toBeTruthy();
 	});
 });
 
@@ -43,7 +44,6 @@ describe('ProjectManager (smoke)', () => {
 describe('ProjectManager form (PR-N3, refs #187)', () => {
 	async function openCreateForm() {
 		const utils = render(ProjectManager, { props: { projects: [], assignments: [] } });
-		await fireEvent.click(utils.getByRole('button', { name: /案件を管理/ }));
 		const addBtn = await waitFor(() => {
 			return Array.from(document.querySelectorAll('button')).find((el) =>
 				el.textContent?.includes('案件を追加')
@@ -51,7 +51,7 @@ describe('ProjectManager form (PR-N3, refs #187)', () => {
 		});
 		await fireEvent.click(addBtn);
 		const form = await waitFor(() => {
-			const f = document.querySelector('form[action="?/createProject"]') as HTMLFormElement;
+			const f = document.querySelector('form[action="/?/createProject"]') as HTMLFormElement;
 			if (!f) throw new Error('createProject form not rendered');
 			return f;
 		});
@@ -60,7 +60,6 @@ describe('ProjectManager form (PR-N3, refs #187)', () => {
 
 	async function openEditForm(project: Project) {
 		const utils = render(ProjectManager, { props: { projects: [project], assignments: [] } });
-		await fireEvent.click(utils.getByRole('button', { name: /案件を管理/ }));
 		const editBtn = await waitFor(() => {
 			return Array.from(document.querySelectorAll('button')).find((el) =>
 				el.textContent?.trim().match(/^編集$/)
@@ -68,7 +67,7 @@ describe('ProjectManager form (PR-N3, refs #187)', () => {
 		});
 		await fireEvent.click(editBtn);
 		const form = await waitFor(() => {
-			const f = document.querySelector('form[action="?/updateProject"]') as HTMLFormElement;
+			const f = document.querySelector('form[action="/?/updateProject"]') as HTMLFormElement;
 			if (!f) throw new Error('updateProject form not rendered');
 			return f;
 		});
@@ -86,7 +85,9 @@ describe('ProjectManager form (PR-N3, refs #187)', () => {
 		const { form } = await openCreateForm();
 		const desc = form.querySelector('textarea[name="description"]');
 		const tags = form.querySelector('input[name="tags"]');
-		const linksJson = form.querySelector('input[type="hidden"][name="linksJson"]') as HTMLInputElement;
+		const linksJson = form.querySelector(
+			'input[type="hidden"][name="linksJson"]'
+		) as HTMLInputElement;
 		expect(desc).toBeTruthy();
 		expect(tags).toBeTruthy();
 		expect(linksJson).toBeTruthy();
@@ -133,9 +134,7 @@ describe('ProjectManager form (PR-N3, refs #187)', () => {
 		) as HTMLInputElement;
 		expect(desc.value).toBe('body markdown');
 		expect(tags.value).toMatch(/TypeScript,\s*AWS/);
-		expect(JSON.parse(linksJson.value)).toEqual([
-			{ url: 'https://example.com', label: 'Wiki' }
-		]);
+		expect(JSON.parse(linksJson.value)).toEqual([{ url: 'https://example.com', label: 'Wiki' }]);
 	});
 
 	it('edit form: 詳細無しの project で summary から開いた 詳細 は Preview / Write の切替で閉じない', async () => {
@@ -178,7 +177,6 @@ describe('ProjectManager form (PR-N3, refs #187)', () => {
 describe('ProjectManager Markdown Write/Preview tabs', () => {
 	async function openCreateFormDetails() {
 		const utils = render(ProjectManager, { props: { projects: [], assignments: [] } });
-		await fireEvent.click(utils.getByRole('button', { name: /案件を管理/ }));
 		const addBtn = await waitFor(() => {
 			return Array.from(document.querySelectorAll('button')).find((el) =>
 				el.textContent?.includes('案件を追加')
@@ -186,7 +184,7 @@ describe('ProjectManager Markdown Write/Preview tabs', () => {
 		});
 		await fireEvent.click(addBtn);
 		const form = await waitFor(() => {
-			const f = document.querySelector('form[action="?/createProject"]') as HTMLFormElement;
+			const f = document.querySelector('form[action="/?/createProject"]') as HTMLFormElement;
 			if (!f) throw new Error('createProject form not rendered');
 			return f;
 		});

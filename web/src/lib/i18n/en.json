@@ -13,7 +13,8 @@
 		"confirm": "Confirm",
 		"requiredError": "Required",
 		"maxLengthError": "{n} characters max",
-		"opensInNewTab": "opens in new tab"
+		"opensInNewTab": "opens in new tab",
+		"count": "{count} items"
 	},
 	"timeline": {
 		"today": "Today",
@@ -36,9 +37,6 @@
 		"statusKeyResizeEnd": "End date changed by keyboard: {range}"
 	},
 	"departments": {
-		"manageWithCount": "Manage departments ({count})",
-		"manage": "Manage departments",
-		"description": "Add, edit and delete departments (organization)",
 		"add": "+ Add department",
 		"createTitle": "Add department",
 		"editTitle": "Rename department",
@@ -55,15 +53,12 @@
 		"confirmDeleteRoot": "Delete \"{name}\"?\nSub-departments become roots and members become unassigned."
 	},
 	"resources": {
-		"manage": "Manage people",
-		"manageWithCount": "Manage people ({count})",
 		"add": "+ Add person",
 		"addNew": "Add person",
 		"editTitle": "Edit person",
 		"createTitle": "Add person",
-		"description": "Add, edit and delete resources (people)",
 		"empty": "No people registered yet.",
-		"emptyHint": "Use the \"Manage people\" button at the top right to add the first resource.",
+		"emptyHint": "Add your first person on the People page.",
 		"name": "Name",
 		"assignmentCount": "({count} assignments)",
 		"confirmDelete": "Delete \"{name}\"?",
@@ -71,13 +66,10 @@
 		"createFailed": "Failed to add the person. Please try again."
 	},
 	"projects": {
-		"manage": "Manage projects",
-		"manageWithCount": "Manage projects ({count})",
 		"add": "+ Add project",
 		"addNew": "Add project",
 		"editTitle": "Edit project",
 		"createTitle": "Add project",
-		"description": "Add, edit and delete projects",
 		"empty": "No projects registered yet.",
 		"name": "Project name",
 		"color": "Display color",
@@ -102,7 +94,13 @@
 		"detailTitle": "{name} detail"
 	},
 	"nav": {
-		"timelineLink": "Timeline"
+		"label": "Main menu",
+		"menuToggle": "Menu",
+		"timelineLink": "Timeline",
+		"assignmentsLink": "Assignments",
+		"resourcesLink": "People",
+		"projectsLink": "Projects",
+		"departmentsLink": "Departments"
 	},
 	"assignments": {
 		"add": "Add assignment",
@@ -111,11 +109,10 @@
 		"editTitle": "Edit assignment",
 		"description": "Assign a person to a project for a date range",
 		"list": "Assignments",
-		"listWithCount": "Assignments ({count})",
 		"listTitle": "Assignments",
 		"listDescription": "List of registered assignments",
 		"empty": "No assignments registered yet.",
-		"emptyHint": "Use \"+ Add assignment\" at the top right to create one.",
+		"emptyHint": "Use \"+ Add assignment\" to create one.",
 		"resource": "Person",
 		"project": "Project",
 		"startDate": "Start date",
@@ -171,7 +168,8 @@
 		"labelSystem": "Theme: system ({resolved})",
 		"light": "light",
 		"dark": "dark",
-		"system": "system"
+		"system": "system",
+		"heading": "Theme"
 	},
 	"locale": {
 		"label": "Language",

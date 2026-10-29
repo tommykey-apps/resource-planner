@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { toast } from 'svelte-sonner';
-	import TreeStructure from 'phosphor-svelte/lib/TreeStructure';
 	import { Button } from './ui/button';
 	import { Input } from './ui/input';
 	import Dialog from './Dialog.svelte';
@@ -34,7 +33,6 @@
 			.sort((a, b) => a.name.localeCompare(b.name));
 	}
 
-	let listOpen = $state(false);
 	let formOpen = $state(false);
 	let formName = $state('');
 	/** 作成時の親 (空文字 = ルート)。 「子部署を追加」 で preset する。 */
@@ -125,66 +123,53 @@
 	}
 </script>
 
-<Button variant="outline" onclick={() => (listOpen = true)}>
-	<TreeStructure size={18} weight="regular" aria-hidden="true" />
-	<span class="hidden sm:ml-1 sm:inline"
-		>{t('departments.manageWithCount', { count: departments.length })}</span
-	>
-</Button>
+<div class="flex flex-col gap-3">
+	<Button class="self-start" onclick={startCreateRoot}>{t('departments.add')}</Button>
 
-<Dialog
-	bind:open={listOpen}
-	title={t('departments.manage')}
-	description={t('departments.description')}
->
-	<div class="flex flex-col gap-3">
-		<Button onclick={startCreateRoot}>{t('departments.add')}</Button>
-
-		{#if flatTree.length === 0}
-			<p class="py-4 text-center text-sm text-muted-foreground">{t('departments.empty')}</p>
-		{:else}
-			<ul class="divide-y divide-border border border-border">
-				{#each flatTree as { dept, depth } (dept.id)}
-					<!-- 操作が収まらないときは名前を潰さず操作側を次の行へ回す (flex-wrap + shrink-0)。 -->
-					<li class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm">
-						<span style="padding-left: {depth * 16}px">{dept.name}</span>
-						<div class="flex shrink-0 items-center gap-1">
-							<Button size="xs" variant="outline" onclick={() => startEdit(dept)}>
-								{t('common.edit')}
-							</Button>
-							<!-- 子部署を追加 -->
-							<Button size="xs" variant="outline" onclick={() => startCreateChild(dept)}>
-								{t('departments.addChild')}
-							</Button>
-							<!-- 付け替え (move): 親を選んだ瞬間に submit。 -->
-							<form method="POST" action="/?/moveDepartment" use:enhance={moveSubmit}>
-								<input type="hidden" name="id" value={dept.id} />
-								<select
-									name="parentId"
-									aria-label={t('departments.moveAria', { name: dept.name })}
-									value={dept.parentId ?? ''}
-									onchange={(e) => e.currentTarget.form?.requestSubmit()}
-									class="h-8 border border-input bg-background px-1 text-xs focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-									style="border-radius: calc(var(--radius) * 0.6)"
-								>
-									<option value="">{t('departments.rootOption')}</option>
-									{#each moveOptions(dept) as o (o.id)}
-										<option value={o.id}>{o.name}</option>
-									{/each}
-								</select>
-							</form>
-							<!-- 削除 (#241): 配下は親へ繰り上げ。 確認 dialog は makeDeleteSubmit が出す。 -->
-							<form method="POST" action="/?/deleteDepartment" use:enhance={makeDeleteSubmit(dept)}>
-								<input type="hidden" name="id" value={dept.id} />
-								<Button size="xs" variant="destructive" type="submit">{t('common.delete')}</Button>
-							</form>
-						</div>
-					</li>
-				{/each}
-			</ul>
-		{/if}
-	</div>
-</Dialog>
+	{#if flatTree.length === 0}
+		<p class="py-4 text-center text-sm text-muted-foreground">{t('departments.empty')}</p>
+	{:else}
+		<ul class="divide-y divide-border border border-border">
+			{#each flatTree as { dept, depth } (dept.id)}
+				<!-- 操作が収まらないときは名前を潰さず操作側を次の行へ回す (flex-wrap + shrink-0)。 -->
+				<li class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm">
+					<span style="padding-left: {depth * 16}px">{dept.name}</span>
+					<div class="flex shrink-0 items-center gap-1">
+						<Button size="xs" variant="outline" onclick={() => startEdit(dept)}>
+							{t('common.edit')}
+						</Button>
+						<!-- 子部署を追加 -->
+						<Button size="xs" variant="outline" onclick={() => startCreateChild(dept)}>
+							{t('departments.addChild')}
+						</Button>
+						<!-- 付け替え (move): 親を選んだ瞬間に submit。 -->
+						<form method="POST" action="/?/moveDepartment" use:enhance={moveSubmit}>
+							<input type="hidden" name="id" value={dept.id} />
+							<select
+								name="parentId"
+								aria-label={t('departments.moveAria', { name: dept.name })}
+								value={dept.parentId ?? ''}
+								onchange={(e) => e.currentTarget.form?.requestSubmit()}
+								class="h-8 border border-input bg-background px-1 text-xs focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+								style="border-radius: calc(var(--radius) * 0.6)"
+							>
+								<option value="">{t('departments.rootOption')}</option>
+								{#each moveOptions(dept) as o (o.id)}
+									<option value={o.id}>{o.name}</option>
+								{/each}
+							</select>
+						</form>
+						<!-- 削除 (#241): 配下は親へ繰り上げ。 確認 dialog は makeDeleteSubmit が出す。 -->
+						<form method="POST" action="/?/deleteDepartment" use:enhance={makeDeleteSubmit(dept)}>
+							<input type="hidden" name="id" value={dept.id} />
+							<Button size="xs" variant="destructive" type="submit">{t('common.delete')}</Button>
+						</form>
+					</div>
+				</li>
+			{/each}
+		</ul>
+	{/if}
+</div>
 
 <Dialog
 	bind:open={formOpen}

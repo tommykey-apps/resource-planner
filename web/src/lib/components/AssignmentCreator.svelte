@@ -75,13 +75,13 @@
 	title={canCreate ? '' : t('assignments.requirePeopleAndProjects')}
 >
 	<Plus size={18} weight="bold" aria-hidden="true" />
-	<span class="hidden sm:ml-1 sm:inline">{t('assignments.add')}</span>
+	<span class="ml-1">{t('assignments.add')}</span>
 </Button>
 
 <Dialog bind:open title={t('assignments.createTitle')} description={t('assignments.description')}>
 	<form
 		method="POST"
-		action="?/createAssignment"
+		action="/?/createAssignment"
 		use:enhance={formSubmit}
 		class="flex flex-col gap-3"
 	>

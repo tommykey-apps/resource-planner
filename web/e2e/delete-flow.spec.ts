@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { clearMagicLinks, getMagicLinkUrl } from './fixtures/magic-link';
+import { openSection } from './fixtures/nav';
 
 /**
  * #132 / #148 で導入した imperative confirmDialog の表示 regression を防ぐ E2E。
@@ -33,7 +34,7 @@ test('Resource delete: confirm dialog が画面に表示されて Cancel で閉�
 	await signInAsTestUser(page);
 
 	// ヘッダの「Manage people」 button を開く (en は Accept-Language fallback の default)
-	await page.getByRole('button', { name: /Manage people/ }).click();
+	await openSection(page, 'People');
 
 	// 「+ Add person」 → Name 入力 → Create
 	await page.getByRole('button', { name: /\+ Add person/ }).click();

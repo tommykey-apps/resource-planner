@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { clearMagicLinks, getMagicLinkUrl } from './fixtures/magic-link';
+import { openSection } from './fixtures/nav';
 
 /**
  * #142: /assignments を 375px 幅で開いたとき 6 列 table が右端で見切れていた問題の regression spec。
@@ -29,30 +30,34 @@ async function signIn(page: import('@playwright/test').Page) {
 
 async function createOneAssignment(page: import('@playwright/test').Page, suffix: string) {
 	// Resource 作成
-	await page.getByRole('button', { name: /Manage people/ }).click();
+	await openSection(page, 'People');
 	await page.getByRole('button', { name: /\+ Add person/ }).click();
 	await page.getByLabel('Name').fill(`r-${suffix}`);
 	await page.getByRole('button', { name: /^Create$/ }).click();
 	await expect(page.locator('li', { hasText: `r-${suffix}` })).toBeVisible();
-	await page.keyboard.press('Escape');
 
 	// Project 作成
-	await page.getByRole('button', { name: /Manage projects/ }).click();
+	await openSection(page, 'Projects');
 	await page.getByRole('button', { name: /\+ Add project/ }).click();
 	await page.getByLabel('Project name').fill(`p-${suffix}`);
 	await page.getByRole('button', { name: /^Create$/ }).click();
 	await expect(page.locator('li', { hasText: `p-${suffix}` })).toBeVisible();
-	await page.keyboard.press('Escape');
 
 	// Assignment 作成 (AssignmentCreator は label でなく select/date input、 デフォルト値で submit)
+	await openSection(page, 'Timeline');
 	await page.getByRole('button', { name: /Add assignment/ }).click();
-	await page.getByRole('button', { name: /^Create$/ }).last().click();
+	await page
+		.getByRole('button', { name: /^Create$/ })
+		.last()
+		.click();
 }
 
-test('viewport breakpoint で /assignments が card / table を切り替える (#142)', async ({ page }) => {
-	// header の Manage / Add button は mobile (<sm) でテキストが hidden され accessible name が
-	// 空になるため、 fixture 作成は **desktop viewport** で行う。 viewport breakpoint の挙動だけ
-	// /assignments で確認するのが本 spec のスコープ。
+test('viewport breakpoint で /assignments が card / table を切り替える (#142)', async ({
+	page
+}) => {
+	// ヘッダーの水平メニューは mobile (<md) でハンバーガーメニューに畳まれるため、 fixture 作成は
+	// **desktop viewport** で行う。 viewport breakpoint の挙動だけ /assignments で確認するのが
+	// 本 spec のスコープ。
 	await page.setViewportSize({ width: 1280, height: 800 });
 	await signIn(page);
 	await createOneAssignment(page, `${Date.now()}`);

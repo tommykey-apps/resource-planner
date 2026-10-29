@@ -14,7 +14,7 @@
 		resourceIdsForDepartmentFilter,
 		DEPARTMENT_FILTER_UNASSIGNED
 	} from '$lib/repository/department-tree';
-	import AppHeader from '$lib/components/AppHeader.svelte';
+	import AssignmentCreator from '$lib/components/AssignmentCreator.svelte';
 	import AssignmentEditor from '$lib/components/AssignmentEditor.svelte';
 	import EmptyStateGuide from '$lib/components/EmptyStateGuide.svelte';
 	import { t } from '$lib/i18n/index.svelte';
@@ -38,26 +38,9 @@
 		dbAssignments = data.assignments;
 	});
 
-	// #121 / #184: optimistic UI 用に resources / projects も local state へ lift。
-	// 同上の trade-off: server confirm 後の rebase 動作で local 楽観追加 entity (temp ID) が
-	// 一瞬消えて server entity (real ID) に置き換わる。 ResourceManager で
-	// onOptimisticCreate / onConfirmCreate を expose し、 swap を呼び出し側で同期させる。
-	let resources = $state<typeof data.resources>([]);
-	$effect(() => {
-		resources = data.resources;
-	});
+	const resources = $derived(data.resources);
 	const projects = $derived(data.projects);
 
-	function optimisticAddResource(temp: { id: string; name: string }) {
-		resources = [...resources, temp];
-	}
-	function confirmResourceCreate(temp: { id: string }, real: { id: string; name: string }) {
-		resources = resources.map((r) => (r.id === temp.id ? real : r));
-	}
-	function rollbackResourceCreate(temp: { id: string }) {
-		resources = resources.filter((r) => r.id !== temp.id);
-		toast.error(t('resources.createFailed'));
-	}
 	const projectMap = $derived(new Map(projects.map((p) => [p.id, p])));
 
 	const timelineAssignments = $derived(
@@ -158,20 +141,16 @@
 	}
 </script>
 
-<AppHeader
-	{resources}
-	{projects}
-	assignments={dbAssignments}
-	departments={data.departments}
-	user={data.user}
-	csrfToken={data.csrfToken}
-	isHomeActive
-	onOptimisticCreateResource={optimisticAddResource}
-	onConfirmCreateResource={confirmResourceCreate}
-	onRollbackCreateResource={rollbackResourceCreate}
-/>
+<svelte:head>
+	<title>{t('nav.timelineLink')} — {t('app.title')}</title>
+</svelte:head>
 
 <main class="mx-auto max-w-[1200px] px-4 py-6">
+	<div class="mb-4 flex items-center justify-between gap-2">
+		<h1 class="m-0 text-xl font-semibold">{t('nav.timelineLink')}</h1>
+		<AssignmentCreator {resources} {projects} />
+	</div>
+
 	<EmptyStateGuide
 		resourceCount={resources.length}
 		projectCount={projects.length}
@@ -180,7 +159,7 @@
 
 	{#if resources.length === 0}
 		<div class="empty-state">
-			<p>{t('resources.emptyHint')}</p>
+			<p><a href="/resources" class="underline">{t('resources.emptyHint')}</a></p>
 		</div>
 	{:else}
 		<TimelineToolbar
@@ -261,11 +240,6 @@
 
 	.empty-state p {
 		margin: 0;
-	}
-
-	.empty-state .hint {
-		margin-top: 0.25rem;
-		font-size: 0.875rem;
 	}
 
 	main :global(.toolbar) {

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { clearMagicLinks, getMagicLinkUrl } from './fixtures/magic-link';
+import { openSection } from './fixtures/nav';
 
 /**
  * #206: home の ResourceTimeline 帯 click で AssignmentEditor dialog が起動することを E2E で守る。
@@ -32,22 +33,24 @@ async function signIn(page: import('@playwright/test').Page) {
 }
 
 async function bootstrap1Assignment(page: import('@playwright/test').Page, suffix: string) {
-	await page.getByRole('button', { name: /Manage people/ }).click();
+	await openSection(page, 'People');
 	await page.getByRole('button', { name: /\+ Add person/ }).click();
 	await page.locator('input[name="name"]').fill(`r-${suffix}`);
 	await page.getByRole('button', { name: /^Create$/ }).click();
 	await expect(page.locator('li', { hasText: `r-${suffix}` })).toBeVisible();
-	await page.keyboard.press('Escape');
 
-	await page.getByRole('button', { name: /Manage projects/ }).click();
+	await openSection(page, 'Projects');
 	await page.getByRole('button', { name: /\+ Add project/ }).click();
 	await page.locator('input[name="name"]').fill(`p-${suffix}`);
 	await page.getByRole('button', { name: /^Create$/ }).click();
 	await expect(page.locator('li', { hasText: `p-${suffix}` })).toBeVisible();
-	await page.keyboard.press('Escape');
 
+	await openSection(page, 'Timeline');
 	await page.getByRole('button', { name: /Add assignment/ }).click();
-	await page.getByRole('button', { name: /^Create$/ }).last().click();
+	await page
+		.getByRole('button', { name: /^Create$/ })
+		.last()
+		.click();
 }
 
 test('home: bar を click すると AssignmentEditor dialog が開く (#206)', async ({ page }) => {

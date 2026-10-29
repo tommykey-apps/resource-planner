@@ -6,7 +6,7 @@
 	import { addDays, parseLocalDate } from '$lib/date';
 	import { confirmDialog } from '$lib/forms/confirm-dialog';
 	import { t } from '$lib/i18n/index.svelte';
-	import AppHeader from '$lib/components/AppHeader.svelte';
+	import AssignmentCreator from '$lib/components/AssignmentCreator.svelte';
 	import AssignmentEditor from '$lib/components/AssignmentEditor.svelte';
 	import ProjectDetailView from '$lib/components/ProjectDetailView.svelte';
 	import {
@@ -117,18 +117,11 @@
 	<title>{t('assignments.listTitle')} — {t('app.title')}</title>
 </svelte:head>
 
-<AppHeader
-	{resources}
-	{projects}
-	{assignments}
-	departments={data.departments}
-	user={data.user}
-	csrfToken={data.csrfToken}
-	isAssignmentsActive
-/>
-
 <main class="mx-auto max-w-[1200px] px-4 py-6">
-	<h1 class="mb-4 text-xl font-semibold">{t('assignments.listTitle')}</h1>
+	<div class="mb-4 flex items-center justify-between gap-2">
+		<h1 class="m-0 text-xl font-semibold">{t('assignments.listTitle')}</h1>
+		<AssignmentCreator {resources} {projects} />
+	</div>
 
 	<div class="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-6">
 		<input
@@ -190,7 +183,11 @@
 		</button>
 	</div>
 
-	{#snippet rowActions(a: Assignment, resource: typeof resources[number] | undefined, project: typeof projects[number] | undefined)}
+	{#snippet rowActions(
+		a: Assignment,
+		resource: (typeof resources)[number] | undefined,
+		project: (typeof projects)[number] | undefined
+	)}
 		<div class="flex justify-end gap-1">
 			<Button size="xs" variant="outline" onclick={() => openEditor(a)}>
 				{t('common.edit')}
@@ -211,7 +208,9 @@
 	{/snippet}
 
 	{#if filtered.length === 0}
-		<div class="rounded border border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
+		<div
+			class="rounded border border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground"
+		>
 			{t('assignments.noMatches')}
 		</div>
 	{:else}
