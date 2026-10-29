@@ -46,4 +46,17 @@ describe('AssignmentCreator (smoke)', () => {
 		});
 		expect(form).toBeTruthy();
 	});
+
+	// DESIGN.md: 見出しの直下に説明文を置かない。 ダイアログ題名の下に説明を出さない。
+	it('ダイアログに説明文を置かない', async () => {
+		const { getByRole } = render(AssignmentCreator, {
+			props: {
+				resources: [{ id: 'r1', name: 'Alice' }],
+				projects: [{ id: 'p1', name: 'Project A', color: '#0EA5E9' }]
+			}
+		});
+		await fireEvent.click(getByRole('button', { name: /アサインを追加/ }));
+		const dialog = await waitFor(() => getByRole('dialog'));
+		expect(dialog.getAttribute('aria-describedby')).toBeNull();
+	});
 });

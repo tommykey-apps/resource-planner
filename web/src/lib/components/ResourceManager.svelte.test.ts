@@ -23,19 +23,19 @@ describe('ResourceManager (smoke)', () => {
 				assignments: []
 			}
 		});
-		expect(getByRole('button', { name: /人を追加/ })).toBeInTheDocument();
+		expect(getByRole('button', { name: /メンバーを追加/ })).toBeInTheDocument();
 		expect(getByText('Alice')).toBeInTheDocument();
 		expect(getByText('Bob')).toBeInTheDocument();
 	});
 
-	it('起動用の「人を管理」 button を持たない', () => {
+	it('起動用の「メンバーを管理」 button を持たない', () => {
 		const { queryByRole } = render(ResourceManager, { props: { resources: [], assignments: [] } });
-		expect(queryByRole('button', { name: /人を管理/ })).toBeNull();
+		expect(queryByRole('button', { name: /メンバーを管理/ })).toBeNull();
 	});
 
 	it('0 件のときは空状態の文言を出す', () => {
 		const { getByText } = render(ResourceManager, { props: { resources: [], assignments: [] } });
-		expect(getByText('まだ人が登録されていません。')).toBeInTheDocument();
+		expect(getByText('メンバーはいません。')).toBeInTheDocument();
 	});
 
 	it('削除 form は /?/deleteResource に送る (別ページからでも / の action に届く)', () => {
@@ -64,6 +64,6 @@ describe('ResourceManager (smoke)', () => {
 			}
 		});
 		// レンダリングが壊れないことを確認 (callback は実行されない)
-		expect(result.getByRole('button', { name: /人を追加/ })).toBeInTheDocument();
+		expect(result.getByRole('button', { name: /メンバーを追加/ })).toBeInTheDocument();
 	});
 });

@@ -24,7 +24,7 @@ describe('ProjectManager (smoke)', () => {
 
 	it('0 件のときは空状態の文言を出す', () => {
 		const { getByText } = render(ProjectManager, { props: { projects: [], assignments: [] } });
-		expect(getByText('まだ案件が登録されていません。')).toBeInTheDocument();
+		expect(getByText('案件はありません。')).toBeInTheDocument();
 	});
 
 	it('削除 form は /?/deleteProject に送る (別ページからでも / の action に届く)', () => {

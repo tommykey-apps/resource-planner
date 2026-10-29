@@ -78,7 +78,7 @@
 	<span class="ml-1">{t('assignments.add')}</span>
 </Button>
 
-<Dialog bind:open title={t('assignments.createTitle')} description={t('assignments.description')}>
+<Dialog bind:open title={t('assignments.createTitle')}>
 	<form
 		method="POST"
 		action="/?/createAssignment"

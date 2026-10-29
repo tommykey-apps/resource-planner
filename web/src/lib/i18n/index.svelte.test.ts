@@ -32,11 +32,11 @@ describe('t (translation lookup)', () => {
 	});
 
 	it('returns the translated string for a known key (ja default)', () => {
-		expect(t('resources.addNew')).toBe('人を追加');
+		expect(t('resources.addNew')).toBe('メンバーを追加');
 	});
 
 	it('switches language when localeState changes', () => {
-		expect(t('resources.addNew')).toBe('人を追加');
+		expect(t('resources.addNew')).toBe('メンバーを追加');
 		localeState.current = 'en';
 		expect(t('resources.addNew')).toBe('Add person');
 	});

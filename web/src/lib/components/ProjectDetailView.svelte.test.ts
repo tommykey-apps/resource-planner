@@ -59,9 +59,9 @@ describe('ProjectDetailView (PR-N4, refs #187)', () => {
 		expect(anchor).toBeTruthy();
 		expect(anchor.getAttribute('target')).toBe('_blank');
 		expect(anchor.getAttribute('rel')).toBe('noopener noreferrer');
-		// BP B7: sr-only で AT に「新規 tab で開く」 を伝える
+		// BP B7: sr-only で AT に「新しいタブで開く」 を伝える
 		const srOnly = anchor.querySelector('.sr-only');
-		expect(srOnly?.textContent).toMatch(/新規 tab|new tab/i);
+		expect(srOnly?.textContent).toMatch(/新しいタブ|new tab/i);
 	});
 
 	it('falls back to URL as link text when label is empty', async () => {

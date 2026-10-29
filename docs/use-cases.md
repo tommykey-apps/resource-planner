@@ -41,7 +41,7 @@ SvelteKit form actions / `+page.server.ts` load の動的振る舞い (画面 �
 - アクター: 認証済みユーザー (許可ドメイン制限を通過、team_default に自動 join)
 - 前提条件:
   - サインイン済 (Auth.js session 有効、`session.teamId` 存在)
-  - ヘッダーのナビ「人」(`/resources`) から操作
+  - ヘッダーのナビ「メンバー」(`/resources`) から操作
 
 ### 対応コード
 
@@ -61,7 +61,7 @@ sequenceDiagram
     participant AuthJs as Auth.js (locals.auth)
     participant DDB as DynamoDB
 
-    User->>SK: 「+ 人を追加」 → 名前入力
+    User->>SK: 「+ メンバーを追加」 → 名前入力
     SK->>Server: POST ?/createResource<br/>FormData(name)
     Server->>AuthJs: await locals.auth()
     AuthJs-->>Server: { user: { id, email } }

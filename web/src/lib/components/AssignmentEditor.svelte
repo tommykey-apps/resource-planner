@@ -81,7 +81,7 @@
 	});
 </script>
 
-<Dialog bind:open title={t('assignments.editTitle')} description={t('assignments.description')}>
+<Dialog bind:open title={t('assignments.editTitle')}>
 	<!--
 		#184: action は **絶対 path 必須**。 本 component は home (/) と /assignments 両方で使われる
 		shared component で、 form action `updateAssignment` は root (`/+page.server.ts`) にだけ存在する。

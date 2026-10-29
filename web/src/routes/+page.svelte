@@ -159,7 +159,10 @@
 
 	{#if resources.length === 0}
 		<div class="empty-state">
-			<p><a href="/resources" class="underline">{t('resources.emptyHint')}</a></p>
+			<p>
+				{t('resources.empty')}
+				<a href="/resources" class="underline">{t('resources.addNew')}</a>
+			</p>
 		</div>
 	{:else}
 		<TimelineToolbar

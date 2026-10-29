@@ -31,7 +31,7 @@ describe('DepartmentManager (#238)', () => {
 
 	it('0 件のときは空状態の文言を出す', () => {
 		const { getByText } = render(DepartmentManager, { props: { departments: [] } });
-		expect(getByText('まだ部署が登録されていません。')).toBeInTheDocument();
+		expect(getByText('部署はありません。')).toBeInTheDocument();
 	});
 });
 

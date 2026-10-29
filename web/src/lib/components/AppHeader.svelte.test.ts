@@ -30,7 +30,7 @@ function setPath(path: string) {
 const NAV_ITEMS = [
 	{ href: '/', label: /タイムライン/ },
 	{ href: '/assignments', label: /アサイン一覧/ },
-	{ href: '/resources', label: /^人$/ },
+	{ href: '/resources', label: /^メンバー$/ },
 	{ href: '/projects', label: /^案件$/ },
 	{ href: '/departments', label: /^部署$/ }
 ];
