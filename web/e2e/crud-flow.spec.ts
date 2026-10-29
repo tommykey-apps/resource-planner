@@ -35,22 +35,22 @@ test('Resource + Project の作成 → delete confirm まで一気通貫で機�
 	// ── Resource 作成 (ヘッダのナビ「People」→ 「+ Add person」)
 	await openSection(page, 'People');
 	await page.getByRole('button', { name: /\+ Add person/ }).click();
-	await page.getByLabel('Name').fill(resourceName);
+	await page.getByLabel('Name', { exact: true }).fill(resourceName);
 	await page.getByRole('button', { name: /^Create$/ }).click();
-	await expect(page.locator('li', { hasText: resourceName })).toBeVisible();
+	await expect(page.locator('tr', { hasText: resourceName })).toBeVisible();
 
 	// ── Project 作成 (ヘッダのナビ「Projects」→ 「+ Add project」)
 	await openSection(page, 'Projects');
-	await expect(page.locator('li', { hasText: resourceName })).toBeHidden();
+	await expect(page.locator('tr', { hasText: resourceName })).toBeHidden();
 	await page.getByRole('button', { name: /\+ Add project/ }).click();
 	// Project は「Project name」 label
 	await page.getByLabel('Project name').fill(projectName);
 	await page.getByRole('button', { name: /^Create$/ }).click();
-	await expect(page.locator('li', { hasText: projectName })).toBeVisible();
+	await expect(page.locator('tr', { hasText: projectName })).toBeVisible();
 
 	// ── Resource を delete → ConfirmDialog が出て Confirm
 	await openSection(page, 'People');
-	const row = page.locator('li', { hasText: resourceName });
+	const row = page.locator('tr', { hasText: resourceName });
 	await expect(row).toBeVisible();
 	await row.getByRole('button', { name: /^Delete$/ }).click();
 
@@ -61,5 +61,5 @@ test('Resource + Project の作成 → delete confirm まで一気通貫で機�
 	await expect(alert).toBeHidden();
 
 	// 削除後は list から消える
-	await expect(page.locator('li', { hasText: resourceName })).toBeHidden();
+	await expect(page.locator('tr', { hasText: resourceName })).toBeHidden();
 });

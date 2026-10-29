@@ -41,7 +41,7 @@ test('Resource create が tooLong で 400 → dialog 再 open + 入力値が保�
 	// HTML5 `maxlength="100"` を一時的に外して 101 文字を入れる (server side の
 	// zod max(100, 'tooLong') を踏ませて 400 を強制)。 input イベントを dispatch して
 	// Svelte の bind:value も同期させる。
-	const name = page.getByLabel('Name');
+	const name = page.getByLabel('Name', { exact: true });
 	await name.evaluate((el, value) => {
 		(el as HTMLInputElement).removeAttribute('maxlength');
 		const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;

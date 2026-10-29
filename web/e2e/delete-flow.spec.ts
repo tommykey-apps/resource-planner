@@ -39,11 +39,11 @@ test('Resource delete: confirm dialog が画面に表示されて Cancel で閉�
 	// 「+ Add person」 → Name 入力 → Create
 	await page.getByRole('button', { name: /\+ Add person/ }).click();
 	const uniqueName = `e2e-${Date.now()}`;
-	await page.getByLabel('Name').fill(uniqueName);
+	await page.getByLabel('Name', { exact: true }).fill(uniqueName);
 	await page.getByRole('button', { name: /^Create$/ }).click();
 
 	// 作成後の一覧で対象 row の「Delete」 を押す
-	const row = page.locator('li', { hasText: uniqueName });
+	const row = page.locator('tr', { hasText: uniqueName });
 	await expect(row).toBeVisible();
 	await row.getByRole('button', { name: /^Delete$/ }).click();
 

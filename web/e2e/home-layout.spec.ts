@@ -40,13 +40,13 @@ async function bootstrap1Assignment(page: import('@playwright/test').Page, suffi
 	await page.getByRole('button', { name: /\+ Add person/ }).click();
 	await page.locator('input[name="name"]').fill(`r-${suffix}`);
 	await page.getByRole('button', { name: /^Create$/ }).click();
-	await expect(page.locator('li', { hasText: `r-${suffix}` })).toBeVisible();
+	await expect(page.locator('tr', { hasText: `r-${suffix}` })).toBeVisible();
 
 	await openSection(page, 'Projects');
 	await page.getByRole('button', { name: /\+ Add project/ }).click();
 	await page.locator('input[name="name"]').fill(`p-${suffix}`);
 	await page.getByRole('button', { name: /^Create$/ }).click();
-	await expect(page.locator('li', { hasText: `p-${suffix}` })).toBeVisible();
+	await expect(page.locator('tr', { hasText: `p-${suffix}` })).toBeVisible();
 
 	await openSection(page, 'Timeline');
 	await page.getByRole('button', { name: /Add assignment/ }).click();
@@ -113,12 +113,12 @@ test('home: resource rail が最長名に auto-fit する (ui-components 0.9.3 #
 	await page.getByRole('button', { name: /\+ Add person/ }).click();
 	await page.locator('input[name="name"]').fill('短');
 	await page.getByRole('button', { name: /^Create$/ }).click();
-	await expect(page.locator('li', { hasText: '短' }).first()).toBeVisible();
+	await expect(page.locator('tr', { hasText: '短' }).first()).toBeVisible();
 	await page.getByRole('button', { name: /\+ Add person/ }).click();
 	const longName = `長い名前テスト ${suffix}`;
 	await page.locator('input[name="name"]').fill(longName);
 	await page.getByRole('button', { name: /^Create$/ }).click();
-	await expect(page.locator('li', { hasText: longName })).toBeVisible();
+	await expect(page.locator('tr', { hasText: longName })).toBeVisible();
 
 	await page.goto('/?d=2026-05-12&z=day');
 

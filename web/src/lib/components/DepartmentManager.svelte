@@ -10,17 +10,53 @@
 	import { t } from '$lib/i18n/index.svelte';
 	import { DEPARTMENT_NAME_MAX_LENGTH } from '$lib/schemas';
 	import { descendantIds, flattenDepartmentTree } from '$lib/repository/department-tree';
-	import type { Department } from '$lib/types';
+	import ScrollShadow from './table/ScrollShadow.svelte';
+	import type { Department, Resource } from '$lib/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
 
 	/**
 	 * 部署の管理 (ADR 0013)。 ツリー (階層 indent) 表示 + 子部署作成 (親指定) + 改名 (#250) +
 	 * 付け替え (move) + 削除 (#241: 配下を親へ繰り上げ)。 循環 / 兄弟名一意の最終検証は server。
 	 */
-	let { departments }: { departments: Department[] } = $props();
+	let {
+		departments,
+		resources = []
+	}: {
+		departments: Department[];
+		/** 所属メンバー数の列に使う。 省略時は 0 人として表示する。 */
+		resources?: Resource[];
+	} = $props();
 
 	/** DFS 平坦化 (depth 付き、 名前順、 dangling はルート扱い) — indent 表示用。 */
 	const flatTree = $derived(flattenDepartmentTree(departments));
+
+	/** その部署に直接所属するメンバー数 (子部署の所属は含めない)。 */
+	const memberCount = $derived.by(() => {
+		const m = new Map<string, number>();
+		for (const r of resources) {
+			if (r.departmentId) m.set(r.departmentId, (m.get(r.departmentId) ?? 0) + 1);
+		}
+		return m;
+	});
+
+	/**
+	 * 親から順の祖先名。 画面上は字下げで見せる親子関係を、 支援技術には行見出しの
+	 * 視覚的に隠したテキストで伝える (デジタル庁「テーブル」IndentedRows の visually-hidden に倣う)。
+	 */
+	const byId = $derived(new Map(departments.map((d) => [d.id, d])));
+	function ancestorNames(dept: Department): string[] {
+		const names: string[] = [];
+		const seen = new Set<string>([dept.id]);
+		let parent = dept.parentId ? byId.get(dept.parentId) : undefined;
+		while (parent && !seen.has(parent.id)) {
+			names.unshift(parent.name);
+			seen.add(parent.id);
+			parent = parent.parentId ? byId.get(parent.parentId) : undefined;
+		}
+		return names;
+	}
+
+	const tableId = $props.id();
 
 	/**
 	 * move の選択肢: 自分自身と子孫を除く (= 循環になる先を UI から除外。 server も検証)。
@@ -127,47 +163,83 @@
 	<Button class="self-start" onclick={startCreateRoot}>{t('departments.add')}</Button>
 
 	{#if flatTree.length === 0}
-		<p class="py-4 text-center text-sm text-muted-foreground">{t('departments.empty')}</p>
+		<p class="py-4 text-sm text-muted-foreground">{t('departments.empty')}</p>
 	{:else}
-		<ul class="divide-y divide-border border border-border">
-			{#each flatTree as { dept, depth } (dept.id)}
-				<!-- 操作が収まらないときは名前を潰さず操作側を次の行へ回す (flex-wrap + shrink-0)。 -->
-				<li class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm">
-					<span style="padding-left: {depth * 16}px">{dept.name}</span>
-					<div class="flex shrink-0 items-center gap-1">
-						<Button size="xs" variant="outline" onclick={() => startEdit(dept)}>
-							{t('common.edit')}
-						</Button>
-						<!-- 子部署を追加 -->
-						<Button size="xs" variant="outline" onclick={() => startCreateChild(dept)}>
-							{t('departments.addChild')}
-						</Button>
-						<!-- 付け替え (move): 親を選んだ瞬間に submit。 -->
-						<form method="POST" action="/?/moveDepartment" use:enhance={moveSubmit}>
-							<input type="hidden" name="id" value={dept.id} />
-							<select
-								name="parentId"
-								aria-label={t('departments.moveAria', { name: dept.name })}
-								value={dept.parentId ?? ''}
-								onchange={(e) => e.currentTarget.form?.requestSubmit()}
-								class="h-8 border border-input bg-background px-1 text-xs focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-								style="border-radius: calc(var(--radius) * 0.6)"
+		<!--
+			ツリーなので並び替えとページ送りは付けない (並べ替えや途中での分割で親子の並びが壊れる)。
+			並びは flattenDepartmentTree の DFS 順 (親 → 子、 兄弟は名前順)。
+		-->
+		<ScrollShadow labelledby="{tableId}-caption">
+			<table class="w-full border-collapse text-sm">
+				<caption id="{tableId}-caption" class="sr-only">{t('nav.departmentsLink')}</caption>
+				<thead class="border-b-2 border-foreground">
+					<tr>
+						<th scope="col" class="px-3 py-2 text-left font-bold">{t('departments.name')}</th>
+						<th scope="col" class="px-3 py-2 text-right font-bold">
+							{t('departments.memberCount')}
+						</th>
+						<th scope="col" class="px-3 py-2 text-right font-bold">{t('common.actions')}</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each flatTree as { dept, depth } (dept.id)}
+						{@const ancestors = ancestorNames(dept)}
+						<tr class="border-b border-border align-top">
+							<th
+								scope="row"
+								class="py-2 pr-3 text-left font-normal whitespace-nowrap"
+								style="padding-left: calc(0.75rem + {depth * 1.5}rem)"
 							>
-								<option value="">{t('departments.rootOption')}</option>
-								{#each moveOptions(dept) as o (o.id)}
-									<option value={o.id}>{o.name}</option>
-								{/each}
-							</select>
-						</form>
-						<!-- 削除 (#241): 配下は親へ繰り上げ。 確認 dialog は makeDeleteSubmit が出す。 -->
-						<form method="POST" action="/?/deleteDepartment" use:enhance={makeDeleteSubmit(dept)}>
-							<input type="hidden" name="id" value={dept.id} />
-							<Button size="xs" variant="destructive" type="submit">{t('common.delete')}</Button>
-						</form>
-					</div>
-				</li>
-			{/each}
-		</ul>
+								{#if ancestors.length > 0}
+									<span class="sr-only">{ancestors.join(' / ')} / </span>
+								{/if}
+								<span>{dept.name}</span>
+							</th>
+							<td class="px-3 py-2 text-right tabular-nums">{memberCount.get(dept.id) ?? 0}</td>
+							<td class="px-3 py-2">
+								<div class="flex justify-end gap-1">
+									<Button size="xs" variant="outline" onclick={() => startEdit(dept)}>
+										{t('common.edit')}
+									</Button>
+									<!-- 子部署を追加 -->
+									<Button size="xs" variant="outline" onclick={() => startCreateChild(dept)}>
+										{t('departments.addChild')}
+									</Button>
+									<!-- 付け替え (move): 親を選んだ瞬間に submit。 -->
+									<form method="POST" action="/?/moveDepartment" use:enhance={moveSubmit}>
+										<input type="hidden" name="id" value={dept.id} />
+										<select
+											name="parentId"
+											aria-label={t('departments.moveAria', { name: dept.name })}
+											value={dept.parentId ?? ''}
+											onchange={(e) => e.currentTarget.form?.requestSubmit()}
+											class="h-8 border border-input bg-background px-1 text-xs focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+											style="border-radius: calc(var(--radius) * 0.6)"
+										>
+											<option value="">{t('departments.rootOption')}</option>
+											{#each moveOptions(dept) as o (o.id)}
+												<option value={o.id}>{o.name}</option>
+											{/each}
+										</select>
+									</form>
+									<!-- 削除 (#241): 配下は親へ繰り上げ。 確認 dialog は makeDeleteSubmit が出す。 -->
+									<form
+										method="POST"
+										action="/?/deleteDepartment"
+										use:enhance={makeDeleteSubmit(dept)}
+									>
+										<input type="hidden" name="id" value={dept.id} />
+										<Button size="xs" variant="destructive" type="submit"
+											>{t('common.delete')}</Button
+										>
+									</form>
+								</div>
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</ScrollShadow>
 	{/if}
 </div>
 

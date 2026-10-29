@@ -35,9 +35,9 @@ async function signInAsTestUser(page: Page): Promise<void> {
 async function createResource(page: Page, name: string): Promise<void> {
 	await openSection(page, 'People');
 	await page.getByRole('button', { name: /\+ Add person/ }).click();
-	await page.getByLabel('Name').fill(name);
+	await page.getByLabel('Name', { exact: true }).fill(name);
 	await page.getByRole('button', { name: /^Create$/ }).click();
-	await expect(page.locator('li', { hasText: name })).toBeVisible();
+	await expect(page.locator('tr', { hasText: name })).toBeVisible();
 }
 
 async function openProjectForm(page: Page): Promise<void> {
@@ -117,13 +117,13 @@ test('Project detail: form CRUD で description/tags/links を save → reload �
 		links: [{ label: 'Wiki', url: 'https://example.com/wiki' }]
 	});
 	await submitProjectForm(page, 'create');
-	await expect(page.locator('li', { hasText: projectName })).toBeVisible();
+	await expect(page.locator('tr', { hasText: projectName })).toBeVisible();
 
 	// ── reload: ProjectManager → Edit で値復元
 	await page.reload();
 	await openSection(page, 'Projects');
 	await page
-		.locator('li', { hasText: projectName })
+		.locator('tr', { hasText: projectName })
 		.getByRole('button', { name: /^Edit$/ })
 		.click();
 	// detail section は値あるので default open
@@ -143,7 +143,7 @@ test('Project detail: form CRUD で description/tags/links を save → reload �
 	await page.reload();
 	await openSection(page, 'Projects');
 	await page
-		.locator('li', { hasText: projectName })
+		.locator('tr', { hasText: projectName })
 		.getByRole('button', { name: /^Edit$/ })
 		.click();
 	// detail なしなので default closed → expand
