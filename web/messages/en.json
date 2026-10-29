@@ -1,0 +1,335 @@
+{
+	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"app_title": "resource-planner",
+	"common_create": "Create",
+	"common_update": "Update",
+	"common_cancel": "Cancel",
+	"common_delete": "Delete",
+	"common_edit": "Edit",
+	"common_submitting": "Submitting…",
+	"common_close": "Close",
+	"common_confirm": "Confirm",
+	"common_requiredError": "Required",
+	"common_maxLengthError": [
+		{
+			"declarations": ["input n", "local nPlural = n: plural"],
+			"selectors": ["nPlural"],
+			"match": {
+				"nPlural=one": "{n} character max",
+				"nPlural=other": "{n} characters max"
+			}
+		}
+	],
+	"common_opensInNewTab": "opens in a new tab",
+	"common_count": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} item",
+				"countPlural=other": "{count} items"
+			}
+		}
+	],
+	"common_actions": "Actions",
+	"common_prevPage": "Previous page",
+	"common_nextPage": "Next page",
+	"common_clearFilters": "Clear filters",
+	"common_filterByName": "Filter by name",
+	"common_assignmentCount": "Assignments",
+	"common_selectRows": "Select rows",
+	"common_selectAllRows": "Select all rows",
+	"common_selectedCount": "{count} selected",
+	"common_clearSelection": "Clear selection",
+	"common_bulkActions": "Bulk actions",
+	"common_deleteSelected": "Delete selected",
+	"common_change": "Change",
+	"common_bulkDeleteFailed": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "Couldn't delete {count} item. Reload the page to check.",
+				"countPlural=other": "Couldn't delete {count} items. Reload the page to check."
+			}
+		}
+	],
+	"timeline_today": "Today",
+	"timeline_prev": "Prev",
+	"timeline_next": "Next",
+	"timeline_prevAria": "Previous period",
+	"timeline_nextAria": "Next period",
+	"timeline_zoomDay": "Day",
+	"timeline_zoomWeek": "Week",
+	"timeline_zoomMonth": "Month",
+	"timeline_zoomYear": "Year",
+	"timeline_barResizeStart": "Change start date",
+	"timeline_barResizeEnd": "Change end date",
+	"timeline_canvasRegion": "Timeline canvas",
+	"timeline_statusMoved": "Moved: {range}",
+	"timeline_statusResizeStart": "Start date changed: {range}",
+	"timeline_statusResizeEnd": "End date changed: {range}",
+	"timeline_statusKeyMoved": "Moved by keyboard: {range}",
+	"timeline_statusKeyResizeStart": "Start date changed by keyboard: {range}",
+	"timeline_statusKeyResizeEnd": "End date changed by keyboard: {range}",
+	"departments_add": "+ Add department",
+	"departments_createTitle": "Add department",
+	"departments_editTitle": "Rename department",
+	"departments_name": "Department name",
+	"departments_empty": "No departments.",
+	"departments_unassigned": "Unassigned",
+	"departments_field": "Department",
+	"departments_allOption": "All departments",
+	"departments_addChild": "Add sub-department",
+	"departments_parent": "Parent department",
+	"departments_rootOption": "(top level)",
+	"departments_moveAria": "Change parent of {name}",
+	"departments_confirmDelete": "Delete \"{name}\"?\nSub-departments and members will move to the parent \"{parent}\".",
+	"departments_confirmDeleteRoot": "Delete \"{name}\"?\nSub-departments move to the top level and members become unassigned.",
+	"departments_memberCount": "Members",
+	"resources_add": "+ Add person",
+	"resources_addNew": "Add person",
+	"resources_editTitle": "Edit person",
+	"resources_createTitle": "Add person",
+	"resources_empty": "No people.",
+	"resources_name": "Name",
+	"resources_confirmDelete": "Delete \"{name}\"?",
+	"resources_confirmDeleteWithAssignments": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "Delete \"{name}\" and {count} related assignment?\nThis can't be undone.",
+				"countPlural=other": "Delete \"{name}\" and {count} related assignments?\nThis can't be undone."
+			}
+		}
+	],
+	"resources_createFailed": "Couldn't add the person. Try again.",
+	"resources_noMatches": "No people match the filters",
+	"resources_moveSelected": "Change department",
+	"resources_confirmBulkDelete": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "Delete {count} selected person?\nThis can't be undone.",
+				"countPlural=other": "Delete {count} selected people?\nThis can't be undone."
+			}
+		}
+	],
+	"resources_confirmBulkDeleteWithAssignments": [
+		{
+			"declarations": [
+				"input count",
+				"input assignments",
+				"local countPlural = count: plural",
+				"local assignmentsPlural = assignments: plural"
+			],
+			"selectors": ["countPlural", "assignmentsPlural"],
+			"match": {
+				"countPlural=one, assignmentsPlural=one": "Delete {count} selected person and {assignments} related assignment?\nThis can't be undone.",
+				"countPlural=one, assignmentsPlural=other": "Delete {count} selected person and {assignments} related assignments?\nThis can't be undone.",
+				"countPlural=other, assignmentsPlural=one": "Delete {count} selected people and {assignments} related assignment?\nThis can't be undone.",
+				"countPlural=other, assignmentsPlural=other": "Delete {count} selected people and {assignments} related assignments?\nThis can't be undone."
+			}
+		}
+	],
+	"resources_bulkDeleted": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "Deleted {count} person",
+				"countPlural=other": "Deleted {count} people"
+			}
+		}
+	],
+	"resources_bulkMoved": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "Changed the department of {count} person",
+				"countPlural=other": "Changed the department of {count} people"
+			}
+		}
+	],
+	"resources_bulkMoveFailed": "Couldn't change the department. Reload the page and try again.",
+	"projects_add": "+ Add project",
+	"projects_addNew": "Add project",
+	"projects_editTitle": "Edit project",
+	"projects_createTitle": "Add project",
+	"projects_empty": "No projects.",
+	"projects_name": "Project name",
+	"projects_color": "Display color",
+	"projects_confirmDelete": "Delete \"{name}\"?",
+	"projects_confirmDeleteWithAssignments": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "Delete \"{name}\" and {count} related assignment?\nThis can't be undone.",
+				"countPlural=other": "Delete \"{name}\" and {count} related assignments?\nThis can't be undone."
+			}
+		}
+	],
+	"projects_editDetail": "Edit detail",
+	"projects_descriptionLabel": "Description",
+	"projects_descriptionHint": "Markdown is supported",
+	"projects_descriptionTabsLabel": "Description edit mode",
+	"projects_writeTab": "Write",
+	"projects_previewTab": "Preview",
+	"projects_previewEmpty": "Nothing to preview.",
+	"projects_tagsLabel": "Tags",
+	"projects_tagsHint": "Comma-separated (e.g. TypeScript, Svelte, AWS)",
+	"projects_linksLabel": "Related links",
+	"projects_linkLabel": "Label (optional)",
+	"projects_linkUrl": "URL",
+	"projects_addLink": "+ Add link",
+	"projects_removeLink": "Remove",
+	"projects_viewDetail": "View detail",
+	"projects_detailTitle": "{name} detail",
+	"projects_noMatches": "No projects match the filters",
+	"projects_filterLabel": "Filter by name or tag",
+	"projects_confirmBulkDelete": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "Delete {count} selected project?\nThis can't be undone.",
+				"countPlural=other": "Delete {count} selected projects?\nThis can't be undone."
+			}
+		}
+	],
+	"projects_confirmBulkDeleteWithAssignments": [
+		{
+			"declarations": [
+				"input count",
+				"input assignments",
+				"local countPlural = count: plural",
+				"local assignmentsPlural = assignments: plural"
+			],
+			"selectors": ["countPlural", "assignmentsPlural"],
+			"match": {
+				"countPlural=one, assignmentsPlural=one": "Delete {count} selected project and {assignments} related assignment?\nThis can't be undone.",
+				"countPlural=one, assignmentsPlural=other": "Delete {count} selected project and {assignments} related assignments?\nThis can't be undone.",
+				"countPlural=other, assignmentsPlural=one": "Delete {count} selected projects and {assignments} related assignment?\nThis can't be undone.",
+				"countPlural=other, assignmentsPlural=other": "Delete {count} selected projects and {assignments} related assignments?\nThis can't be undone."
+			}
+		}
+	],
+	"projects_bulkDeleted": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "Deleted {count} project",
+				"countPlural=other": "Deleted {count} projects"
+			}
+		}
+	],
+	"nav_label": "Main menu",
+	"nav_menuToggle": "Menu",
+	"nav_timelineLink": "Timeline",
+	"nav_assignmentsLink": "Assignments",
+	"nav_resourcesLink": "People",
+	"nav_projectsLink": "Projects",
+	"nav_departmentsLink": "Departments",
+	"assignments_add": "Add assignment",
+	"assignments_addLong": "+ Add assignment",
+	"assignments_createTitle": "Add assignment",
+	"assignments_editTitle": "Edit assignment",
+	"assignments_list": "Assignments",
+	"assignments_listTitle": "Assignments",
+	"assignments_resource": "Person",
+	"assignments_project": "Project",
+	"assignments_startDate": "Start date",
+	"assignments_endDate": "End date (inclusive)",
+	"assignments_deletedResource": "(deleted person)",
+	"assignments_deletedProject": "(deleted project)",
+	"assignments_create": "Create",
+	"assignments_requirePeopleAndProjects": "Add a person and a project to create assignments",
+	"assignments_updateError": "Failed to update the assignment",
+	"assignments_networkError": "Network error",
+	"assignments_conflict": "Someone else updated this assignment first. Showing the latest version.",
+	"assignments_confirmDelete": "Delete this assignment?\n{label}",
+	"assignments_searchPlaceholder": "Search people or projects",
+	"assignments_allResources": "All people",
+	"assignments_allProjects": "All projects",
+	"assignments_matchCount": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} match",
+				"countPlural=other": "{count} matches"
+			}
+		}
+	],
+	"assignments_clearFilters": "Clear filters",
+	"assignments_noMatches": "No assignments match the current filters",
+	"assignments_durationDays": "Days",
+	"signin_title": "Sign in",
+	"signin_description": "Enter your work email. We will send you a sign-in link by email.",
+	"signin_emailLabel": "Email address",
+	"signin_emailPlaceholder": "you@your-company.example.com",
+	"signin_submit": "Send sign-in link",
+	"signin_submitting": "Sending…",
+	"signin_hint": "Only email addresses on the allowed domain can sign in.",
+	"signin_checkEmailTitle": "Check your email",
+	"signin_checkEmailDescription": "We sent a sign-in link to your email. Open it to sign in.",
+	"signin_checkEmailFootnote": "If the email does not arrive, check your spam folder. The link expires in 24 hours.",
+	"signin_checkEmailRetry": "Send to a different email",
+	"signin_errorTitle": "Sign-in failed",
+	"signin_errorAccessDenied": "This email address can't sign in. Either the domain isn't allowed, or delivery to it was stopped after a bounce or spam report.",
+	"signin_errorSuppressed": "We can't send email to this address because of a past delivery failure or spam report. If this looks wrong, contact your administrator.",
+	"signin_errorVerification": "The link is invalid or expired. Please send a new sign-in link.",
+	"signin_errorConfiguration": "There is a problem with the auth configuration. Please contact the administrator.",
+	"signin_errorDefault": "Couldn't sign in. Try again later.",
+	"signin_errorCode": "Error code: {code}",
+	"signin_backToSignin": "Back to sign-in",
+	"errorPage_hint401": "Sign in to continue.",
+	"errorPage_hint403": "You don't have permission to do this.",
+	"errorPage_hint404": "This page doesn't exist. Check the URL.",
+	"errorPage_hint5xx": "Something went wrong on the server. Try again later.",
+	"errorPage_goHome": "Back to home",
+	"errorPage_signin": "Sign in",
+	"errorPage_unknownMessage": "An unknown error occurred",
+	"theme_label": "Theme: {mode}",
+	"theme_labelSystem": "Theme: system ({resolved})",
+	"theme_light": "light",
+	"theme_dark": "dark",
+	"theme_system": "system",
+	"theme_heading": "Theme",
+	"locale_label": "Language",
+	"locale_japanese": "日本語",
+	"locale_english": "English",
+	"avatar_label": "User menu",
+	"avatar_labelWithEmail": "User menu ({email})",
+	"avatar_signout": "Sign out",
+	"emptyGuide_label": "Getting set up",
+	"emptyGuide_step1": "Add a person",
+	"emptyGuide_step2": "Add a project",
+	"emptyGuide_step3": "Add an assignment",
+	"errors_generic": "Input error",
+	"errors_required": "{field} is required",
+	"errors_tooLong": "{field} must be at most {max} characters",
+	"errors_invalidDateFormat": "{field} must be in YYYY-MM-DD format",
+	"errors_invalidColorFormat": "Color must be in #RRGGBB format",
+	"errors_endBeforeStart": "End date must be on or after the start date",
+	"errors_invalidVersion": "Someone else updated this first. Reload the page.",
+	"errors_tooMany": "{field} must have at most {max} entries",
+	"errors_invalidUrl": "{field} must be an http or https URL",
+	"errors_nameConflict": "A sibling department with this name already exists",
+	"errors_parentNotFound": "The specified parent department was not found",
+	"errors_cycle": "A department cannot be moved under itself or its descendants",
+	"errors_notFound": "The target department was not found",
+	"errors_authRequired": "Authentication required",
+	"fields_id": "id",
+	"fields_name": "Name",
+	"fields_color": "Color",
+	"fields_startDate": "Start date",
+	"fields_endDate": "End date",
+	"fields_resourceId": "Person",
+	"fields_projectId": "Project"
+}

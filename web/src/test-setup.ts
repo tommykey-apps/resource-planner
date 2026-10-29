@@ -5,6 +5,14 @@
  * - bits-ui の body-scroll-lock teardown race のみ握り潰す (下記参照)
  */
 import '@testing-library/jest-dom/vitest';
+import { beforeEach } from 'vitest';
+import { overwriteGetLocale } from '$lib/paraglide/runtime';
+
+// テストは日本語の文言で書く。 Paraglide JS の言語判定 (cookie / navigator.languages) に
+// 依存させないよう、 公式 API の overwriteGetLocale で固定する。 英語を見るテストは個別に上書きする。
+beforeEach(() => {
+	overwriteGetLocale(() => 'ja');
+});
 
 /**
  * bits-ui v2 (>= 2.18.0) Dialog 系は内部で `BodyScrollLock` を使い、 unmount 時に

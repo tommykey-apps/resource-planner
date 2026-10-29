@@ -1,4 +1,3 @@
-import type { Locale } from '$lib/i18n/index.svelte';
 import type { Theme } from '$lib/theme';
 
 declare global {
@@ -7,19 +6,17 @@ declare global {
 		 * #178: error() の body に machine-readable な i18n key を載せて、
 		 * +error.svelte が user locale で翻訳できる構造にする (SvelteKit 公式パターン)。
 		 * - message: locale 未知時の fallback (英語 hardcode で OK)
-		 * - code: errors.json の key (例: 'authRequired')。 client が `t(\`errors.${code}\`)` 化
+		 * - code: error code (例: 'authRequired')。 client が `$lib/i18n/message-maps` で翻訳
 		 *
 		 * 参考: https://svelte.dev/docs/kit/errors
 		 *
-		 * server-side で t() を呼ぶ案も検討したが、 localeState は \`$state\` の singleton で
-		 * cross-request leak risk が SvelteKit 公式 docs で明示警告されている。
+		 * server で翻訳しないのは、 文言を client の言語に揃えるため (wire format は code に限る)。
 		 */
 		interface Error {
 			message: string;
 			code?: string;
 		}
 		interface Locals {
-			locale: Locale;
 			theme: Theme;
 		}
 		// interface PageData {}

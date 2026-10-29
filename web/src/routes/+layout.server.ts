@@ -7,7 +7,6 @@ import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async (event) => {
 	const session = await event.locals.auth();
-	const locale = event.locals.locale;
 	const theme = event.locals.theme;
 
 	// 未認証なら sign-in ページへ送る (#65 / #87、Clerk 撤去後)。
@@ -16,7 +15,6 @@ export const load: LayoutServerLoad = async (event) => {
 		if (event.url.pathname.startsWith('/sign-in') || event.url.pathname.startsWith('/auth')) {
 			// csrfToken は未認証時 AppHeader を mount しないので空文字で OK (型整合用)。
 			return {
-				locale,
 				theme,
 				csrfToken: '',
 				resources: [],
@@ -54,7 +52,6 @@ export const load: LayoutServerLoad = async (event) => {
 	}));
 
 	return {
-		locale,
 		theme,
 		csrfToken,
 		user: { id: session.user.id, email: session.user.email, name: session.user.name },

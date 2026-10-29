@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from '$lib/i18n/index.svelte';
+	import { m } from '$lib/paraglide/messages.js';
 	import type { PageData } from './$types';
 	let { data }: { data: PageData } = $props();
 
@@ -17,13 +17,13 @@
 </script>
 
 <svelte:head>
-	<title>{t('signin.title')} — {t('app.title')}</title>
+	<title>{m.signin_title()} — {m.app_title()}</title>
 </svelte:head>
 
 <main class="container mx-auto max-w-md px-4 py-12">
-	<h1 class="mb-2 text-2xl font-bold">{t('signin.title')}</h1>
+	<h1 class="mb-2 text-2xl font-bold">{m.signin_title()}</h1>
 	<p class="mb-6 text-sm text-muted-foreground">
-		{t('signin.description')}
+		{m.signin_description()}
 	</p>
 
 	<!--
@@ -36,7 +36,7 @@
 		<input type="hidden" name="csrfToken" value={data.csrfToken} />
 		<input type="hidden" name="callbackUrl" value="/" />
 		<div>
-			<label for="email" class="mb-1 block text-sm font-medium">{t('signin.emailLabel')}</label>
+			<label for="email" class="mb-1 block text-sm font-medium">{m.signin_emailLabel()}</label>
 			<input
 				id="email"
 				name="email"
@@ -45,7 +45,7 @@
 				autocomplete="email"
 				readonly={submitting}
 				class="w-full rounded border border-input bg-background px-3 py-2 read-only:opacity-60"
-				placeholder={t('signin.emailPlaceholder')}
+				placeholder={m.signin_emailPlaceholder()}
 			/>
 		</div>
 		<button
@@ -53,11 +53,11 @@
 			disabled={submitting}
 			class="w-full cursor-pointer rounded bg-primary px-4 py-2 text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
 		>
-			{submitting ? t('signin.submitting') : t('signin.submit')}
+			{submitting ? m.signin_submitting() : m.signin_submit()}
 		</button>
 	</form>
 
 	<p class="mt-6 text-xs text-muted-foreground">
-		{t('signin.hint')}
+		{m.signin_hint()}
 	</p>
 </main>

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
 	import ResourceManager from '$lib/components/ResourceManager.svelte';
-	import { t } from '$lib/i18n/index.svelte';
+	import { m } from '$lib/paraglide/messages.js';
 	import type { Resource } from '$lib/types';
 	import type { PageData } from './$types';
 
@@ -22,17 +22,17 @@
 	}
 	function rollbackCreate(temp: Resource) {
 		resources = resources.filter((r) => r.id !== temp.id);
-		toast.error(t('resources.createFailed'));
+		toast.error(m.resources_createFailed());
 	}
 </script>
 
 <svelte:head>
-	<title>{t('nav.resourcesLink')} — {t('app.title')}</title>
+	<title>{m.nav_resourcesLink()} — {m.app_title()}</title>
 </svelte:head>
 
 <main class="mx-auto max-w-[1200px] px-4 py-6">
 	<div class="mb-4 flex items-baseline gap-3">
-		<h1 class="m-0 text-xl font-semibold">{t('nav.resourcesLink')}</h1>
+		<h1 class="m-0 text-xl font-semibold">{m.nav_resourcesLink()}</h1>
 	</div>
 	<ResourceManager
 		{resources}

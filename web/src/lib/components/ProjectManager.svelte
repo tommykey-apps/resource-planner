@@ -8,7 +8,8 @@
 	import { confirmDialog } from '$lib/forms/confirm-dialog';
 	import { mapServerErrors, type ServerErrors } from '$lib/forms/server-error';
 	import { renderMarkdown } from '$lib/markdown';
-	import { localeState, t } from '$lib/i18n/index.svelte';
+	import { m } from '$lib/paraglide/messages.js';
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { nextSort, paginate, sortRows } from '$lib/list-table';
 	import { createListQuery } from '$lib/state/list-query.svelte';
 	import SortHeader from './table/SortHeader.svelte';
@@ -89,9 +90,7 @@
 				(p.tags ?? []).some((tag) => tag.toLowerCase().includes(q))
 		);
 	});
-	const sorted = $derived(
-		sortRows(filtered, sortValue[query.sort], query.dir, localeState.current)
-	);
+	const sorted = $derived(sortRows(filtered, sortValue[query.sort], query.dir, getLocale()));
 	const paged = $derived(paginate(sorted, query.page));
 
 	function sortBy(key: SortKey) {
@@ -110,10 +109,10 @@
 		getIds: () => selection.ids,
 		assignmentCountOf: (id) => assignmentCountByProject.get(id) ?? 0,
 		messages: {
-			confirm: (count) => t('projects.confirmBulkDelete', { count }),
+			confirm: (count) => m.projects_confirmBulkDelete({ count }),
 			confirmWithAssignments: (count, assignments) =>
-				t('projects.confirmBulkDeleteWithAssignments', { count, assignments }),
-			deleted: (count) => t('projects.bulkDeleted', { count })
+				m.projects_confirmBulkDeleteWithAssignments({ count, assignments }),
+			deleted: (count) => m.projects_bulkDeleted({ count })
 		},
 		onDone: () => selection.clear()
 	});
@@ -209,12 +208,12 @@
 		return async ({ cancel }) => {
 			const msg =
 				args.count > 0
-					? t('projects.confirmDeleteWithAssignments', { name: args.name, count: args.count })
-					: t('projects.confirmDelete', { name: args.name });
+					? m.projects_confirmDeleteWithAssignments({ name: args.name, count: args.count })
+					: m.projects_confirmDelete({ name: args.name });
 			const ok = await confirmDialog({
-				title: t('common.confirm'),
+				title: m.common_confirm(),
 				message: msg,
-				confirmLabel: t('common.delete'),
+				confirmLabel: m.common_delete(),
 				destructive: true
 			});
 			if (!ok) cancel();
@@ -223,14 +222,14 @@
 </script>
 
 <div class="flex flex-col gap-3">
-	<Button class="self-start" onclick={startCreate}>{t('projects.add')}</Button>
+	<Button class="self-start" onclick={startCreate}>{m.projects_add()}</Button>
 
 	{#if projects.length === 0}
-		<p class="py-4 text-sm text-muted-foreground">{t('projects.empty')}</p>
+		<p class="py-4 text-sm text-muted-foreground">{m.projects_empty()}</p>
 	{:else}
 		<div class="flex flex-wrap items-end gap-3">
 			<div class="flex flex-col gap-1 text-sm">
-				<label for="{tableId}-q">{t('projects.filterLabel')}</label>
+				<label for="{tableId}-q">{m.projects_filterLabel()}</label>
 				<input
 					id="{tableId}-q"
 					type="search"
@@ -241,7 +240,7 @@
 				/>
 			</div>
 			<span class="pb-2 text-sm text-muted-foreground" aria-live="polite"
-				>{t('common.count', { count: filtered.length })}</span
+				>{m.common_count({ count: filtered.length })}</span
 			>
 			{#if query.q}
 				<button
@@ -249,44 +248,43 @@
 					class="cursor-pointer pb-2 text-sm underline underline-offset-4"
 					onclick={() => list.clearFilters()}
 				>
-					{t('common.clearFilters')}
+					{m.common_clearFilters()}
 				</button>
 			{/if}
 		</div>
 
 		{#if filtered.length === 0}
-			<p class="py-4 text-sm text-muted-foreground">{t('projects.noMatches')}</p>
+			<p class="py-4 text-sm text-muted-foreground">{m.projects_noMatches()}</p>
 		{:else}
 			<BulkActionBar count={selection.ids.length} onClear={selection.clear}>
 				<form method="POST" action="/?/deleteProjects" use:enhance={bulkDeleteSubmit}>
 					{#each selection.ids as id (id)}
 						<input type="hidden" name="ids" value={id} />
 					{/each}
-					<Button size="xs" variant="destructive" type="submit">{t('common.deleteSelected')}</Button
-					>
+					<Button size="xs" variant="destructive" type="submit">{m.common_deleteSelected()}</Button>
 				</form>
 			</BulkActionBar>
 			<ScrollShadow labelledby="{tableId}-caption">
 				<table class="w-full border-collapse text-sm">
-					<caption id="{tableId}-caption" class="sr-only">{t('nav.projectsLink')}</caption>
+					<caption id="{tableId}-caption" class="sr-only">{m.nav_projectsLink()}</caption>
 					<thead class="border-b-2 border-foreground">
 						<tr>
 							<SelectAllHeader state={selection.state} onToggle={selection.toggleAll} />
 							<SortHeader
-								label={t('projects.name')}
+								label={m.projects_name()}
 								active={query.sort === 'name'}
 								dir={query.dir}
 								onSort={() => sortBy('name')}
 							/>
-							<th scope="col" class="px-3 py-2 text-left font-bold">{t('projects.tagsLabel')}</th>
+							<th scope="col" class="px-3 py-2 text-left font-bold">{m.projects_tagsLabel()}</th>
 							<SortHeader
-								label={t('common.assignmentCount')}
+								label={m.common_assignmentCount()}
 								active={query.sort === 'assignments'}
 								dir={query.dir}
 								onSort={() => sortBy('assignments')}
 								align="right"
 							/>
-							<th scope="col" class="px-3 py-2 text-right font-bold">{t('common.actions')}</th>
+							<th scope="col" class="px-3 py-2 text-right font-bold">{m.common_actions()}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -325,7 +323,7 @@
 											size="xs"
 											variant="outline"
 											disabled={batchMode}
-											onclick={() => startEdit(p)}>{t('common.edit')}</Button
+											onclick={() => startEdit(p)}>{m.common_edit()}</Button
 										>
 										<form
 											method="POST"
@@ -334,7 +332,7 @@
 										>
 											<input type="hidden" name="id" value={p.id} />
 											<Button size="xs" variant="destructive" type="submit" disabled={batchMode}>
-												{t('common.delete')}
+												{m.common_delete()}
 											</Button>
 										</form>
 									</div>
@@ -348,13 +346,13 @@
 				page={paged.page}
 				pageCount={paged.pageCount}
 				hrefFor={list.hrefFor}
-				label={t('nav.projectsLink')}
+				label={m.nav_projectsLink()}
 			/>
 		{/if}
 	{/if}
 </div>
 
-<Dialog bind:open={formOpen} title={editing ? t('projects.editTitle') : t('projects.createTitle')}>
+<Dialog bind:open={formOpen} title={editing ? m.projects_editTitle() : m.projects_createTitle()}>
 	<form
 		method="POST"
 		action={editing ? '/?/updateProject' : '/?/createProject'}
@@ -366,7 +364,7 @@
 		{/if}
 
 		<label class="flex flex-col gap-1 text-sm">
-			<span>{t('projects.name')}</span>
+			<span>{m.projects_name()}</span>
 			<Input
 				name="name"
 				type="text"
@@ -381,7 +379,7 @@
 		</label>
 
 		<label class="flex flex-col gap-1 text-sm">
-			<span>{t('projects.color')}</span>
+			<span>{m.projects_color()}</span>
 			<div class="flex items-center gap-2">
 				<input
 					name="color"
@@ -400,7 +398,7 @@
 		<!-- BP B7 (APG Disclosure): 既存値ありなら default open、 なければ closed。 -->
 		<details bind:open={detailOpen} class="mt-2">
 			<summary class="cursor-pointer text-sm font-medium select-none">
-				{t('projects.editDetail')}
+				{m.projects_editDetail()}
 			</summary>
 			<div class="mt-2 flex flex-col gap-3">
 				<!--
@@ -413,15 +411,15 @@
 				<div class="flex flex-col gap-1 text-sm">
 					<div class="flex items-baseline justify-between gap-2">
 						<span>
-							{t('projects.descriptionLabel')}
-							<small class="text-xs text-muted-foreground">{t('projects.descriptionHint')}</small>
+							{m.projects_descriptionLabel()}
+							<small class="text-xs text-muted-foreground">{m.projects_descriptionHint()}</small>
 						</span>
 						<div
 							role="tablist"
-							aria-label={t('projects.descriptionTabsLabel')}
+							aria-label={m.projects_descriptionTabsLabel()}
 							class="inline-flex items-center gap-0 rounded border border-border bg-muted/50 p-0.5 text-xs"
 						>
-							{#each [{ id: 'write', label: t('projects.writeTab') }, { id: 'preview', label: t('projects.previewTab') }] as tab (tab.id)}
+							{#each [{ id: 'write', label: m.projects_writeTab() }, { id: 'preview', label: m.projects_previewTab() }] as tab (tab.id)}
 								<button
 									type="button"
 									role="tab"
@@ -467,7 +465,7 @@
 							<!-- markdown.ts: marked + isomorphic-dompurify で sanitize 済 (server / client 共通)。 -->
 							{@html renderMarkdown(formDescription)}
 						{:else}
-							<p class="text-muted-foreground">{t('projects.previewEmpty')}</p>
+							<p class="text-muted-foreground">{m.projects_previewEmpty()}</p>
 						{/if}
 					</div>
 
@@ -477,7 +475,7 @@
 				</div>
 
 				<label class="flex flex-col gap-1 text-sm">
-					<span>{t('projects.tagsLabel')}</span>
+					<span>{m.projects_tagsLabel()}</span>
 					<Input
 						id="project-tags-input"
 						name="tags"
@@ -487,7 +485,7 @@
 					/>
 					<!-- BP B7: aria-describedby で AT に comma 区切り意図を伝える。 -->
 					<p id="project-tags-hint" class="text-xs text-muted-foreground">
-						{t('projects.tagsHint')}
+						{m.projects_tagsHint()}
 					</p>
 					{#if formError?.tags}
 						<span class="text-xs text-destructive">{formError.tags}</span>
@@ -495,22 +493,22 @@
 				</label>
 
 				<fieldset class="flex flex-col gap-2">
-					<legend class="text-sm">{t('projects.linksLabel')}</legend>
+					<legend class="text-sm">{m.projects_linksLabel()}</legend>
 					{#each formLinks as link, i (link._key)}
 						<div class="flex items-start gap-2">
 							<!-- BP B7 a11y: 各 input に aria-label を付け、 行番号を伝える
 							     (placeholder は accessible name の代替不可、 WAI-ARIA APG)。 -->
 							<Input
-								aria-label={`${t('projects.linkLabel')} ${i + 1}`}
-								placeholder={t('projects.linkLabel')}
+								aria-label={`${m.projects_linkLabel()} ${i + 1}`}
+								placeholder={m.projects_linkLabel()}
 								bind:value={link.label}
 								maxlength={PROJECT_LINK_LABEL_MAX_LENGTH}
 								class="flex-1"
 							/>
 							<Input
 								type="url"
-								aria-label={`${t('projects.linkUrl')} ${i + 1}`}
-								placeholder={t('projects.linkUrl')}
+								aria-label={`${m.projects_linkUrl()} ${i + 1}`}
+								placeholder={m.projects_linkUrl()}
 								bind:value={link.url}
 								maxlength={PROJECT_LINK_URL_MAX_LENGTH}
 								class="flex-1"
@@ -519,16 +517,16 @@
 								size="xs"
 								variant="ghost"
 								type="button"
-								aria-label={`${t('projects.removeLink')} ${i + 1}`}
+								aria-label={`${m.projects_removeLink()} ${i + 1}`}
 								onclick={() => removeLink(i)}
 							>
-								{t('projects.removeLink')}
+								{m.projects_removeLink()}
 							</Button>
 						</div>
 					{/each}
 					{#if formLinks.length < PROJECT_LINK_MAX_COUNT}
 						<Button size="xs" variant="outline" type="button" onclick={addLink} class="self-start">
-							{t('projects.addLink')}
+							{m.projects_addLink()}
 						</Button>
 					{/if}
 					{#if formError?.linksJson}
@@ -554,14 +552,14 @@
 				onclick={() => (formOpen = false)}
 				disabled={formSubmitState.submitting}
 			>
-				{t('common.cancel')}
+				{m.common_cancel()}
 			</Button>
 			<Button type="submit" disabled={formSubmitState.submitting}>
 				{formSubmitState.submitting
-					? t('common.submitting')
+					? m.common_submitting()
 					: editing
-						? t('common.update')
-						: t('common.create')}
+						? m.common_update()
+						: m.common_create()}
 			</Button>
 		</div>
 	</form>

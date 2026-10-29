@@ -2,7 +2,7 @@
 	import * as AlertDialog from './ui/alert-dialog';
 	import { buttonVariants } from './ui/button';
 	import { cn } from '$lib/utils.js';
-	import { t } from '$lib/i18n/index.svelte';
+	import { m } from '$lib/paraglide/messages.js';
 	import { confirmRequest, resolveConfirm } from '$lib/forms/confirm-dialog';
 
 	const open = $derived($confirmRequest !== null);
@@ -38,13 +38,13 @@
 			</AlertDialog.Header>
 			<AlertDialog.Footer>
 				<AlertDialog.Cancel onclick={() => resolveConfirm(false)}>
-					{req.cancelLabel ?? t('common.cancel')}
+					{req.cancelLabel ?? m.common_cancel()}
 				</AlertDialog.Cancel>
 				<AlertDialog.Action
 					class={cn(buttonVariants({ variant: req.destructive ? 'destructive' : 'default' }))}
 					onclick={() => resolveConfirm(true)}
 				>
-					{req.confirmLabel ?? t('common.confirm')}
+					{req.confirmLabel ?? m.common_confirm()}
 				</AlertDialog.Action>
 			</AlertDialog.Footer>
 		{/if}

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import CaretLeft from 'phosphor-svelte/lib/CaretLeft';
 	import CaretRight from 'phosphor-svelte/lib/CaretRight';
-	import { t } from '$lib/i18n/index.svelte';
+	import { m } from '$lib/paraglide/messages.js';
 
 	/**
 	 * デジタル庁「ページナビゲーション」テキスト型の移植。
@@ -30,13 +30,13 @@
 		{#if page > 1}
 			<a class={linkClass} href={hrefFor(page - 1)} data-sveltekit-noscroll>
 				<CaretLeft size={16} aria-hidden="true" />
-				{t('common.prevPage')}
+				{m.common_prevPage()}
 			</a>
 		{/if}
 		<span class="text-sm tabular-nums">{page} / {pageCount}</span>
 		{#if page < pageCount}
 			<a class={linkClass} href={hrefFor(page + 1)} data-sveltekit-noscroll>
-				{t('common.nextPage')}
+				{m.common_nextPage()}
 				<CaretRight size={16} aria-hidden="true" />
 			</a>
 		{/if}

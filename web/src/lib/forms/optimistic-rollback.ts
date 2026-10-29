@@ -20,7 +20,7 @@ export type RollbackRecoverInput<T extends { name?: string }> = {
 	translate: (e: ServerError) => string;
 	/**
 	 * 該当 field の error が無いとき (network error 等) に表示する fallback。
-	 * 通常 `t('errors.generic')` を渡す。
+	 * 通常 `m.errors_generic()` を渡す。
 	 */
 	fallback: string;
 	/** error を引く form field 名 (例: 'name')。 */

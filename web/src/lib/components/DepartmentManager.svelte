@@ -7,7 +7,7 @@
 	import { createSubmitState } from '$lib/forms/submit-state.svelte';
 	import { confirmDialog } from '$lib/forms/confirm-dialog';
 	import { translateServerError, type ServerErrors } from '$lib/forms/server-error';
-	import { t } from '$lib/i18n/index.svelte';
+	import { m } from '$lib/paraglide/messages.js';
 	import { DEPARTMENT_NAME_MAX_LENGTH } from '$lib/schemas';
 	import { descendantIds, flattenDepartmentTree } from '$lib/repository/department-tree';
 	import ScrollShadow from './table/ScrollShadow.svelte';
@@ -111,7 +111,7 @@
 				const errs = (result.data as { errors?: ServerErrors })?.errors;
 				// name / parentId いずれかの最初のエラーを表示 (nameConflict / parentNotFound 等)。
 				const first = errs?.name ?? errs?.parentId;
-				formError = first ? translateServerError(first) : t('errors.generic');
+				formError = first ? translateServerError(first) : m.errors_generic();
 			}
 			await update();
 		};
@@ -123,7 +123,7 @@
 			if (result.type === 'failure') {
 				const errs = (result.data as { errors?: ServerErrors })?.errors;
 				const first = errs?.parentId ?? errs?.name;
-				toast.error(first ? translateServerError(first) : t('errors.generic'));
+				toast.error(first ? translateServerError(first) : m.errors_generic());
 			}
 			await update();
 		};
@@ -139,12 +139,12 @@
 			// (server も dangling 親はルートに正規化するので表示と挙動が一致する)。
 			const parent = dept.parentId ? departments.find((d) => d.id === dept.parentId) : undefined;
 			const message = parent
-				? t('departments.confirmDelete', { name: dept.name, parent: parent.name })
-				: t('departments.confirmDeleteRoot', { name: dept.name });
+				? m.departments_confirmDelete({ name: dept.name, parent: parent.name })
+				: m.departments_confirmDeleteRoot({ name: dept.name });
 			const ok = await confirmDialog({
-				title: t('common.confirm'),
+				title: m.common_confirm(),
 				message,
-				confirmLabel: t('common.delete'),
+				confirmLabel: m.common_delete(),
 				destructive: true
 			});
 			if (!ok) {
@@ -152,7 +152,7 @@
 				return;
 			}
 			return async ({ result, update }) => {
-				if (result.type === 'failure') toast.error(t('errors.generic'));
+				if (result.type === 'failure') toast.error(m.errors_generic());
 				await update();
 			};
 		};
@@ -160,10 +160,10 @@
 </script>
 
 <div class="flex flex-col gap-3">
-	<Button class="self-start" onclick={startCreateRoot}>{t('departments.add')}</Button>
+	<Button class="self-start" onclick={startCreateRoot}>{m.departments_add()}</Button>
 
 	{#if flatTree.length === 0}
-		<p class="py-4 text-sm text-muted-foreground">{t('departments.empty')}</p>
+		<p class="py-4 text-sm text-muted-foreground">{m.departments_empty()}</p>
 	{:else}
 		<!--
 			ツリーなので並び替えとページ送りは付けない (並べ替えや途中での分割で親子の並びが壊れる)。
@@ -171,14 +171,14 @@
 		-->
 		<ScrollShadow labelledby="{tableId}-caption">
 			<table class="w-full border-collapse text-sm">
-				<caption id="{tableId}-caption" class="sr-only">{t('nav.departmentsLink')}</caption>
+				<caption id="{tableId}-caption" class="sr-only">{m.nav_departmentsLink()}</caption>
 				<thead class="border-b-2 border-foreground">
 					<tr>
-						<th scope="col" class="px-3 py-2 text-left font-bold">{t('departments.name')}</th>
+						<th scope="col" class="px-3 py-2 text-left font-bold">{m.departments_name()}</th>
 						<th scope="col" class="px-3 py-2 text-right font-bold">
-							{t('departments.memberCount')}
+							{m.departments_memberCount()}
 						</th>
-						<th scope="col" class="px-3 py-2 text-right font-bold">{t('common.actions')}</th>
+						<th scope="col" class="px-3 py-2 text-right font-bold">{m.common_actions()}</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -199,24 +199,24 @@
 							<td class="px-3 py-2">
 								<div class="flex justify-end gap-1">
 									<Button size="xs" variant="outline" onclick={() => startEdit(dept)}>
-										{t('common.edit')}
+										{m.common_edit()}
 									</Button>
 									<!-- 子部署を追加 -->
 									<Button size="xs" variant="outline" onclick={() => startCreateChild(dept)}>
-										{t('departments.addChild')}
+										{m.departments_addChild()}
 									</Button>
 									<!-- 付け替え (move): 親を選んだ瞬間に submit。 -->
 									<form method="POST" action="/?/moveDepartment" use:enhance={moveSubmit}>
 										<input type="hidden" name="id" value={dept.id} />
 										<select
 											name="parentId"
-											aria-label={t('departments.moveAria', { name: dept.name })}
+											aria-label={m.departments_moveAria({ name: dept.name })}
 											value={dept.parentId ?? ''}
 											onchange={(e) => e.currentTarget.form?.requestSubmit()}
 											class="h-8 border border-input bg-background px-1 text-xs focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 											style="border-radius: calc(var(--radius) * 0.6)"
 										>
-											<option value="">{t('departments.rootOption')}</option>
+											<option value="">{m.departments_rootOption()}</option>
 											{#each moveOptions(dept) as o (o.id)}
 												<option value={o.id}>{o.name}</option>
 											{/each}
@@ -230,7 +230,7 @@
 									>
 										<input type="hidden" name="id" value={dept.id} />
 										<Button size="xs" variant="destructive" type="submit"
-											>{t('common.delete')}</Button
+											>{m.common_delete()}</Button
 										>
 									</form>
 								</div>
@@ -245,7 +245,7 @@
 
 <Dialog
 	bind:open={formOpen}
-	title={editing ? t('departments.editTitle') : t('departments.createTitle')}
+	title={editing ? m.departments_editTitle() : m.departments_createTitle()}
 >
 	<form
 		method="POST"
@@ -257,7 +257,7 @@
 			<input type="hidden" name="id" value={editing.id} />
 		{/if}
 		<label class="flex flex-col gap-1 text-sm">
-			<span>{t('departments.name')}</span>
+			<span>{m.departments_name()}</span>
 			<Input
 				name="name"
 				type="text"
@@ -270,15 +270,15 @@
 		<!-- 親部署 (空 = ルート)。 「子部署を追加」 から開くと preset される。 改名時は出さない (付け替えは行内 select)。 -->
 		{#if !editing}
 			<label class="flex flex-col gap-1 text-sm">
-				<span>{t('departments.parent')}</span>
+				<span>{m.departments_parent()}</span>
 				<select
 					name="parentId"
-					aria-label={t('departments.parent')}
+					aria-label={m.departments_parent()}
 					bind:value={formParentId}
 					class="h-9 border border-input bg-background px-2 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 					style="border-radius: calc(var(--radius) * 0.6)"
 				>
-					<option value="">{t('departments.rootOption')}</option>
+					<option value="">{m.departments_rootOption()}</option>
 					{#each flatTree as { dept, depth } (dept.id)}
 						<option value={dept.id}>{'\u00A0\u00A0'.repeat(depth)}{dept.name}</option>
 					{/each}
@@ -295,14 +295,14 @@
 				onclick={() => (formOpen = false)}
 				disabled={formSubmitState.submitting}
 			>
-				{t('common.cancel')}
+				{m.common_cancel()}
 			</Button>
 			<Button type="submit" disabled={formSubmitState.submitting}>
 				{formSubmitState.submitting
-					? t('common.submitting')
+					? m.common_submitting()
 					: editing
-						? t('common.update')
-						: t('common.create')}
+						? m.common_update()
+						: m.common_create()}
 			</Button>
 		</div>
 	</form>

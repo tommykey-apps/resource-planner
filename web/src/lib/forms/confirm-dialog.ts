@@ -8,9 +8,9 @@
  * ```ts
  * import { confirmDialog } from '$lib/components/ConfirmDialog.svelte';
  * const ok = await confirmDialog({
- *   title: t('common.confirm'),
- *   message: t('resources.confirmDelete', { name }),
- *   confirmLabel: t('common.delete'),
+ *   title: m.common_confirm(),
+ *   message: m.resources_confirmDelete({ name }),
+ *   confirmLabel: m.common_delete(),
  *   destructive: true
  * });
  * if (ok) await action();

@@ -3,7 +3,8 @@
 	import Sun from 'phosphor-svelte/lib/Sun';
 	import Moon from 'phosphor-svelte/lib/Moon';
 	import Monitor from 'phosphor-svelte/lib/Monitor';
-	import { t } from '$lib/i18n/index.svelte';
+	import { m } from '$lib/paraglide/messages.js';
+	import { themeLabel } from '$lib/i18n/message-maps';
 
 	/**
 	 * テーマ切替 (light → dark → system → light、#97)。 sign-in 画面で使う。
@@ -20,9 +21,9 @@
 	const label = $derived.by(() => {
 		const u = userPrefersMode.current;
 		if (u === 'system') {
-			return t('theme.labelSystem', { resolved: t(`theme.${mode.current ?? 'light'}`) });
+			return m.theme_labelSystem({ resolved: themeLabel(mode.current ?? 'light') });
 		}
-		return t('theme.label', { mode: t(`theme.${u}`) });
+		return m.theme_label({ mode: themeLabel(u) });
 	});
 </script>
 

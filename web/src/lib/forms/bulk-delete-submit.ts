@@ -8,7 +8,7 @@
  */
 import { toast } from 'svelte-sonner';
 import type { SubmitFunction } from '@sveltejs/kit';
-import { t } from '$lib/i18n/index.svelte';
+import { m } from '$lib/paraglide/messages.js';
 import { confirmDialog } from './confirm-dialog';
 
 export function makeBulkDeleteSubmit(opts: {
@@ -25,12 +25,12 @@ export function makeBulkDeleteSubmit(opts: {
 		const ids = opts.getIds();
 		const assignments = ids.reduce((n, id) => n + opts.assignmentCountOf(id), 0);
 		const ok = await confirmDialog({
-			title: t('common.confirm'),
+			title: m.common_confirm(),
 			message:
 				assignments > 0
 					? opts.messages.confirmWithAssignments(ids.length, assignments)
 					: opts.messages.confirm(ids.length),
-			confirmLabel: t('common.delete'),
+			confirmLabel: m.common_delete(),
 			destructive: true
 		});
 		if (!ok) {
@@ -43,7 +43,7 @@ export function makeBulkDeleteSubmit(opts: {
 				toast.success(opts.messages.deleted(deleted.length));
 			} else if (result.type === 'failure') {
 				const failed = (result.data as { failed?: string[] } | undefined)?.failed ?? [];
-				toast.error(t('common.bulkDeleteFailed', { count: failed.length }));
+				toast.error(m.common_bulkDeleteFailed({ count: failed.length }));
 			}
 			opts.onDone();
 			await update();

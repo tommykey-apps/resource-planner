@@ -14,7 +14,6 @@ function makeEvent(opts: { user?: { id: string; email?: string; name?: string };
 		url: { pathname: opts.pathname ?? '/' },
 		locals: {
 			auth: authMock,
-			locale: 'ja',
 			theme: 'light'
 		}
 	} as unknown as Parameters<typeof load>[0];

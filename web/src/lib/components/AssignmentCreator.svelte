@@ -7,7 +7,7 @@
 	import { formatLocalDate } from '$lib/date';
 	import { createSubmitState } from '$lib/forms/submit-state.svelte';
 	import { mapServerErrors, type ServerErrors } from '$lib/forms/server-error';
-	import { t } from '$lib/i18n/index.svelte';
+	import { m } from '$lib/paraglide/messages.js';
 	import type { Resource, Project } from '$lib/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
 
@@ -72,13 +72,13 @@
 <Button
 	onclick={startCreate}
 	disabled={!canCreate}
-	title={canCreate ? '' : t('assignments.requirePeopleAndProjects')}
+	title={canCreate ? '' : m.assignments_requirePeopleAndProjects()}
 >
 	<Plus size={18} weight="bold" aria-hidden="true" />
-	<span class="ml-1">{t('assignments.add')}</span>
+	<span class="ml-1">{m.assignments_add()}</span>
 </Button>
 
-<Dialog bind:open title={t('assignments.createTitle')}>
+<Dialog bind:open title={m.assignments_createTitle()}>
 	<form
 		method="POST"
 		action="/?/createAssignment"
@@ -86,7 +86,7 @@
 		class="flex flex-col gap-3"
 	>
 		<label class="flex flex-col gap-1 text-sm">
-			<span>{t('assignments.resource')}</span>
+			<span>{m.assignments_resource()}</span>
 			<select
 				name="resourceId"
 				bind:value={resourceId}
@@ -104,7 +104,7 @@
 		</label>
 
 		<label class="flex flex-col gap-1 text-sm">
-			<span>{t('assignments.project')}</span>
+			<span>{m.assignments_project()}</span>
 			<select
 				name="projectId"
 				bind:value={projectId}
@@ -123,7 +123,7 @@
 
 		<div class="grid grid-cols-2 gap-3">
 			<label class="flex flex-col gap-1 text-sm">
-				<span>{t('assignments.startDate')}</span>
+				<span>{m.assignments_startDate()}</span>
 				<Input name="startDate" type="date" bind:value={startDate} required />
 				{#if formError?.startDate}
 					<span class="text-xs text-destructive">{formError.startDate}</span>
@@ -131,7 +131,7 @@
 			</label>
 
 			<label class="flex flex-col gap-1 text-sm">
-				<span>{t('assignments.endDate')}</span>
+				<span>{m.assignments_endDate()}</span>
 				<Input name="endDate" type="date" bind:value={endDate} required min={startDate} />
 				{#if formError?.endDate}
 					<span class="text-xs text-destructive">{formError.endDate}</span>
@@ -146,10 +146,10 @@
 				onclick={() => (open = false)}
 				disabled={formSubmitState.submitting}
 			>
-				{t('common.cancel')}
+				{m.common_cancel()}
 			</Button>
 			<Button type="submit" disabled={formSubmitState.submitting}>
-				{formSubmitState.submitting ? t('common.submitting') : t('assignments.create')}
+				{formSubmitState.submitting ? m.common_submitting() : m.assignments_create()}
 			</Button>
 		</div>
 	</form>
