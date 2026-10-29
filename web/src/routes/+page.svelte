@@ -17,7 +17,7 @@
 	import AssignmentCreator from '$lib/components/AssignmentCreator.svelte';
 	import AssignmentEditor from '$lib/components/AssignmentEditor.svelte';
 	import EmptyStateGuide from '$lib/components/EmptyStateGuide.svelte';
-	import { t } from '$lib/i18n/index.svelte';
+	import { m } from '$lib/paraglide/messages.js';
 	import { translateServerError } from '$lib/forms/server-error';
 	import { patchAssignment } from '$lib/services/assignment-api';
 	import { syncStateToUrl } from '$lib/state/url-state.svelte';
@@ -114,15 +114,15 @@
 			dbAssignments = latest
 				? dbAssignments.map((a) => (a.id === latest.id ? latest : a))
 				: snapshot;
-			toast.error(t('assignments.conflict'));
+			toast.error(m.assignments_conflict());
 			return;
 		}
 		dbAssignments = snapshot;
 		const firstError = result.errors ? Object.values(result.errors)[0] : null;
 		const description = firstError
 			? translateServerError(firstError)
-			: t('assignments.networkError');
-		toast.error(t('assignments.updateError'), { description });
+			: m.assignments_networkError();
+		toast.error(m.assignments_updateError(), { description });
 	}
 
 	/**
@@ -142,12 +142,12 @@
 </script>
 
 <svelte:head>
-	<title>{t('nav.timelineLink')} — {t('app.title')}</title>
+	<title>{m.nav_timelineLink()} — {m.app_title()}</title>
 </svelte:head>
 
 <main class="mx-auto max-w-[1200px] px-4 py-6">
 	<div class="mb-4 flex items-center justify-between gap-2">
-		<h1 class="m-0 text-xl font-semibold">{t('nav.timelineLink')}</h1>
+		<h1 class="m-0 text-xl font-semibold">{m.nav_timelineLink()}</h1>
 		<AssignmentCreator {resources} {projects} />
 	</div>
 
@@ -160,8 +160,8 @@
 	{#if resources.length === 0}
 		<div class="empty-state">
 			<p>
-				{t('resources.empty')}
-				<a href="/resources" class="underline">{t('resources.addNew')}</a>
+				{m.resources_empty()}
+				<a href="/resources" class="underline">{m.resources_addNew()}</a>
 			</p>
 		</div>
 	{:else}
@@ -169,23 +169,23 @@
 			bind:viewportStart
 			bind:zoom
 			labels={{
-				today: t('timeline.today'),
-				prev: t('timeline.prev'),
-				next: t('timeline.next'),
-				zoomDay: t('timeline.zoomDay'),
-				zoomWeek: t('timeline.zoomWeek'),
-				zoomMonth: t('timeline.zoomMonth'),
-				zoomYear: t('timeline.zoomYear')
+				today: m.timeline_today(),
+				prev: m.timeline_prev(),
+				next: m.timeline_next(),
+				zoomDay: m.timeline_zoomDay(),
+				zoomWeek: m.timeline_zoomWeek(),
+				zoomMonth: m.timeline_zoomMonth(),
+				zoomYear: m.timeline_zoomYear()
 			}}
-			ariaLabels={{ prev: t('timeline.prevAria'), next: t('timeline.nextAria') }}
+			ariaLabels={{ prev: m.timeline_prevAria(), next: m.timeline_nextAria() }}
 		/>
 
 		<!-- #242: 部署フィルタ (子孫含む)。 選ぶと resource 行 + 帯が絞り込まれ、 URL `?dept=` に同期。 -->
 		<div class="dept-filter">
-			<label for="timeline-dept-filter">{t('departments.field')}</label>
+			<label for="timeline-dept-filter">{m.departments_field()}</label>
 			<select id="timeline-dept-filter" bind:value={departmentId}>
-				<option value="">{t('departments.allOption')}</option>
-				<option value={DEPARTMENT_FILTER_UNASSIGNED}>{t('departments.unassigned')}</option>
+				<option value="">{m.departments_allOption()}</option>
+				<option value={DEPARTMENT_FILTER_UNASSIGNED}>{m.departments_unassigned()}</option>
 				{#each departmentOptions as { dept, depth } (dept.id)}
 					<option value={dept.id}>{'\u00A0\u00A0'.repeat(depth)}{dept.name}</option>
 				{/each}
@@ -208,17 +208,17 @@
 			resourceColWidth="auto"
 			labels={{
 				bar: {
-					resizeStart: t('timeline.barResizeStart'),
-					resizeEnd: t('timeline.barResizeEnd')
+					resizeStart: m.timeline_barResizeStart(),
+					resizeEnd: m.timeline_barResizeEnd()
 				},
-				canvas: { region: t('timeline.canvasRegion') },
+				canvas: { region: m.timeline_canvasRegion() },
 				status: {
-					move: (range) => t('timeline.statusMoved', { range }),
-					resizeStart: (range) => t('timeline.statusResizeStart', { range }),
-					resizeEnd: (range) => t('timeline.statusResizeEnd', { range }),
-					keyMove: (range) => t('timeline.statusKeyMoved', { range }),
-					keyResizeStart: (range) => t('timeline.statusKeyResizeStart', { range }),
-					keyResizeEnd: (range) => t('timeline.statusKeyResizeEnd', { range })
+					move: (range) => m.timeline_statusMoved({ range }),
+					resizeStart: (range) => m.timeline_statusResizeStart({ range }),
+					resizeEnd: (range) => m.timeline_statusResizeEnd({ range }),
+					keyMove: (range) => m.timeline_statusKeyMoved({ range }),
+					keyResizeStart: (range) => m.timeline_statusKeyResizeStart({ range }),
+					keyResizeEnd: (range) => m.timeline_statusKeyResizeEnd({ range })
 				}
 			}}
 			onMove={handleUpdate}

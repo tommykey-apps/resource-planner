@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Check from 'phosphor-svelte/lib/Check';
-	import { t } from '$lib/i18n/index.svelte';
+	import { m } from '$lib/paraglide/messages.js';
 
 	/**
 	 * 3-step onboarding chip (#99 item 3)。「人 → 案件 → アサイン」 の 3 段階を可視化し、
@@ -21,15 +21,15 @@
 	} = $props();
 
 	const steps = $derived([
-		{ done: resourceCount > 0, label: t('emptyGuide.step1') },
-		{ done: projectCount > 0, label: t('emptyGuide.step2') },
-		{ done: assignmentCount > 0, label: t('emptyGuide.step3') }
+		{ done: resourceCount > 0, label: m.emptyGuide_step1() },
+		{ done: projectCount > 0, label: m.emptyGuide_step2() },
+		{ done: assignmentCount > 0, label: m.emptyGuide_step3() }
 	]);
 	const allDone = $derived(steps.every((s) => s.done));
 </script>
 
 {#if !allDone}
-	<ol class="mb-6 grid gap-3 sm:grid-cols-3" aria-label={t('emptyGuide.label')}>
+	<ol class="mb-6 grid gap-3 sm:grid-cols-3" aria-label={m.emptyGuide_label()}>
 		{#each steps as step, i (i)}
 			<li
 				class="flex items-center gap-2 rounded border px-3 py-2 text-sm transition-colors"

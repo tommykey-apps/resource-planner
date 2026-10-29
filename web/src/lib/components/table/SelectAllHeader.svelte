@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from '$lib/i18n/index.svelte';
+	import { m } from '$lib/paraglide/messages.js';
 	import type { SelectionState } from '$lib/state/row-selection.svelte';
 
 	/**
@@ -18,7 +18,7 @@
 	<input
 		type="checkbox"
 		class="h-4 w-4 cursor-pointer align-middle accent-foreground"
-		aria-label={t('common.selectRows')}
+		aria-label={m.common_selectRows()}
 		aria-describedby={descriptionId}
 		checked={state === 'all'}
 		{@attach (el) => {
@@ -26,5 +26,5 @@
 		}}
 		onchange={onToggle}
 	/>
-	<span id={descriptionId} hidden>{t('common.selectAllRows')}</span>
+	<span id={descriptionId} hidden>{m.common_selectAllRows()}</span>
 </th>

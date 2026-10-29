@@ -1,14 +1,18 @@
 // @vitest-environment jsdom
-import { render } from '@testing-library/svelte';
-import { describe, expect, it, beforeEach } from 'vitest';
+import { fireEvent, render } from '@testing-library/svelte';
+import { describe, expect, it, vi } from 'vitest';
+import { overwriteGetLocale } from '$lib/paraglide/runtime';
 import LocaleSwitcher from './LocaleSwitcher.svelte';
-import { localeState } from '$lib/i18n/index.svelte';
+
+const { setLocale } = vi.hoisted(() => ({ setLocale: vi.fn() }));
+vi.mock('$lib/paraglide/runtime', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('$lib/paraglide/runtime')>();
+	// getLocale は overwriteGetLocale で差し替わる live binding。 spread で値を写すと
+	// 差し替え前の関数が残るので、 名前空間経由で毎回読む。
+	return { ...actual, getLocale: () => actual.getLocale(), setLocale };
+});
 
 describe('LocaleSwitcher (smoke)', () => {
-	beforeEach(() => {
-		localeState.current = 'ja';
-	});
-
 	it('renders a button with phosphor svg icon and current locale code', () => {
 		const { getByRole } = render(LocaleSwitcher);
 		const btn = getByRole('button');
@@ -17,24 +21,26 @@ describe('LocaleSwitcher (smoke)', () => {
 	});
 
 	it('shows EN code when locale is en', () => {
-		localeState.current = 'en';
+		overwriteGetLocale(() => 'en');
 		const { getByRole } = render(LocaleSwitcher);
-		const btn = getByRole('button');
-		expect(btn.textContent).toContain('EN');
+		expect(getByRole('button').textContent).toContain('EN');
+	});
+
+	it('押すと もう一方の言語で setLocale を呼ぶ (Paraglide JS が cookie を書いて再読み込みする)', async () => {
+		const { getByRole } = render(LocaleSwitcher);
+		await fireEvent.click(getByRole('button'));
+		expect(setLocale).toHaveBeenCalledWith('en');
 	});
 
 	it('uses aria-label that mentions language / 言語', () => {
 		const { getByRole } = render(LocaleSwitcher);
-		const btn = getByRole('button');
-		const label = btn.getAttribute('aria-label') ?? '';
+		const label = getByRole('button').getAttribute('aria-label') ?? '';
 		expect(label.toLowerCase()).toMatch(/language|言語/);
 	});
 
 	it('has focus-visible ring classes consistent with shadcn Button (#101 item 5)', () => {
 		const { getByRole } = render(LocaleSwitcher);
-		const btn = getByRole('button');
-		const cls = btn.className;
-		expect(cls).toMatch(/focus-visible:ring/);
+		expect(getByRole('button').className).toMatch(/focus-visible:ring/);
 	});
 
 	it('has cursor-pointer class consistent with shadcn Button (#124)', () => {

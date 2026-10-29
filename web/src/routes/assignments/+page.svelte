@@ -5,7 +5,7 @@
 	import * as Table from '$lib/components/ui/table';
 	import { addDays, parseLocalDate } from '$lib/date';
 	import { confirmDialog } from '$lib/forms/confirm-dialog';
-	import { t } from '$lib/i18n/index.svelte';
+	import { m } from '$lib/paraglide/messages.js';
 	import AssignmentCreator from '$lib/components/AssignmentCreator.svelte';
 	import AssignmentEditor from '$lib/components/AssignmentEditor.svelte';
 	import ProjectDetailView from '$lib/components/ProjectDetailView.svelte';
@@ -90,9 +90,9 @@
 	function makeDeleteSubmit(args: { label: string }): SubmitFunction {
 		return async ({ cancel }) => {
 			const ok = await confirmDialog({
-				title: t('common.confirm'),
-				message: t('assignments.confirmDelete', { label: args.label }),
-				confirmLabel: t('common.delete'),
+				title: m.common_confirm(),
+				message: m.assignments_confirmDelete({ label: args.label }),
+				confirmLabel: m.common_delete(),
 				destructive: true
 			});
 			if (!ok) cancel();
@@ -114,12 +114,12 @@
 </script>
 
 <svelte:head>
-	<title>{t('assignments.listTitle')} — {t('app.title')}</title>
+	<title>{m.assignments_listTitle()} — {m.app_title()}</title>
 </svelte:head>
 
 <main class="mx-auto max-w-[1200px] px-4 py-6">
 	<div class="mb-4 flex items-center justify-between gap-2">
-		<h1 class="m-0 text-xl font-semibold">{t('assignments.listTitle')}</h1>
+		<h1 class="m-0 text-xl font-semibold">{m.assignments_listTitle()}</h1>
 		<AssignmentCreator {resources} {projects} />
 	</div>
 
@@ -127,37 +127,37 @@
 		<input
 			type="search"
 			bind:value={filters.q}
-			placeholder={t('assignments.searchPlaceholder')}
-			aria-label={t('assignments.searchPlaceholder')}
+			placeholder={m.assignments_searchPlaceholder()}
+			aria-label={m.assignments_searchPlaceholder()}
 			class="h-9 rounded border border-input bg-background px-2 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 		/>
 		<select
 			bind:value={filters.departmentId}
-			aria-label={t('departments.field')}
+			aria-label={m.departments_field()}
 			class="h-9 rounded border border-input bg-background px-2 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 		>
-			<option value="">{t('departments.allOption')}</option>
-			<option value={DEPARTMENT_FILTER_UNASSIGNED}>{t('departments.unassigned')}</option>
+			<option value="">{m.departments_allOption()}</option>
+			<option value={DEPARTMENT_FILTER_UNASSIGNED}>{m.departments_unassigned()}</option>
 			{#each departmentOptions as { dept, depth } (dept.id)}
 				<option value={dept.id}>{'\u00A0\u00A0'.repeat(depth)}{dept.name}</option>
 			{/each}
 		</select>
 		<select
 			bind:value={filters.resourceId}
-			aria-label={t('assignments.resource')}
+			aria-label={m.assignments_resource()}
 			class="h-9 rounded border border-input bg-background px-2 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 		>
-			<option value="">{t('assignments.allResources')}</option>
+			<option value="">{m.assignments_allResources()}</option>
 			{#each resources as r (r.id)}
 				<option value={r.id}>{r.name}</option>
 			{/each}
 		</select>
 		<select
 			bind:value={filters.projectId}
-			aria-label={t('assignments.project')}
+			aria-label={m.assignments_project()}
 			class="h-9 rounded border border-input bg-background px-2 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 		>
-			<option value="">{t('assignments.allProjects')}</option>
+			<option value="">{m.assignments_allProjects()}</option>
 			{#each projects as p (p.id)}
 				<option value={p.id}>{p.name}</option>
 			{/each}
@@ -165,21 +165,21 @@
 		<input
 			type="date"
 			bind:value={filters.from}
-			aria-label={t('assignments.startDate')}
+			aria-label={m.assignments_startDate()}
 			class="h-9 rounded border border-input bg-background px-2 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 		/>
 		<input
 			type="date"
 			bind:value={filters.to}
-			aria-label={t('assignments.endDate')}
+			aria-label={m.assignments_endDate()}
 			class="h-9 rounded border border-input bg-background px-2 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 		/>
 	</div>
 
 	<div class="mb-2 flex items-center justify-between text-xs text-muted-foreground">
-		<span>{t('assignments.matchCount', { count: filtered.length })}</span>
+		<span>{m.assignments_matchCount({ count: filtered.length })}</span>
 		<button type="button" class="cursor-pointer underline" onclick={clearFilters}>
-			{t('assignments.clearFilters')}
+			{m.assignments_clearFilters()}
 		</button>
 	</div>
 
@@ -190,7 +190,7 @@
 	)}
 		<div class="flex justify-end gap-1">
 			<Button size="xs" variant="outline" onclick={() => openEditor(a)}>
-				{t('common.edit')}
+				{m.common_edit()}
 			</Button>
 			<form
 				method="POST"
@@ -201,7 +201,7 @@
 			>
 				<input type="hidden" name="id" value={a.id} />
 				<Button size="xs" variant="destructive" type="submit">
-					{t('common.delete')}
+					{m.common_delete()}
 				</Button>
 			</form>
 		</div>
@@ -211,12 +211,12 @@
 		<div
 			class="rounded border border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground"
 		>
-			{t('assignments.noMatches')}
+			{m.assignments_noMatches()}
 		</div>
 	{:else}
 		<!-- #142: mobile (<sm) は table 6 列が 375px 幅で見切れるため card layout に切替。
 		     desktop (>=sm) は従来 table を維持。 共通の edit/delete UI は rowActions snippet で. -->
-		<ul class="space-y-2 sm:hidden" aria-label={t('assignments.list')}>
+		<ul class="space-y-2 sm:hidden" aria-label={m.assignments_list()}>
 			{#each filtered as a (a.id)}
 				{@const resource = resourceMap.get(a.resourceId)}
 				{@const project = projectMap.get(a.projectId)}
@@ -224,7 +224,7 @@
 					<div class="mb-2 flex items-start justify-between gap-2">
 						<div class="flex min-w-0 flex-col gap-0.5">
 							<span class="truncate text-sm font-semibold">
-								{resource?.name ?? t('assignments.deletedResource')}
+								{resource?.name ?? m.assignments_deletedResource()}
 							</span>
 							{#if project}
 								<!-- WCAG 2.5.3 (Label in Name): visible text を accessible name に含める
@@ -248,18 +248,18 @@
 										style="background-color: #999"
 										aria-hidden="true"
 									></span>
-									<span class="truncate">{t('assignments.deletedProject')}</span>
+									<span class="truncate">{m.assignments_deletedProject()}</span>
 								</span>
 							{/if}
 						</div>
 						{@render rowActions(a, resource, project)}
 					</div>
 					<dl class="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 text-xs text-muted-foreground">
-						<dt>{t('assignments.startDate')}</dt>
+						<dt>{m.assignments_startDate()}</dt>
 						<dd class="font-mono">{a.startDate}</dd>
-						<dt>{t('assignments.endDate')}</dt>
+						<dt>{m.assignments_endDate()}</dt>
 						<dd class="font-mono">{displayEndDate(a)}</dd>
-						<dt>{t('assignments.durationDays')}</dt>
+						<dt>{m.assignments_durationDays()}</dt>
 						<dd class="font-mono">{duration(a)}</dd>
 					</dl>
 				</li>
@@ -270,12 +270,12 @@
 			<Table.Root>
 				<Table.Header>
 					<Table.Row>
-						<Table.Head>{t('assignments.resource')}</Table.Head>
-						<Table.Head>{t('assignments.project')}</Table.Head>
-						<Table.Head>{t('assignments.startDate')}</Table.Head>
-						<Table.Head>{t('assignments.endDate')}</Table.Head>
-						<Table.Head class="text-right">{t('assignments.durationDays')}</Table.Head>
-						<Table.Head class="text-right">{t('common.edit')} / {t('common.delete')}</Table.Head>
+						<Table.Head>{m.assignments_resource()}</Table.Head>
+						<Table.Head>{m.assignments_project()}</Table.Head>
+						<Table.Head>{m.assignments_startDate()}</Table.Head>
+						<Table.Head>{m.assignments_endDate()}</Table.Head>
+						<Table.Head class="text-right">{m.assignments_durationDays()}</Table.Head>
+						<Table.Head class="text-right">{m.common_edit()} / {m.common_delete()}</Table.Head>
 					</Table.Row>
 				</Table.Header>
 				<Table.Body>
@@ -283,7 +283,7 @@
 						{@const resource = resourceMap.get(a.resourceId)}
 						{@const project = projectMap.get(a.projectId)}
 						<Table.Row>
-							<Table.Cell>{resource?.name ?? t('assignments.deletedResource')}</Table.Cell>
+							<Table.Cell>{resource?.name ?? m.assignments_deletedResource()}</Table.Cell>
 							<Table.Cell>
 								{#if project}
 									<!-- WCAG 2.5.3 (Label in Name): visible text のみで accessible name 構成。 -->
@@ -306,7 +306,7 @@
 											style="background-color: #999"
 											aria-hidden="true"
 										></span>
-										{t('assignments.deletedProject')}
+										{m.assignments_deletedProject()}
 									</span>
 								{/if}
 							</Table.Cell>

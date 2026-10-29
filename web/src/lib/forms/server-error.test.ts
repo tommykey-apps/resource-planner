@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { formatZodErrors, mapServerErrors, translateServerError } from './server-error';
 import type { ServerErrors } from './server-error';
-import { localeState } from '$lib/i18n/index.svelte';
+import { overwriteGetLocale } from '$lib/paraglide/runtime';
 
 /**
  * #139: server → client wire format の純粋関数を test。
@@ -61,28 +61,28 @@ describe('translateServerError (#139)', () => {
 	});
 
 	it('ja locale: required → "{field} は必須です" に field 翻訳済を補間', () => {
-		localeState.current = 'ja';
+		overwriteGetLocale(() => 'ja');
 		expect(translateServerError({ code: 'required', field: 'name' })).toBe('名前 は必須です');
 	});
 
 	it('en locale: required → "{field} is required"', () => {
-		localeState.current = 'en';
+		overwriteGetLocale(() => 'en');
 		expect(translateServerError({ code: 'required', field: 'startDate' })).toBe(
 			'Start date is required'
 		);
 	});
 
 	it('tooLong は max を補間', () => {
-		localeState.current = 'en';
+		overwriteGetLocale(() => 'en');
 		expect(translateServerError({ code: 'tooLong', field: 'name', max: 100 })).toBe(
 			'Name must be at most 100 characters'
 		);
 	});
 
 	it('未知の code は errors.generic に fallback (locale に追随)', () => {
-		localeState.current = 'ja';
+		overwriteGetLocale(() => 'ja');
 		expect(translateServerError({ code: 'noSuchCode', field: 'name' })).toBe('入力エラー');
-		localeState.current = 'en';
+		overwriteGetLocale(() => 'en');
 		expect(translateServerError({ code: 'noSuchCode', field: 'name' })).toBe('Input error');
 	});
 });
@@ -96,7 +96,7 @@ describe('translateServerError (#139)', () => {
  */
 describe('mapServerErrors (#170)', () => {
 	it('field list 分のキーを返し、 該当 field のみ翻訳結果が入る (他は undefined)', () => {
-		localeState.current = 'en';
+		overwriteGetLocale(() => 'en');
 		const errors: ServerErrors = {
 			name: { code: 'required', field: 'name' }
 		};
@@ -118,7 +118,7 @@ describe('mapServerErrors (#170)', () => {
 	});
 
 	it('全 field hit: 4 field を一括翻訳', () => {
-		localeState.current = 'en';
+		overwriteGetLocale(() => 'en');
 		const errors: ServerErrors = {
 			resourceId: { code: 'required', field: 'resourceId' },
 			projectId: { code: 'required', field: 'projectId' },

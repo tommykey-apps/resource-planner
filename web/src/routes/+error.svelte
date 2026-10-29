@@ -1,20 +1,17 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { Button } from '$lib/components/ui/button';
-	import { t } from '$lib/i18n/index.svelte';
+	import { m } from '$lib/paraglide/messages.js';
+	import { errorMessage } from '$lib/i18n/message-maps';
 
 	const status = $derived(page.status);
 	// #178: server が App.Error.code (i18n key) を載せていたら user locale で翻訳。
-	// 未知 key (= t() が key 文字列を return) なら raw message に fallback、
-	// それも無ければ unknownMessage。
-	const message = $derived.by(() => {
-		const code = page.error?.code;
-		if (code) {
-			const translated = t(`errors.${code}`);
-			if (translated !== `errors.${code}`) return translated;
-		}
-		return page.error?.message ?? t('errorPage.unknownMessage');
-	});
+	// 未知の code なら raw message に fallback、 それも無ければ unknownMessage。
+	const message = $derived(
+		(page.error?.code && errorMessage(page.error.code, { field: '' })) ||
+			page.error?.message ||
+			m.errorPage_unknownMessage()
+	);
 </script>
 
 <main>
@@ -23,21 +20,21 @@
 		<p class="message">{message}</p>
 
 		{#if status === 401}
-			<p class="hint">{t('errorPage.hint401')}</p>
+			<p class="hint">{m.errorPage_hint401()}</p>
 		{:else if status === 403}
-			<p class="hint">{t('errorPage.hint403')}</p>
+			<p class="hint">{m.errorPage_hint403()}</p>
 		{:else if status === 404}
-			<p class="hint">{t('errorPage.hint404')}</p>
+			<p class="hint">{m.errorPage_hint404()}</p>
 		{:else if status >= 500}
-			<p class="hint">{t('errorPage.hint5xx')}</p>
+			<p class="hint">{m.errorPage_hint5xx()}</p>
 		{/if}
 
 		<div class="actions">
 			<Button variant="outline" onclick={() => (window.location.href = '/')}>
-				{t('errorPage.goHome')}
+				{m.errorPage_goHome()}
 			</Button>
 			<Button variant="ghost" onclick={() => (window.location.href = '/sign-in')}>
-				{t('errorPage.signin')}
+				{m.errorPage_signin()}
 			</Button>
 		</div>
 	</div>

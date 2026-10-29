@@ -1,6 +1,8 @@
 /// <reference types="vitest/config" />
 import tailwindcss from '@tailwindcss/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
+import { paraglideVitePlugin } from '@inlang/paraglide-js';
+import { paraglideOptions } from './paraglide.options.js';
 import { svelteTesting } from '@testing-library/svelte/vite';
 import { defineConfig } from 'vite';
 
@@ -14,7 +16,7 @@ if (process.env.VITEST) {
 }
 
 export default defineConfig({
-	plugins: [tailwindcss(), sveltekit()],
+	plugins: [tailwindcss(), sveltekit(), paraglideVitePlugin(paraglideOptions)],
 	test: {
 		// 2 種類の test を分離 (#94):
 		// - unit: node 環境、Auth.js / SvelteKit server module を直接 import

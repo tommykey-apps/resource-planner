@@ -2,18 +2,12 @@
 	import './layout.css';
 	import { ModeWatcher } from 'mode-watcher';
 	import { Toaster } from 'svelte-sonner';
-	import { initLocale } from '$lib/i18n/index.svelte';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import AppHeader from '$lib/components/AppHeader.svelte';
 	import { syncThemeCookie } from '$lib/theme-cookie.svelte';
 	import type { LayoutData } from './$types';
 
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
-
-	// SSR で決定された locale (cookie / Accept-Language) を client にも同期 (#98)
-	$effect.pre(() => {
-		initLocale(data.locale);
-	});
 
 	// #141: テーマ変更 (アバターメニュー / sign-in 画面) を cookie にミラー。
 	syncThemeCookie();

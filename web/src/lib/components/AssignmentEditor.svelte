@@ -6,7 +6,7 @@
 	import { addDays } from '$lib/date';
 	import { createSubmitState } from '$lib/forms/submit-state.svelte';
 	import { mapServerErrors, type ServerErrors } from '$lib/forms/server-error';
-	import { t } from '$lib/i18n/index.svelte';
+	import { m } from '$lib/paraglide/messages.js';
 	import type { Assignment, Resource, Project } from '$lib/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
 
@@ -81,7 +81,7 @@
 	});
 </script>
 
-<Dialog bind:open title={t('assignments.editTitle')}>
+<Dialog bind:open title={m.assignments_editTitle()}>
 	<!--
 		#184: action は **絶対 path 必須**。 本 component は home (/) と /assignments 両方で使われる
 		shared component で、 form action `updateAssignment` は root (`/+page.server.ts`) にだけ存在する。
@@ -98,14 +98,14 @@
 		{/if}
 
 		{#if formConflict}
-			<p class="text-sm text-destructive" role="alert">{t('assignments.conflict')}</p>
+			<p class="text-sm text-destructive" role="alert">{m.assignments_conflict()}</p>
 		{/if}
 
 		<label class="flex flex-col gap-1 text-sm">
-			<span>{t('assignments.resource')}</span>
+			<span>{m.assignments_resource()}</span>
 			<select
 				name="resourceId"
-				aria-label={t('assignments.resource')}
+				aria-label={m.assignments_resource()}
 				bind:value={formResourceId}
 				required
 				class="h-9 border border-input bg-background px-2 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
@@ -121,10 +121,10 @@
 		</label>
 
 		<label class="flex flex-col gap-1 text-sm">
-			<span>{t('assignments.project')}</span>
+			<span>{m.assignments_project()}</span>
 			<select
 				name="projectId"
-				aria-label={t('assignments.project')}
+				aria-label={m.assignments_project()}
 				bind:value={formProjectId}
 				required
 				class="h-9 border border-input bg-background px-2 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
@@ -141,7 +141,7 @@
 
 		<div class="grid grid-cols-2 gap-3">
 			<label class="flex flex-col gap-1 text-sm">
-				<span>{t('assignments.startDate')}</span>
+				<span>{m.assignments_startDate()}</span>
 				<Input name="startDate" type="date" bind:value={formStartDate} required />
 				{#if formError?.startDate}
 					<span class="text-xs text-destructive">{formError.startDate}</span>
@@ -149,7 +149,7 @@
 			</label>
 
 			<label class="flex flex-col gap-1 text-sm">
-				<span>{t('assignments.endDate')}</span>
+				<span>{m.assignments_endDate()}</span>
 				<Input name="endDate" type="date" bind:value={formEndDate} required min={formStartDate} />
 				{#if formError?.endDate}
 					<span class="text-xs text-destructive">{formError.endDate}</span>
@@ -164,10 +164,10 @@
 				onclick={() => (open = false)}
 				disabled={submitState.submitting}
 			>
-				{t('common.cancel')}
+				{m.common_cancel()}
 			</Button>
 			<Button type="submit" disabled={submitState.submitting}>
-				{submitState.submitting ? t('common.submitting') : t('common.update')}
+				{submitState.submitting ? m.common_submitting() : m.common_update()}
 			</Button>
 		</div>
 	</form>

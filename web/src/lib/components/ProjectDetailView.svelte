@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Dialog from './Dialog.svelte';
 	import ArrowSquareOut from 'phosphor-svelte/lib/ArrowSquareOut';
-	import { t } from '$lib/i18n/index.svelte';
+	import { m } from '$lib/paraglide/messages.js';
 	import type { ProjectWithRenderedDescription } from '$lib/types';
 
 	let {
@@ -13,10 +13,10 @@
 	} = $props();
 </script>
 
-<Dialog bind:open title={t('projects.detailTitle', { name: project.name })}>
+<Dialog bind:open title={m.projects_detailTitle({ name: project.name })}>
 	{#if project.descriptionHtml}
 		<section class="mb-4">
-			<h3 class="mb-2 text-sm font-semibold">{t('projects.descriptionLabel')}</h3>
+			<h3 class="mb-2 text-sm font-semibold">{m.projects_descriptionLabel()}</h3>
 			<!--
 				descriptionHtml は `+layout.server.ts` で `renderMarkdown()` を通って sanitize 済
 				(ADR 0010 / PR-N2)。 client 側は表示のみ、 ここで生 markdown を render し直すと
@@ -30,7 +30,7 @@
 
 	{#if project.tags?.length}
 		<section class="mb-4">
-			<h3 class="mb-2 text-sm font-semibold">{t('projects.tagsLabel')}</h3>
+			<h3 class="mb-2 text-sm font-semibold">{m.projects_tagsLabel()}</h3>
 			<ul class="flex flex-wrap gap-2">
 				{#each project.tags as tag (tag)}
 					<li
@@ -46,7 +46,7 @@
 
 	{#if project.links?.length}
 		<section>
-			<h3 class="mb-2 text-sm font-semibold">{t('projects.linksLabel')}</h3>
+			<h3 class="mb-2 text-sm font-semibold">{m.projects_linksLabel()}</h3>
 			<ul class="flex flex-col gap-1 text-sm">
 				{#each project.links as link (link.url)}
 					<li>
@@ -63,7 +63,7 @@
 						>
 							{link.label || link.url}
 							<ArrowSquareOut size={14} aria-hidden="true" />
-							<span class="sr-only"> ({t('common.opensInNewTab')})</span>
+							<span class="sr-only"> ({m.common_opensInNewTab()})</span>
 						</a>
 					</li>
 				{/each}

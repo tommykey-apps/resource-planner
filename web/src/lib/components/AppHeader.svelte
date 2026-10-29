@@ -4,7 +4,7 @@
 	import X from 'phosphor-svelte/lib/X';
 	import AvatarDropdown from './AvatarDropdown.svelte';
 	import LocaleSwitcher from './LocaleSwitcher.svelte';
-	import { t } from '$lib/i18n/index.svelte';
+	import { m } from '$lib/paraglide/messages.js';
 
 	/**
 	 * アプリ共通ヘッダ (#136、 #146、 header 標準化)。
@@ -28,11 +28,11 @@
 	const NAV_ID = 'app-main-nav';
 
 	const navItems = $derived([
-		{ href: '/', label: t('nav.timelineLink') },
-		{ href: '/assignments', label: t('nav.assignmentsLink') },
-		{ href: '/resources', label: t('nav.resourcesLink') },
-		{ href: '/projects', label: t('nav.projectsLink') },
-		{ href: '/departments', label: t('nav.departmentsLink') }
+		{ href: '/', label: m.nav_timelineLink() },
+		{ href: '/assignments', label: m.nav_assignmentsLink() },
+		{ href: '/resources', label: m.nav_resourcesLink() },
+		{ href: '/projects', label: m.nav_projectsLink() },
+		{ href: '/departments', label: m.nav_departmentsLink() }
 	]);
 
 	function isCurrent(href: string): boolean {
@@ -48,7 +48,7 @@
 	<div class="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-2 gap-y-2 px-4 py-2 md:gap-x-6">
 		<a href="/" class="flex shrink-0 items-center gap-2 no-underline">
 			<img src="/header-icon.png" alt="" width="32" height="32" class="h-8 w-8 shrink-0" />
-			<span class="text-base font-semibold tracking-tight sm:text-lg">{t('app.title')}</span>
+			<span class="text-base font-semibold tracking-tight sm:text-lg">{m.app_title()}</span>
 		</a>
 
 		<div class="order-2 ml-auto flex items-center gap-2 md:order-3">
@@ -59,7 +59,7 @@
 				class="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-border bg-background hover:bg-accent focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none md:hidden"
 				aria-expanded={menuOpen}
 				aria-controls={NAV_ID}
-				aria-label={t('nav.menuToggle')}
+				aria-label={m.nav_menuToggle()}
 				onclick={() => (menuOpen = !menuOpen)}
 			>
 				{#if menuOpen}
@@ -72,7 +72,7 @@
 
 		<nav
 			id={NAV_ID}
-			aria-label={t('nav.label')}
+			aria-label={m.nav_label()}
 			class="order-3 w-full md:order-2 md:block md:w-auto"
 			class:hidden={!menuOpen}
 		>

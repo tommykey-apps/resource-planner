@@ -8,7 +8,8 @@
 	import { confirmDialog } from '$lib/forms/confirm-dialog';
 	import { translateServerError, type ServerErrors } from '$lib/forms/server-error';
 	import { rollbackRecoverState } from '$lib/forms/optimistic-rollback';
-	import { localeState, t } from '$lib/i18n/index.svelte';
+	import { m } from '$lib/paraglide/messages.js';
+	import { getLocale } from '$lib/paraglide/runtime';
 	import {
 		flattenDepartmentTree,
 		resourceIdsForDepartmentFilter,
@@ -60,7 +61,7 @@
 	const departmentName = $derived(new Map(departments.map((d) => [d.id, d.name])));
 	/** 部署名 (未所属 / 不明な部署 id は「未所属」)。 #239: dangling も未所属として扱う。 */
 	function departmentLabel(r: Resource): string {
-		return (r.departmentId && departmentName.get(r.departmentId)) || t('departments.unassigned');
+		return (r.departmentId && departmentName.get(r.departmentId)) || m.departments_unassigned();
 	}
 
 	/**
@@ -88,9 +89,7 @@
 			(r) => (!q || r.name.toLowerCase().includes(q)) && (!deptIds || deptIds.has(r.id))
 		);
 	});
-	const sorted = $derived(
-		sortRows(filtered, sortValue[query.sort], query.dir, localeState.current)
-	);
+	const sorted = $derived(sortRows(filtered, sortValue[query.sort], query.dir, getLocale()));
 	const paged = $derived(paginate(sorted, query.page));
 
 	function sortBy(key: SortKey) {
@@ -114,10 +113,10 @@
 		getIds: () => selection.ids,
 		assignmentCountOf: (id) => assignmentCountByResource.get(id) ?? 0,
 		messages: {
-			confirm: (count) => t('resources.confirmBulkDelete', { count }),
+			confirm: (count) => m.resources_confirmBulkDelete({ count }),
 			confirmWithAssignments: (count, assignments) =>
-				t('resources.confirmBulkDeleteWithAssignments', { count, assignments }),
-			deleted: (count) => t('resources.bulkDeleted', { count })
+				m.resources_confirmBulkDeleteWithAssignments({ count, assignments }),
+			deleted: (count) => m.resources_bulkDeleted({ count })
 		},
 		onDone: () => selection.clear()
 	});
@@ -126,9 +125,9 @@
 		return async ({ result, update }) => {
 			if (result.type === 'success') {
 				const moved = (result.data as { moved?: number })?.moved ?? 0;
-				toast.success(t('resources.bulkMoved', { count: moved }));
+				toast.success(m.resources_bulkMoved({ count: moved }));
 			} else {
-				toast.error(t('resources.bulkMoveFailed'));
+				toast.error(m.resources_bulkMoveFailed());
 			}
 			selection.clear();
 			await update();
@@ -204,7 +203,7 @@
 						failureData:
 							result.type === 'failure' ? (result.data as { errors?: ServerErrors }) : undefined,
 						translate: translateServerError,
-						fallback: t('errors.generic'),
+						fallback: m.errors_generic(),
 						field: 'name'
 					});
 					formName = recovered.formName;
@@ -220,7 +219,7 @@
 				editing = null;
 			} else if (result.type === 'failure') {
 				const errs = (result.data as { errors?: ServerErrors })?.errors;
-				formError = errs?.name ? translateServerError(errs.name) : t('errors.generic');
+				formError = errs?.name ? translateServerError(errs.name) : m.errors_generic();
 			}
 			await update();
 		};
@@ -236,12 +235,12 @@
 		return async ({ cancel }) => {
 			const msg =
 				args.count > 0
-					? t('resources.confirmDeleteWithAssignments', { name: args.name, count: args.count })
-					: t('resources.confirmDelete', { name: args.name });
+					? m.resources_confirmDeleteWithAssignments({ name: args.name, count: args.count })
+					: m.resources_confirmDelete({ name: args.name });
 			const ok = await confirmDialog({
-				title: t('common.confirm'),
+				title: m.common_confirm(),
 				message: msg,
-				confirmLabel: t('common.delete'),
+				confirmLabel: m.common_delete(),
 				destructive: true
 			});
 			if (!ok) cancel();
@@ -250,14 +249,14 @@
 </script>
 
 <div class="flex flex-col gap-3">
-	<Button class="self-start" onclick={startCreate}>{t('resources.add')}</Button>
+	<Button class="self-start" onclick={startCreate}>{m.resources_add()}</Button>
 
 	{#if resources.length === 0}
-		<p class="py-4 text-sm text-muted-foreground">{t('resources.empty')}</p>
+		<p class="py-4 text-sm text-muted-foreground">{m.resources_empty()}</p>
 	{:else}
 		<div class="flex flex-wrap items-end gap-3">
 			<div class="flex flex-col gap-1 text-sm">
-				<label for="{tableId}-q">{t('common.filterByName')}</label>
+				<label for="{tableId}-q">{m.common_filterByName()}</label>
 				<input
 					id="{tableId}-q"
 					type="search"
@@ -268,7 +267,7 @@
 				/>
 			</div>
 			<div class="flex flex-col gap-1 text-sm">
-				<label for="{tableId}-dept">{t('departments.field')}</label>
+				<label for="{tableId}-dept">{m.departments_field()}</label>
 				<select
 					id="{tableId}-dept"
 					value={deptFilter}
@@ -276,15 +275,15 @@
 					class="h-9 border border-input bg-background px-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
 					style="border-radius: calc(var(--radius) * 0.6)"
 				>
-					<option value="">{t('departments.allOption')}</option>
-					<option value={DEPARTMENT_FILTER_UNASSIGNED}>{t('departments.unassigned')}</option>
+					<option value="">{m.departments_allOption()}</option>
+					<option value={DEPARTMENT_FILTER_UNASSIGNED}>{m.departments_unassigned()}</option>
 					{#each flatTree as { dept, depth } (dept.id)}
 						<option value={dept.id}>{'\u00A0\u00A0'.repeat(depth)}{dept.name}</option>
 					{/each}
 				</select>
 			</div>
 			<span class="pb-2 text-sm text-muted-foreground" aria-live="polite"
-				>{t('common.count', { count: filtered.length })}</span
+				>{m.common_count({ count: filtered.length })}</span
 			>
 			{#if hasFilter}
 				<button
@@ -292,13 +291,13 @@
 					class="cursor-pointer pb-2 text-sm underline underline-offset-4"
 					onclick={() => list.clearFilters()}
 				>
-					{t('common.clearFilters')}
+					{m.common_clearFilters()}
 				</button>
 			{/if}
 		</div>
 
 		{#if filtered.length === 0}
-			<p class="py-4 text-sm text-muted-foreground">{t('resources.noMatches')}</p>
+			<p class="py-4 text-sm text-muted-foreground">{m.resources_noMatches()}</p>
 		{:else}
 			<BulkActionBar count={selection.ids.length} onClear={selection.clear}>
 				<form
@@ -310,7 +309,7 @@
 					{#each selection.ids as id (id)}
 						<input type="hidden" name="ids" value={id} />
 					{/each}
-					<label for="{tableId}-bulk-dept">{t('resources.moveSelected')}</label>
+					<label for="{tableId}-bulk-dept">{m.resources_moveSelected()}</label>
 					<select
 						id="{tableId}-bulk-dept"
 						name="departmentId"
@@ -318,47 +317,46 @@
 						class="h-8 border border-input bg-background px-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
 						style="border-radius: calc(var(--radius) * 0.6)"
 					>
-						<option value="">{t('departments.unassigned')}</option>
+						<option value="">{m.departments_unassigned()}</option>
 						{#each flatTree as { dept, depth } (dept.id)}
 							<option value={dept.id}>{'\u00A0\u00A0'.repeat(depth)}{dept.name}</option>
 						{/each}
 					</select>
-					<Button size="xs" variant="outline" type="submit">{t('common.change')}</Button>
+					<Button size="xs" variant="outline" type="submit">{m.common_change()}</Button>
 				</form>
 				<form method="POST" action="/?/deleteResources" use:enhance={bulkDeleteSubmit}>
 					{#each selection.ids as id (id)}
 						<input type="hidden" name="ids" value={id} />
 					{/each}
-					<Button size="xs" variant="destructive" type="submit">{t('common.deleteSelected')}</Button
-					>
+					<Button size="xs" variant="destructive" type="submit">{m.common_deleteSelected()}</Button>
 				</form>
 			</BulkActionBar>
 			<ScrollShadow labelledby="{tableId}-caption">
 				<table class="w-full border-collapse text-sm">
-					<caption id="{tableId}-caption" class="sr-only">{t('nav.resourcesLink')}</caption>
+					<caption id="{tableId}-caption" class="sr-only">{m.nav_resourcesLink()}</caption>
 					<thead class="border-b-2 border-foreground">
 						<tr>
 							<SelectAllHeader state={selection.state} onToggle={selection.toggleAll} />
 							<SortHeader
-								label={t('resources.name')}
+								label={m.resources_name()}
 								active={query.sort === 'name'}
 								dir={query.dir}
 								onSort={() => sortBy('name')}
 							/>
 							<SortHeader
-								label={t('departments.field')}
+								label={m.departments_field()}
 								active={query.sort === 'department'}
 								dir={query.dir}
 								onSort={() => sortBy('department')}
 							/>
 							<SortHeader
-								label={t('common.assignmentCount')}
+								label={m.common_assignmentCount()}
 								active={query.sort === 'assignments'}
 								dir={query.dir}
 								onSort={() => sortBy('assignments')}
 								align="right"
 							/>
-							<th scope="col" class="px-3 py-2 text-right font-bold">{t('common.actions')}</th>
+							<th scope="col" class="px-3 py-2 text-right font-bold">{m.common_actions()}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -390,7 +388,7 @@
 											size="xs"
 											variant="outline"
 											disabled={batchMode}
-											onclick={() => startEdit(r)}>{t('common.edit')}</Button
+											onclick={() => startEdit(r)}>{m.common_edit()}</Button
 										>
 										<form
 											method="POST"
@@ -399,7 +397,7 @@
 										>
 											<input type="hidden" name="id" value={r.id} />
 											<Button size="xs" variant="destructive" type="submit" disabled={batchMode}>
-												{t('common.delete')}
+												{m.common_delete()}
 											</Button>
 										</form>
 									</div>
@@ -413,16 +411,13 @@
 				page={paged.page}
 				pageCount={paged.pageCount}
 				hrefFor={list.hrefFor}
-				label={t('nav.resourcesLink')}
+				label={m.nav_resourcesLink()}
 			/>
 		{/if}
 	{/if}
 </div>
 
-<Dialog
-	bind:open={formOpen}
-	title={editing ? t('resources.editTitle') : t('resources.createTitle')}
->
+<Dialog bind:open={formOpen} title={editing ? m.resources_editTitle() : m.resources_createTitle()}>
 	<form
 		method="POST"
 		action={editing ? '/?/updateResource' : '/?/createResource'}
@@ -433,7 +428,7 @@
 			<input type="hidden" name="id" value={editing.id} />
 		{/if}
 		<label class="flex flex-col gap-1 text-sm">
-			<span>{t('resources.name')}</span>
+			<span>{m.resources_name()}</span>
 			<Input
 				name="name"
 				type="text"
@@ -445,15 +440,15 @@
 		</label>
 		<!-- #239: 所属部署 (空 = 未所属)。 ツリー indent 付き選択は #240。 -->
 		<label class="flex flex-col gap-1 text-sm">
-			<span>{t('departments.field')}</span>
+			<span>{m.departments_field()}</span>
 			<select
 				name="departmentId"
-				aria-label={t('departments.field')}
+				aria-label={m.departments_field()}
 				bind:value={formDepartmentId}
 				class="h-9 border border-input bg-background px-2 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 				style="border-radius: calc(var(--radius) * 0.6)"
 			>
-				<option value="">{t('departments.unassigned')}</option>
+				<option value="">{m.departments_unassigned()}</option>
 				{#each flatTree as { dept, depth } (dept.id)}
 					<option value={dept.id}>{'\u00A0\u00A0'.repeat(depth)}{dept.name}</option>
 				{/each}
@@ -469,14 +464,14 @@
 				onclick={() => (formOpen = false)}
 				disabled={formSubmitState.submitting}
 			>
-				{t('common.cancel')}
+				{m.common_cancel()}
 			</Button>
 			<Button type="submit" disabled={formSubmitState.submitting}>
 				{formSubmitState.submitting
-					? t('common.submitting')
+					? m.common_submitting()
 					: editing
-						? t('common.update')
-						: t('common.create')}
+						? m.common_update()
+						: m.common_create()}
 			</Button>
 		</div>
 	</form>

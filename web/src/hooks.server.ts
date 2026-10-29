@@ -1,28 +1,26 @@
 import { sequence } from '@sveltejs/kit/hooks';
 import type { Handle } from '@sveltejs/kit';
 import { handle as authjsHandle } from './auth';
-import { COOKIE_NAME, pickLocaleFromAcceptLanguage, type Locale } from '$lib/i18n/index.svelte';
+import { paraglideMiddleware } from '$lib/paraglide/server';
+import { getTextDirection } from '$lib/paraglide/runtime';
 import { pickTheme, THEME_COOKIE_NAME } from '$lib/theme';
 
 /**
- * locale を cookie / Accept-Language から決定して event.locals に格納する hook (#98)。
- * 優先順位: cookie > Accept-Language > 'en' (fallback)。
- *
- * 実値は `+layout.server.ts` で `data.locale` として client に渡る。
+ * 言語の決定 (Paraglide JS のミドルウェア)。 判定順は paraglide.options.js の strategy
+ * (cookie > Accept-Language > baseLocale)。 AsyncLocalStorage で request ごとに分離されるので、
+ * 以降の handle / load / SSR 中の getLocale() はこの request の言語を返す。
+ * 手順: https://paraglidejs.com/sveltekit
  */
-const localeHandle: Handle = async ({ event, resolve }) => {
-	const cookieLocale = event.cookies.get(COOKIE_NAME);
-	let locale: Locale;
-	if (cookieLocale === 'en' || cookieLocale === 'ja') {
-		locale = cookieLocale;
-	} else {
-		locale = pickLocaleFromAcceptLanguage(event.request.headers.get('accept-language'));
-	}
-	event.locals.locale = locale;
-	return resolve(event, {
-		transformPageChunk: ({ html }) => html.replace('<html lang="en">', `<html lang="${locale}">`)
+const paraglideHandle: Handle = ({ event, resolve }) =>
+	paraglideMiddleware(event.request, ({ request, locale }) => {
+		event.request = request;
+		return resolve(event, {
+			transformPageChunk: ({ html }) =>
+				html
+					.replace('%paraglide.lang%', locale)
+					.replace('%paraglide.dir%', getTextDirection(locale))
+		});
 	});
-};
 
 /**
  * theme (light/dark/system) を cookie から決定して event.locals に格納する hook (#141)。
@@ -64,8 +62,8 @@ const securityHeadersHandle: Handle = async ({ event, resolve }) => {
 };
 
 export const handle: Handle = sequence(
+	paraglideHandle,
 	authjsHandle,
-	localeHandle,
 	themeHandle,
 	securityHeadersHandle
 );

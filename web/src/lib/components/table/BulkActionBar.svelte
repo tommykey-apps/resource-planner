@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { t } from '$lib/i18n/index.svelte';
+	import { m } from '$lib/paraglide/messages.js';
 
 	/**
 	 * 一括操作バー (Carbon Data table batch actions): 1 行でも選ぶと表の上に出し、
@@ -12,16 +12,16 @@
 </script>
 
 <p class="sr-only" aria-live="polite">
-	{count > 0 ? t('common.selectedCount', { count }) : ''}
+	{count > 0 ? m.common_selectedCount({ count }) : ''}
 </p>
 
 {#if count > 0}
 	<div
 		role="region"
-		aria-label={t('common.bulkActions')}
+		aria-label={m.common_bulkActions()}
 		class="flex flex-wrap items-center gap-3 border border-foreground bg-muted px-3 py-2 text-sm"
 	>
-		<span class="font-bold">{t('common.selectedCount', { count })}</span>
+		<span class="font-bold">{m.common_selectedCount({ count })}</span>
 		<div class="flex flex-wrap items-center gap-2">
 			{@render children()}
 		</div>
@@ -30,7 +30,7 @@
 			class="ml-auto cursor-pointer underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
 			onclick={onClear}
 		>
-			{t('common.clearSelection')}
+			{m.common_clearSelection()}
 		</button>
 	</div>
 {/if}

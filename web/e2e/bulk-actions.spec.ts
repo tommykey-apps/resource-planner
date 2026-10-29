@@ -73,7 +73,7 @@ test('メンバーを選んで所属部署を一括変更し、 そのまま一�
 
 	await bar.getByRole('button', { name: 'Delete selected' }).click();
 	await alert.getByRole('button', { name: /^Delete$/ }).click();
-	await expect(page.getByText('Deleted 1 people')).toBeVisible();
+	await expect(page.getByText('Deleted 1 person')).toBeVisible();
 	await expect(page.getByRole('rowheader')).toHaveText([names[1]]);
 
 	// 再読み込みしても消えたまま (サーバーで削除された)
