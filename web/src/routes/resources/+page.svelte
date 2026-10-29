@@ -9,10 +9,7 @@
 
 	// #121 / #184: 楽観追加のため resources を local state へ lift。 server confirm 後の
 	// invalidateAll で data.resources が更新されたら server truth に rebase する。
-	let resources = $state<Resource[]>([]);
-	$effect(() => {
-		resources = data.resources;
-	});
+	let resources = $derived<Resource[]>(data.resources);
 
 	function optimisticAdd(temp: Resource) {
 		resources = [...resources, temp];

@@ -21,9 +21,8 @@
 
 	const today = formatLocalDate(new Date());
 	const oneWeekLater = (() => {
-		const d = new Date();
-		d.setDate(d.getDate() + 6);
-		return formatLocalDate(d);
+		const now = new Date();
+		return formatLocalDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 6));
 	})();
 
 	let open = $state(false);

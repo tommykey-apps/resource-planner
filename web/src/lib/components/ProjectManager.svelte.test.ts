@@ -198,7 +198,7 @@ describe('ProjectManager form (PR-N3, refs #187)', () => {
  */
 describe('ProjectManager Markdown Write/Preview tabs', () => {
 	async function openCreateFormDetails() {
-		const utils = render(ProjectManager, { props: { projects: [], assignments: [] } });
+		render(ProjectManager, { props: { projects: [], assignments: [] } });
 		const addBtn = await waitFor(() => {
 			return Array.from(document.querySelectorAll('button')).find((el) =>
 				el.textContent?.includes('案件を追加')

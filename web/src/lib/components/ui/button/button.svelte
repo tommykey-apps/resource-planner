@@ -61,6 +61,8 @@
 </script>
 
 {#if href}
+	<!-- 汎用部品。 href は呼び出し側で resolve() 済みの値を受け取る -->
+	<!-- eslint-disable svelte/no-navigation-without-resolve -->
 	<a
 		bind:this={ref}
 		data-slot="button"
@@ -73,6 +75,7 @@
 	>
 		{@render children?.()}
 	</a>
+	<!-- eslint-enable svelte/no-navigation-without-resolve -->
 {:else}
 	<button
 		bind:this={ref}

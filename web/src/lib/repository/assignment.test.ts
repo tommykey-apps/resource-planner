@@ -20,7 +20,6 @@ import {
 
 const ddbMock = mockClient(DynamoDBDocumentClient);
 const TEAM = 'team-test';
-const TABLE = process.env.DYNAMODB_TABLE ?? 'resource-planner-test';
 
 beforeEach(() => {
 	ddbMock.reset();

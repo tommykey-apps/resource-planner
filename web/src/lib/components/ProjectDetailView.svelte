@@ -23,6 +23,7 @@
 				二重 sanitize で過剰 strip になる可能性があるため使わない。
 			-->
 			<div class="prose prose-sm max-w-none dark:prose-invert">
+				<!-- eslint-disable-next-line svelte/no-at-html-tags -- renderMarkdown() (DOMPurify) で sanitize 済 -->
 				{@html project.descriptionHtml}
 			</div>
 		</section>
@@ -58,7 +59,7 @@
 						<a
 							href={link.url}
 							target="_blank"
-							rel="noopener noreferrer"
+							rel="external noopener noreferrer"
 							class="inline-flex items-center gap-1 text-primary underline-offset-4 hover:underline"
 						>
 							{link.label || link.url}

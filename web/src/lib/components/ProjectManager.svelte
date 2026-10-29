@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { SvelteMap } from 'svelte/reactivity';
 	import { Button } from './ui/button';
 	import { Input } from './ui/input';
 	import { Textarea } from './ui/textarea';
@@ -58,7 +59,7 @@
 
 	/** 各 Project に紐づく Assignment 数 (cascade delete 警告用、UC-06) */
 	const assignmentCountByProject = $derived.by(() => {
-		const m = new Map<string, number>();
+		const m = new SvelteMap<string, number>();
 		for (const a of assignments) {
 			m.set(a.projectId, (m.get(a.projectId) ?? 0) + 1);
 		}
@@ -463,6 +464,7 @@
 					>
 						{#if formDescription.trim()}
 							<!-- markdown.ts: marked + isomorphic-dompurify で sanitize 済 (server / client 共通)。 -->
+							<!-- eslint-disable-next-line svelte/no-at-html-tags -- 上記のとおり sanitize 済 -->
 							{@html renderMarkdown(formDescription)}
 						{:else}
 							<p class="text-muted-foreground">{m.projects_previewEmpty()}</p>

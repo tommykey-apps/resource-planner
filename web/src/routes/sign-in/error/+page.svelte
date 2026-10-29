@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 	import { m } from '$lib/paraglide/messages.js';
 
 	const errorCode = $derived(page.url.searchParams.get('error') ?? 'Default');
@@ -36,7 +37,7 @@
 
 		<div class="mt-6">
 			<a
-				href="/sign-in"
+				href={resolve('/sign-in')}
 				class="inline-block rounded bg-primary px-4 py-2 text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 focus-visible:outline-none"
 			>
 				{m.signin_backToSignin()}

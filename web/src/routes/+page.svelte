@@ -7,6 +7,7 @@
 	} from '@tommykey-apps/ui-components';
 	import { toast } from 'svelte-sonner';
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 	import { toTimelineAssignment, fromTimelineAssignment } from '$lib/timeline-adapter';
 	import { applyTimelineParams, parseTimelineParams } from '$lib/timeline-url-state';
 	import {
@@ -30,13 +31,10 @@
 	// timeline 形式 (end-exclusive Date) は $derived で都度 compose する。
 	// #184: data.assignments は server load 由来 (immutable snapshot)、 一方 dbAssignments は
 	// drag/resize の optimistic update を直接書き換える reactive。 server confirm が
-	// invalidateAll → load 再実行で data.assignments を更新したら、 本 $effect で再同期して
+	// invalidateAll → load 再実行で data.assignments を更新したら、 writable $derived が再計算して
 	// server truth に rebase する。 trade-off: server confirm 後に optimistic state が一時
 	// 巻き戻る瞬間 (data 更新 → 再 sync の間) があるが、 通常 < 1 frame で気付かれない。
-	let dbAssignments = $state<DbAssignment[]>([]);
-	$effect(() => {
-		dbAssignments = data.assignments;
-	});
+	let dbAssignments = $derived<DbAssignment[]>(data.assignments);
 
 	const resources = $derived(data.resources);
 	const projects = $derived(data.projects);
@@ -161,7 +159,7 @@
 		<div class="empty-state">
 			<p>
 				{m.resources_empty()}
-				<a href="/resources" class="underline">{m.resources_addNew()}</a>
+				<a href={resolve('/resources')} class="underline">{m.resources_addNew()}</a>
 			</p>
 		</div>
 	{:else}

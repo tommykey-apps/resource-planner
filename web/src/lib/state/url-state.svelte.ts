@@ -23,12 +23,14 @@
  * - https://svelte.dev/docs/kit/state-management (URL を state の置き場として推奨)
  */
 import { goto } from '$app/navigation';
+import { SvelteURL } from 'svelte/reactivity';
 
 export function syncStateToUrl<T>(getState: () => T, apply: (url: URL, state: T) => URL): void {
 	$effect(() => {
 		if (typeof window === 'undefined') return;
-		const next = apply(new URL(window.location.href), getState());
+		const next = apply(new SvelteURL(window.location.href), getState());
 		if (next.toString() !== window.location.href) {
+			// eslint-disable-next-line svelte/no-navigation-without-resolve -- クエリ文字列付きの URL は resolve() で表せずルールが未対応のため除外
 			goto(next, { replaceState: true, noScroll: true, keepFocus: true });
 		}
 	});

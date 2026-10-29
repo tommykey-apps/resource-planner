@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import { toast } from 'svelte-sonner';
 	import { Button } from './ui/button';
 	import { Input } from './ui/input';
@@ -32,7 +33,7 @@
 
 	/** その部署に直接所属するメンバー数 (子部署の所属は含めない)。 */
 	const memberCount = $derived.by(() => {
-		const m = new Map<string, number>();
+		const m = new SvelteMap<string, number>();
 		for (const r of resources) {
 			if (r.departmentId) m.set(r.departmentId, (m.get(r.departmentId) ?? 0) + 1);
 		}
@@ -46,7 +47,7 @@
 	const byId = $derived(new Map(departments.map((d) => [d.id, d])));
 	function ancestorNames(dept: Department): string[] {
 		const names: string[] = [];
-		const seen = new Set<string>([dept.id]);
+		const seen = new SvelteSet<string>([dept.id]);
 		let parent = dept.parentId ? byId.get(dept.parentId) : undefined;
 		while (parent && !seen.has(parent.id)) {
 			names.unshift(parent.name);

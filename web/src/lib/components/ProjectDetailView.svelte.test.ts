@@ -53,13 +53,13 @@ describe('ProjectDetailView (PR-N4, refs #187)', () => {
 		expect(tagItems.length).toBeGreaterThanOrEqual(2);
 	});
 
-	it('renders links with target=_blank rel="noopener noreferrer" + sr-only "new tab" hint', async () => {
+	it('renders links with target=_blank rel="external noopener noreferrer" + sr-only "new tab" hint', async () => {
 		render(ProjectDetailView, { project: FULL, open: true });
 		const dialog = await findInPortal('[role="dialog"]');
 		const anchor = dialog.querySelector('a[href="https://example.com/wiki"]') as HTMLAnchorElement;
 		expect(anchor).toBeTruthy();
 		expect(anchor.getAttribute('target')).toBe('_blank');
-		expect(anchor.getAttribute('rel')).toBe('noopener noreferrer');
+		expect(anchor.getAttribute('rel')).toBe('external noopener noreferrer');
 		// BP B7: sr-only で AT に「新しいタブで開く」 を伝える
 		const srOnly = anchor.querySelector('.sr-only');
 		expect(srOnly?.textContent).toMatch(/新しいタブ|new tab/i);
