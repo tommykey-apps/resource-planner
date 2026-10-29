@@ -33,7 +33,7 @@ test('Resource delete: confirm dialog が画面に表示されて Cancel で閉�
 }) => {
 	await signInAsTestUser(page);
 
-	// ヘッダの「Manage people」 button を開く (en は Accept-Language fallback の default)
+	// ヘッダーのナビ「People」を開く (en は Accept-Language fallback の default)
 	await openSection(page, 'People');
 
 	// 「+ Add person」 → Name 入力 → Create

@@ -38,8 +38,7 @@ describe('DepartmentManager (#238)', () => {
 describe('DepartmentManager rename (#250)', () => {
 	async function openEditFor(name: string) {
 		render(DepartmentManager, { props: { departments: DEPARTMENTS } });
-		await fireEvent.click(screen.getByRole('button', { name: /部署|Department/ }));
-		const row = (await screen.findByText(name)).closest('li')!;
+		const row = (await screen.findByText(name, { selector: 'li > span' })).closest('li')!;
 		const edit = Array.from(row.querySelectorAll('button')).find((b) =>
 			/編集|Edit/.test(b.textContent ?? '')
 		)!;
