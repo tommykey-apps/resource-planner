@@ -4,6 +4,10 @@ node_modules
 # SvelteKit (in web/)
 web/.svelte-kit
 web/build
+# Paraglide JS の生成物 (中の .gitignore は ESLint / Prettier が読まないため直下でも除外する)
+web/src/lib/paraglide
+web/project.inlang/*
+!web/project.inlang/settings.json
 web/dist
 infra/ses-bounce-handler.zip
 

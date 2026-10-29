@@ -75,7 +75,9 @@ beforeEach(() => {
 async function expectErrorResponse(
 	res: Response,
 	status: number,
-	predicate: (body: { errors: Record<string, { code: string; field: string; max?: number }> }) => void
+	predicate: (body: {
+		errors: Record<string, { code: string; field: string; max?: number }>;
+	}) => void
 ): Promise<void> {
 	expect(res.status).toBe(status);
 	const body = (await res.json()) as {

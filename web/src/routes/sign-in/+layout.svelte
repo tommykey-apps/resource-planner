@@ -11,10 +11,7 @@
 	fixed right-top と被らない。z-40 で modal overlay より下に置く (sign-in 系では
 	modal は無いが、将来 alert dialog を入れた時の overlay 衝突を避けるため)。
 -->
-<div
-	class="fixed right-4 top-4 z-40 flex items-center gap-2"
-	data-testid="signin-layout-toggles"
->
+<div class="fixed top-4 right-4 z-40 flex items-center gap-2" data-testid="signin-layout-toggles">
 	<LocaleSwitcher />
 	<ThemeToggle />
 </div>

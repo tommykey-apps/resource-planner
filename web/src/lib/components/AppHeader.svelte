@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 	import List from 'phosphor-svelte/lib/List';
 	import X from 'phosphor-svelte/lib/X';
 	import AvatarDropdown from './AvatarDropdown.svelte';
@@ -28,11 +29,11 @@
 	const NAV_ID = 'app-main-nav';
 
 	const navItems = $derived([
-		{ href: '/', label: m.nav_timelineLink() },
-		{ href: '/assignments', label: m.nav_assignmentsLink() },
-		{ href: '/resources', label: m.nav_resourcesLink() },
-		{ href: '/projects', label: m.nav_projectsLink() },
-		{ href: '/departments', label: m.nav_departmentsLink() }
+		{ href: resolve('/'), label: m.nav_timelineLink() },
+		{ href: resolve('/assignments'), label: m.nav_assignmentsLink() },
+		{ href: resolve('/resources'), label: m.nav_resourcesLink() },
+		{ href: resolve('/projects'), label: m.nav_projectsLink() },
+		{ href: resolve('/departments'), label: m.nav_departmentsLink() }
 	]);
 
 	function isCurrent(href: string): boolean {
@@ -45,8 +46,10 @@
 </script>
 
 <header class="sticky top-0 z-40 border-b border-border bg-background">
-	<div class="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-2 gap-y-2 px-4 py-2 md:gap-x-6">
-		<a href="/" class="flex shrink-0 items-center gap-2 no-underline">
+	<div
+		class="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-2 gap-y-2 px-4 py-2 md:gap-x-6"
+	>
+		<a href={resolve('/')} class="flex shrink-0 items-center gap-2 no-underline">
 			<img src="/header-icon.png" alt="" width="32" height="32" class="h-8 w-8 shrink-0" />
 			<span class="text-base font-semibold tracking-tight sm:text-lg">{m.app_title()}</span>
 		</a>

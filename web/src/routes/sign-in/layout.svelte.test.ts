@@ -11,7 +11,9 @@ describe('/sign-in +layout.svelte (#123)', () => {
 	it('renders both ThemeToggle and LocaleSwitcher in a fixed right-top container', () => {
 		const { container } = render(SignInLayout);
 		// ThemeToggle: aria-label に "theme" or "テーマ" を含む
-		const themeBtn = container.querySelector('button[aria-label*="テーマ"], button[aria-label*="theme" i]');
+		const themeBtn = container.querySelector(
+			'button[aria-label*="テーマ"], button[aria-label*="theme" i]'
+		);
 		expect(themeBtn).toBeTruthy();
 		// LocaleSwitcher: aria-label に "言語" or "language" を含む
 		const localeBtn = container.querySelector(

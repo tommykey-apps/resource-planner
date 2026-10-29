@@ -28,6 +28,7 @@
 {#if pageCount > 1}
 	<nav class="flex items-center justify-center gap-4" aria-label={label}>
 		{#if page > 1}
+			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- クエリ文字列付きの URL は resolve() で表せずルールが未対応のため除外 -->
 			<a class={linkClass} href={hrefFor(page - 1)} data-sveltekit-noscroll>
 				<CaretLeft size={16} aria-hidden="true" />
 				{m.common_prevPage()}
@@ -35,6 +36,7 @@
 		{/if}
 		<span class="text-sm tabular-nums">{page} / {pageCount}</span>
 		{#if page < pageCount}
+			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- クエリ文字列付きの URL は resolve() で表せずルールが未対応のため除外 -->
 			<a class={linkClass} href={hrefFor(page + 1)} data-sveltekit-noscroll>
 				{m.common_nextPage()}
 				<CaretRight size={16} aria-hidden="true" />

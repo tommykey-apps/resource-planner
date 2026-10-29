@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { m } from '$lib/paraglide/messages.js';
 </script>
 
@@ -16,6 +17,8 @@
 	</p>
 
 	<div class="mt-6">
-		<a href="/sign-in" class="text-sm text-primary underline">{m.signin_checkEmailRetry()}</a>
+		<a href={resolve('/sign-in')} class="text-sm text-primary underline"
+			>{m.signin_checkEmailRetry()}</a
+		>
 	</div>
 </main>

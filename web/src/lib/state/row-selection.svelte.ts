@@ -9,14 +9,16 @@
  *
  * 呼び出しはコンポーネント初期化中に行う ($effect を使うため)。
  */
+import { SvelteSet } from 'svelte/reactivity';
+
 export type SelectionState = 'none' | 'some' | 'all';
 
 export function createRowSelection(getVisibleIds: () => string[], getResetKey: () => unknown) {
-	let selected = $state<ReadonlySet<string>>(new Set());
+	const selected = new SvelteSet<string>();
 
 	$effect(() => {
 		getResetKey();
-		selected = new Set();
+		selected.clear();
 	});
 
 	const ids = $derived(getVisibleIds().filter((id) => selected.has(id)));
@@ -36,17 +38,17 @@ export function createRowSelection(getVisibleIds: () => string[], getResetKey: (
 			return selected.has(id);
 		},
 		toggle(id: string) {
-			const next = new Set(selected);
-			if (next.has(id)) next.delete(id);
-			else next.add(id);
-			selected = next;
+			if (selected.has(id)) selected.delete(id);
+			else selected.add(id);
 		},
 		/** 一部 / 未選択なら表示中の行を全部選び、 全部選択中なら全部外す。 */
 		toggleAll() {
-			selected = state === 'all' ? new Set() : new Set(getVisibleIds());
+			const selectAll = state !== 'all';
+			selected.clear();
+			if (selectAll) for (const id of getVisibleIds()) selected.add(id);
 		},
 		clear() {
-			selected = new Set();
+			selected.clear();
 		}
 	};
 }

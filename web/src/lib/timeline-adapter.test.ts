@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { Assignment as DbAssignment } from './types';
-import { fromTimelineAssignment, toTimelineAssignment } from './timeline-adapter';
+import {
+	fromTimelineAssignment,
+	timelineDateLocale,
+	toTimelineAssignment
+} from './timeline-adapter';
+import { ja } from 'date-fns/locale';
 
 const sampleDb: DbAssignment = {
 	id: 'a1',
@@ -59,5 +64,15 @@ describe('fromTimelineAssignment', () => {
 		const t = toTimelineAssignment(sampleDb, project);
 		const back = fromTimelineAssignment(t, sampleDb);
 		expect(back).toEqual(sampleDb);
+	});
+});
+
+describe('timelineDateLocale', () => {
+	it('ja は date-fns の ja (見出しが「10月」「16(金)」になる)', () => {
+		expect(timelineDateLocale('ja')).toBe(ja);
+	});
+
+	it('en は undefined (ResourceTimeline 既定の英語)', () => {
+		expect(timelineDateLocale('en')).toBeUndefined();
 	});
 });

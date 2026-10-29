@@ -54,7 +54,7 @@
 				</BitsDialog.Title>
 				<!-- #201: visible close button (APG required)。 right-aligned X icon。 -->
 				<BitsDialog.Close
-					class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+					class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-muted focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 					aria-label={m.common_close()}
 				>
 					<X size={16} weight="bold" aria-hidden="true" />

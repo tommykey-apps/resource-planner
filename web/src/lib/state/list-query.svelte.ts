@@ -33,6 +33,7 @@ export function createListQuery<K extends string, F extends string = never>(
 	}
 
 	function navigate(href: string) {
+		// eslint-disable-next-line svelte/no-navigation-without-resolve -- クエリ文字列付きの URL は resolve() で表せずルールが未対応のため除外
 		goto(href, { replaceState: true, keepFocus: true, noScroll: true });
 	}
 

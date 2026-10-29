@@ -61,19 +61,24 @@ describe('createDepartment (ADR 0013 / #240 validation)', () => {
 		mockDepartments([{ id: 'p1', name: '開発本部' }]);
 		const result = await createDepartment(TEAM, { name: 'バックエンド課', parentId: 'p1' });
 		expect(result.parentId).toBe('p1');
-		expect(ddbMock.commandCalls(PutCommand)[0].args[0].input.Item).toMatchObject({ parentId: 'p1' });
+		expect(ddbMock.commandCalls(PutCommand)[0].args[0].input.Item).toMatchObject({
+			parentId: 'p1'
+		});
 	});
 
 	it('親が存在しない → DepartmentTreeError(parentNotFound)、 Put しない', async () => {
 		mockDepartments([{ id: 'p1', name: '開発本部' }]);
-		await expect(
-			createDepartment(TEAM, { name: 'X', parentId: 'ghost' })
-		).rejects.toMatchObject({ code: 'parentNotFound' });
+		await expect(createDepartment(TEAM, { name: 'X', parentId: 'ghost' })).rejects.toMatchObject({
+			code: 'parentNotFound'
+		});
 		expect(ddbMock.commandCalls(PutCommand)).toHaveLength(0);
 	});
 
 	it('兄弟に同名 → DepartmentTreeError(nameConflict)、 Put しない', async () => {
-		mockDepartments([{ id: 'p1', name: '開発本部' }, { id: 'a', name: 'バックエンド課', parentId: 'p1' }]);
+		mockDepartments([
+			{ id: 'p1', name: '開発本部' },
+			{ id: 'a', name: 'バックエンド課', parentId: 'p1' }
+		]);
 		await expect(
 			createDepartment(TEAM, { name: 'バックエンド課', parentId: 'p1' })
 		).rejects.toBeInstanceOf(DepartmentTreeError);
@@ -81,7 +86,10 @@ describe('createDepartment (ADR 0013 / #240 validation)', () => {
 	});
 
 	it('親違いなら同名 OK (兄弟一意はスコープが親単位)', async () => {
-		mockDepartments([{ id: 'p1', name: '開発本部' }, { id: 's', name: '営業本部' }]);
+		mockDepartments([
+			{ id: 'p1', name: '開発本部' },
+			{ id: 's', name: '営業本部' }
+		]);
 		// p1 配下に「営業本部」を作る (root の s と同名だが親が違うので衝突しない)
 		const r = await createDepartment(TEAM, { name: '営業本部', parentId: 'p1' });
 		expect(r.parentId).toBe('p1');
@@ -204,7 +212,10 @@ describe('renameDepartment (#250)', () => {
 
 describe('listDepartments', () => {
 	it('returns departments with parentId normalized to null for roots', async () => {
-		mockDepartments([{ id: 'r', name: '開発本部' }, { id: 'a', name: '課', parentId: 'r' }]);
+		mockDepartments([
+			{ id: 'r', name: '開発本部' },
+			{ id: 'a', name: '課', parentId: 'r' }
+		]);
 		const result = await listDepartments(TEAM);
 		expect(result).toEqual([
 			{ id: 'r', name: '開発本部', parentId: null },
@@ -212,7 +223,10 @@ describe('listDepartments', () => {
 		]);
 		const input = ddbMock.commandCalls(QueryCommand)[0].args[0].input;
 		expect(input.KeyConditionExpression).toBe('pk = :pk AND begins_with(sk, :dept)');
-		expect(input.ExpressionAttributeValues).toMatchObject({ ':pk': `TEAM#${TEAM}`, ':dept': 'DEPT#' });
+		expect(input.ExpressionAttributeValues).toMatchObject({
+			':pk': `TEAM#${TEAM}`,
+			':dept': 'DEPT#'
+		});
 	});
 });
 

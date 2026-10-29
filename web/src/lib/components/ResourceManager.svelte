@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { SvelteMap } from 'svelte/reactivity';
 	import { toast } from 'svelte-sonner';
 	import { Button } from './ui/button';
 	import { Input } from './ui/input';
@@ -51,7 +52,7 @@
 
 	/** 各 Resource に紐づく Assignment 数 (cascade delete 時の警告で使う、UC-06) */
 	const assignmentCountByResource = $derived.by(() => {
-		const m = new Map<string, number>();
+		const m = new SvelteMap<string, number>();
 		for (const a of assignments) {
 			m.set(a.resourceId, (m.get(a.resourceId) ?? 0) + 1);
 		}

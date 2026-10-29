@@ -219,7 +219,7 @@ test('Project detail modal: assignments page で project click → markdown が 
 
 	const externalLink = modal.locator('a[href="https://example.com/spec"]');
 	await expect(externalLink).toHaveAttribute('target', '_blank');
-	await expect(externalLink).toHaveAttribute('rel', 'noopener noreferrer');
+	await expect(externalLink).toHaveAttribute('rel', 'external noopener noreferrer');
 	// BP B7 sr-only: 「新しいタブで開く」 / "opens in a new tab"
 	await expect(externalLink.locator('.sr-only')).toContainText(/(新しいタブ|new tab)/i);
 });

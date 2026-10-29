@@ -139,7 +139,6 @@ async function sendMagicLinkViaSES(params: { identifier: string; url: string }):
  * Auth.js は token を hash 化して DDB に保存するため、URL は送信側でしか平文を得られない。
  */
 export async function sendMagicLinkDev(params: { identifier: string; url: string }): Promise<void> {
-	// eslint-disable-next-line no-console
 	console.log(
 		`\n[Magic Link DEV] to=${params.identifier}\n  ${params.url}\n  (production は SES SDK で送信)\n`
 	);
@@ -195,7 +194,6 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 				await addMembership(DEFAULT_TEAM_ID, user.id, 'member');
 			} catch (e) {
 				// 失敗してもサインイン自体は成功させる (membership は再 sign-in 時に再試行)。
-				// eslint-disable-next-line no-console
 				console.error('[auth.events.signIn] failed to add default team membership', e);
 			}
 		}

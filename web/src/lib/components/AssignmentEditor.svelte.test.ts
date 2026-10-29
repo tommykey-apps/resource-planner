@@ -30,9 +30,7 @@ const SAMPLE: Assignment = {
 	version: 2
 };
 
-async function findInPortal<T extends HTMLElement = HTMLElement>(
-	selector: string
-): Promise<T> {
+async function findInPortal<T extends HTMLElement = HTMLElement>(selector: string): Promise<T> {
 	return await waitFor(() => {
 		const el = document.querySelector(selector) as T | null;
 		if (!el) throw new Error(`not found: ${selector}`);
@@ -64,9 +62,7 @@ describe('AssignmentEditor (#100)', () => {
 			props: { open: true, assignment: SAMPLE, resources: RESOURCES, projects: PROJECTS }
 		});
 		await findInPortal('form[action="/?/updateAssignment"]');
-		const resourceSelect = document.querySelector(
-			'select[name="resourceId"]'
-		) as HTMLSelectElement;
+		const resourceSelect = document.querySelector('select[name="resourceId"]') as HTMLSelectElement;
 		const projectSelect = document.querySelector('select[name="projectId"]') as HTMLSelectElement;
 		expect(Array.from(resourceSelect.options).map((o) => o.value)).toEqual(['r1', 'r2']);
 		expect(resourceSelect.value).toBe('r1');
@@ -99,9 +95,7 @@ describe('AssignmentEditor (#100)', () => {
 			props: { open: true, assignment: SAMPLE, resources: RESOURCES, projects: PROJECTS }
 		});
 		await findInPortal('form[action="/?/updateAssignment"]');
-		const buttons = Array.from(
-			document.querySelectorAll('button[type]')
-		) as HTMLButtonElement[];
+		const buttons = Array.from(document.querySelectorAll('button[type]')) as HTMLButtonElement[];
 		const submitBtns = buttons.filter((b) => b.type === 'submit');
 		const cancelBtns = buttons.filter((b) => b.type === 'button');
 		expect(submitBtns.length).toBeGreaterThanOrEqual(1);
