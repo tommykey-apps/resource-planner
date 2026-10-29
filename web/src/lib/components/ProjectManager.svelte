@@ -76,9 +76,8 @@
 	} | null>(null);
 
 	// BP B7 / APG Disclosure: 既存値ありなら details default open。 新規作成時は閉じる。
-	const hasDetail = $derived(
-		formDescription.length > 0 || formTagsRaw.trim().length > 0 || formLinks.length > 0
-	);
+	// 初期値は form を開く時に 1 回だけ決め、 以降は bind:open で利用者の開閉を保持する。
+	let detailOpen = $state(false);
 
 	function startCreate() {
 		editing = null;
@@ -88,6 +87,7 @@
 		formTagsRaw = '';
 		formLinks = [];
 		formError = null;
+		detailOpen = false;
 		formOpen = true;
 	}
 
@@ -99,6 +99,8 @@
 		formTagsRaw = (p.tags ?? []).join(', ');
 		formLinks = (p.links ?? []).map(withKey);
 		formError = null;
+		detailOpen =
+			formDescription.length > 0 || formTagsRaw.trim().length > 0 || formLinks.length > 0;
 		formOpen = true;
 	}
 
@@ -255,7 +257,7 @@
 		</label>
 
 		<!-- BP B7 (APG Disclosure): 既存値ありなら default open、 なければ closed。 -->
-		<details open={hasDetail} class="mt-2">
+		<details bind:open={detailOpen} class="mt-2">
 			<summary class="cursor-pointer select-none text-sm font-medium">
 				{t('projects.editDetail')}
 			</summary>
