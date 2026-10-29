@@ -14,7 +14,13 @@
 		"requiredError": "必須",
 		"maxLengthError": "{n} 文字以内",
 		"opensInNewTab": "新しいタブで開く",
-		"count": "{count} 件"
+		"count": "{count} 件",
+		"actions": "操作",
+		"prevPage": "前のページ",
+		"nextPage": "次のページ",
+		"clearFilters": "絞り込みを解除",
+		"filterByName": "名前で絞り込み",
+		"assignmentCount": "アサイン数"
 	},
 	"timeline": {
 		"today": "今日",
@@ -50,7 +56,8 @@
 		"rootOption": "(最上位)",
 		"moveAria": "{name} の親部署を変更",
 		"confirmDelete": "「{name}」を削除しますか?\n子部署と所属メンバーは親の「{parent}」へ移ります。",
-		"confirmDeleteRoot": "「{name}」を削除しますか?\n子部署は最上位に、所属メンバーは未所属になります。"
+		"confirmDeleteRoot": "「{name}」を削除しますか?\n子部署は最上位に、所属メンバーは未所属になります。",
+		"memberCount": "所属メンバー"
 	},
 	"resources": {
 		"add": "+ メンバーを追加",
@@ -59,10 +66,10 @@
 		"createTitle": "メンバーを追加",
 		"empty": "メンバーはいません。",
 		"name": "名前",
-		"assignmentCount": "アサイン {count} 件",
 		"confirmDelete": "「{name}」を削除しますか?",
 		"confirmDeleteWithAssignments": "「{name}」と、関連するアサイン {count} 件を削除しますか?\nこの操作は取り消せません。",
-		"createFailed": "メンバーを追加できませんでした。もう一度お試しください。"
+		"createFailed": "メンバーを追加できませんでした。もう一度お試しください。",
+		"noMatches": "条件に一致するメンバーはいません"
 	},
 	"projects": {
 		"add": "+ 案件を追加",
@@ -72,7 +79,6 @@
 		"empty": "案件はありません。",
 		"name": "案件名",
 		"color": "表示色",
-		"assignmentCount": "アサイン {count} 件",
 		"confirmDelete": "「{name}」を削除しますか?",
 		"confirmDeleteWithAssignments": "「{name}」と、関連するアサイン {count} 件を削除しますか?\nこの操作は取り消せません。",
 		"editDetail": "詳細を編集",
@@ -90,7 +96,9 @@
 		"addLink": "+ リンクを追加",
 		"removeLink": "削除",
 		"viewDetail": "詳細を表示",
-		"detailTitle": "{name} の詳細"
+		"detailTitle": "{name} の詳細",
+		"noMatches": "条件に一致する案件はありません",
+		"filterLabel": "案件名・使用技術で絞り込み"
 	},
 	"nav": {
 		"label": "メインメニュー",

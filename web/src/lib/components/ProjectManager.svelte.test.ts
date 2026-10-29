@@ -1,8 +1,30 @@
 // @vitest-environment jsdom
 import { render, fireEvent, waitFor } from '@testing-library/svelte';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ProjectManager from './ProjectManager.svelte';
-import type { Project } from '$lib/types';
+import type { Assignment, Project } from '$lib/types';
+
+// 一覧の絞り込み・並び替え・ページは URL query に持つので $app/state と $app/navigation を mock する。
+const pageState = vi.hoisted(() => ({ url: new URL('http://localhost/projects') }));
+vi.mock('$app/state', () => ({ page: pageState }));
+const goto = vi.hoisted(() => vi.fn());
+vi.mock('$app/navigation', () => ({ goto }));
+vi.stubGlobal(
+	'ResizeObserver',
+	class {
+		observe() {}
+		disconnect() {}
+	}
+);
+
+function setQuery(query: string) {
+	pageState.url = new URL(`http://localhost/projects${query}`);
+}
+
+beforeEach(() => {
+	goto.mockClear();
+	setQuery('');
+});
 
 describe('ProjectManager (smoke)', () => {
 	// header 標準化: 一覧はダイアログではなく `/projects` ページの本文に直接出す。
@@ -258,5 +280,68 @@ describe('ProjectManager Markdown Write/Preview tabs', () => {
 
 		const textarea2 = form.querySelector('textarea[name="description"]') as HTMLTextAreaElement;
 		expect(textarea2.value).toBe('hello');
+	});
+});
+
+/**
+ * 一覧を表にする (DESIGN.md「一覧は表。 並び替え・絞り込み・件数・ページ送り」)。
+ * ページ送りと URL の往復は ResourceManager / list-table のテストで確認済みなので、
+ * ここでは列と案件固有の絞り込み・並び替えを見る。
+ */
+describe('ProjectManager の表', () => {
+	const PROJECTS: Project[] = [
+		{ id: 'p1', name: '基幹システム刷新', color: '#3460fb', tags: ['Java', 'AWS'] },
+		{ id: 'p2', name: '社内ポータル改修', color: '#c00000', tags: ['Svelte'] }
+	];
+	const asn = (id: string, projectId: string): Assignment => ({
+		id,
+		resourceId: 'r1',
+		projectId,
+		startDate: '2026-01-01',
+		endDateExclusive: '2026-01-02',
+		version: 1
+	});
+	const ASSIGNMENTS = [asn('a1', 'p2'), asn('a2', 'p2'), asn('a3', 'p1')];
+
+	function rowNames(container: HTMLElement): string[] {
+		return Array.from(container.querySelectorAll('tbody th[scope="row"]')).map(
+			(th) => th.textContent?.trim() ?? ''
+		);
+	}
+	const renderTable = () =>
+		render(ProjectManager, { props: { projects: PROJECTS, assignments: ASSIGNMENTS } });
+
+	it('列は 案件名 / 使用技術 / アサイン数 / 操作。 案件名は行見出し', () => {
+		const { getAllByRole, container } = renderTable();
+		expect(getAllByRole('columnheader').map((h) => h.textContent?.trim())).toEqual([
+			'案件名',
+			'使用技術',
+			'アサイン数',
+			'操作'
+		]);
+		expect(rowNames(container)).toEqual(['基幹システム刷新', '社内ポータル改修']);
+	});
+
+	it('使用技術をセルに出す', () => {
+		const { getByRole } = renderTable();
+		expect(getByRole('row', { name: /基幹システム刷新/ }).textContent).toContain('Java, AWS');
+	});
+
+	it('?q= は案件名と使用技術のどちらにも一致させる', () => {
+		setQuery('?q=svelte');
+		const { container } = renderTable();
+		expect(rowNames(container)).toEqual(['社内ポータル改修']);
+	});
+
+	it('?sort=assignments&dir=desc でアサイン数の多い順', () => {
+		setQuery('?sort=assignments&dir=desc');
+		const { container } = renderTable();
+		expect(rowNames(container)).toEqual(['社内ポータル改修', '基幹システム刷新']);
+	});
+
+	it('一致しなければ専用の文言を出す', () => {
+		setQuery('?q=存在しない');
+		const { getByText } = renderTable();
+		expect(getByText('条件に一致する案件はありません')).toBeInTheDocument();
 	});
 });

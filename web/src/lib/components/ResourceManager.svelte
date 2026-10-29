@@ -7,8 +7,17 @@
 	import { confirmDialog } from '$lib/forms/confirm-dialog';
 	import { translateServerError, type ServerErrors } from '$lib/forms/server-error';
 	import { rollbackRecoverState } from '$lib/forms/optimistic-rollback';
-	import { t } from '$lib/i18n/index.svelte';
-	import { flattenDepartmentTree } from '$lib/repository/department-tree';
+	import { localeState, t } from '$lib/i18n/index.svelte';
+	import {
+		flattenDepartmentTree,
+		resourceIdsForDepartmentFilter,
+		DEPARTMENT_FILTER_UNASSIGNED
+	} from '$lib/repository/department-tree';
+	import { nextSort, paginate, sortRows } from '$lib/list-table';
+	import { createListQuery } from '$lib/state/list-query.svelte';
+	import SortHeader from './table/SortHeader.svelte';
+	import PageNavigation from './table/PageNavigation.svelte';
+	import ScrollShadow from './table/ScrollShadow.svelte';
 	import type { Resource, Assignment, Department } from '$lib/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
 
@@ -33,32 +42,6 @@
 	// #239/#240: 部署ツリー (DFS 平坦化、 depth 付き)。 select の選択肢 + グループ見出しの両方に使う。
 	const flatTree = $derived(flattenDepartmentTree(departments));
 
-	/**
-	 * #239/#240: Resource を所属部署でグルーピング。 部署は **ツリー順 (親→子) + depth で indent**、
-	 * 未所属は最後。 空グループは出さない。 未所属 / 不明 (dangling) はすべて未所属バケットへ。
-	 */
-	const groups = $derived.by(() => {
-		const knownDeptIds = new Set(departments.map((d) => d.id));
-		const byDept = new Map<string, Resource[]>();
-		for (const r of resources) {
-			const key = r.departmentId && knownDeptIds.has(r.departmentId) ? r.departmentId : '';
-			const list = byDept.get(key);
-			if (list) list.push(r);
-			else byDept.set(key, [r]);
-		}
-		const ordered: { id: string; label: string; depth: number; resources: Resource[] }[] = [];
-		for (const { dept, depth } of flatTree) {
-			const rs = byDept.get(dept.id);
-			if (rs && rs.length > 0)
-				ordered.push({ id: dept.id, label: dept.name, depth, resources: rs });
-		}
-		const unassigned = byDept.get('');
-		if (unassigned && unassigned.length > 0) {
-			ordered.push({ id: '', label: t('departments.unassigned'), depth: 0, resources: unassigned });
-		}
-		return ordered;
-	});
-
 	/** 各 Resource に紐づく Assignment 数 (cascade delete 時の警告で使う、UC-06) */
 	const assignmentCountByResource = $derived.by(() => {
 		const m = new Map<string, number>();
@@ -67,6 +50,48 @@
 		}
 		return m;
 	});
+
+	const departmentName = $derived(new Map(departments.map((d) => [d.id, d.name])));
+	/** 部署名 (未所属 / 不明な部署 id は「未所属」)。 #239: dangling も未所属として扱う。 */
+	function departmentLabel(r: Resource): string {
+		return (r.departmentId && departmentName.get(r.departmentId)) || t('departments.unassigned');
+	}
+
+	/**
+	 * 一覧の表 (DESIGN.md「一覧は表。 並び替え・絞り込み・件数・ページ送り」)。
+	 * 1行1メンバーにし、 部署はグループ見出しではなく列にする
+	 * (デジタル庁「テーブル」アクセシビリティ: グループ行を挟まず 1行1レコード)。
+	 */
+	const SORT_KEYS = ['name', 'department', 'assignments'] as const;
+	type SortKey = (typeof SORT_KEYS)[number];
+	const list = createListQuery(SORT_KEYS, { q: '', sort: 'name', dir: 'asc', page: 1 }, ['dept']);
+	const query = $derived(list.current);
+	const deptFilter = $derived(list.filter('dept'));
+	const hasFilter = $derived(query.q !== '' || deptFilter !== '');
+
+	const sortValue: Record<SortKey, (r: Resource) => string | number> = {
+		name: (r) => r.name,
+		department: (r) => departmentLabel(r),
+		assignments: (r) => assignmentCountByResource.get(r.id) ?? 0
+	};
+
+	const filtered = $derived.by(() => {
+		const q = query.q.toLowerCase();
+		const deptIds = resourceIdsForDepartmentFilter(departments, resources, deptFilter);
+		return resources.filter(
+			(r) => (!q || r.name.toLowerCase().includes(q)) && (!deptIds || deptIds.has(r.id))
+		);
+	});
+	const sorted = $derived(
+		sortRows(filtered, sortValue[query.sort], query.dir, localeState.current)
+	);
+	const paged = $derived(paginate(sorted, query.page));
+
+	function sortBy(key: SortKey) {
+		list.update({ ...nextSort(query, key), page: 1 });
+	}
+
+	const tableId = $props.id();
 
 	let formOpen = $state(false);
 	let editing = $state<Resource | null>(null);
@@ -185,49 +210,119 @@
 <div class="flex flex-col gap-3">
 	<Button class="self-start" onclick={startCreate}>{t('resources.add')}</Button>
 
-	{#if groups.length === 0}
-		<p class="py-4 text-center text-sm text-muted-foreground">{t('resources.empty')}</p>
+	{#if resources.length === 0}
+		<p class="py-4 text-sm text-muted-foreground">{t('resources.empty')}</p>
 	{:else}
-		<!-- #239: 所属部署でグルーピング (見出し + 各部署の resource)。 未所属は最後。 -->
-		{#each groups as g (g.id)}
-			<p
-				class="px-1 pt-2 text-xs font-semibold text-muted-foreground"
-				style="padding-left: {g.depth * 16}px"
+		<div class="flex flex-wrap items-end gap-3">
+			<div class="flex flex-col gap-1 text-sm">
+				<label for="{tableId}-q">{t('common.filterByName')}</label>
+				<input
+					id="{tableId}-q"
+					type="search"
+					value={query.q}
+					oninput={(e) => list.update({ q: e.currentTarget.value, page: 1 })}
+					class="h-9 w-56 border border-input bg-background px-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+					style="border-radius: calc(var(--radius) * 0.6)"
+				/>
+			</div>
+			<div class="flex flex-col gap-1 text-sm">
+				<label for="{tableId}-dept">{t('departments.field')}</label>
+				<select
+					id="{tableId}-dept"
+					value={deptFilter}
+					onchange={(e) => list.setFilter('dept', e.currentTarget.value)}
+					class="h-9 border border-input bg-background px-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+					style="border-radius: calc(var(--radius) * 0.6)"
+				>
+					<option value="">{t('departments.allOption')}</option>
+					<option value={DEPARTMENT_FILTER_UNASSIGNED}>{t('departments.unassigned')}</option>
+					{#each flatTree as { dept, depth } (dept.id)}
+						<option value={dept.id}>{'\u00A0\u00A0'.repeat(depth)}{dept.name}</option>
+					{/each}
+				</select>
+			</div>
+			<span class="pb-2 text-sm text-muted-foreground" aria-live="polite"
+				>{t('common.count', { count: filtered.length })}</span
 			>
-				{g.label}
-			</p>
-			<ul class="divide-y divide-border border border-border">
-				{#each g.resources as r (r.id)}
-					{@const count = assignmentCountByResource.get(r.id) ?? 0}
-					<li class="flex items-center justify-between gap-2 px-3 py-2">
-						<span class="text-sm">
-							{r.name}
-							<span class="ml-1 text-xs text-muted-foreground"
-								>{t('resources.assignmentCount', { count })}</span
-							>
-						</span>
-						<div class="flex gap-1">
-							<Button size="xs" variant="outline" onclick={() => startEdit(r)}
-								>{t('common.edit')}</Button
-							>
-							<form
-								method="POST"
-								action="/?/deleteResource"
-								use:enhance={makeDeleteSubmit({
-									name: r.name,
-									count
-								})}
-							>
-								<input type="hidden" name="id" value={r.id} />
-								<Button size="xs" variant="destructive" type="submit">
-									{t('common.delete')}
-								</Button>
-							</form>
-						</div>
-					</li>
-				{/each}
-			</ul>
-		{/each}
+			{#if hasFilter}
+				<button
+					type="button"
+					class="cursor-pointer pb-2 text-sm underline underline-offset-4"
+					onclick={() => list.clearFilters()}
+				>
+					{t('common.clearFilters')}
+				</button>
+			{/if}
+		</div>
+
+		{#if filtered.length === 0}
+			<p class="py-4 text-sm text-muted-foreground">{t('resources.noMatches')}</p>
+		{:else}
+			<ScrollShadow labelledby="{tableId}-caption">
+				<table class="w-full border-collapse text-sm">
+					<caption id="{tableId}-caption" class="sr-only">{t('nav.resourcesLink')}</caption>
+					<thead class="border-b-2 border-foreground">
+						<tr>
+							<SortHeader
+								label={t('resources.name')}
+								active={query.sort === 'name'}
+								dir={query.dir}
+								onSort={() => sortBy('name')}
+							/>
+							<SortHeader
+								label={t('departments.field')}
+								active={query.sort === 'department'}
+								dir={query.dir}
+								onSort={() => sortBy('department')}
+							/>
+							<SortHeader
+								label={t('common.assignmentCount')}
+								active={query.sort === 'assignments'}
+								dir={query.dir}
+								onSort={() => sortBy('assignments')}
+								align="right"
+							/>
+							<th scope="col" class="px-3 py-2 text-right font-bold">{t('common.actions')}</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each paged.items as r (r.id)}
+							{@const count = assignmentCountByResource.get(r.id) ?? 0}
+							<tr class="border-b border-border align-top">
+								<th scope="row" class="px-3 py-2 text-left font-normal whitespace-nowrap">
+									{r.name}
+								</th>
+								<td class="px-3 py-2 whitespace-nowrap">{departmentLabel(r)}</td>
+								<td class="px-3 py-2 text-right tabular-nums">{count}</td>
+								<td class="px-3 py-2">
+									<div class="flex justify-end gap-1">
+										<Button size="xs" variant="outline" onclick={() => startEdit(r)}
+											>{t('common.edit')}</Button
+										>
+										<form
+											method="POST"
+											action="/?/deleteResource"
+											use:enhance={makeDeleteSubmit({ name: r.name, count })}
+										>
+											<input type="hidden" name="id" value={r.id} />
+											<Button size="xs" variant="destructive" type="submit">
+												{t('common.delete')}
+											</Button>
+										</form>
+									</div>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</ScrollShadow>
+			<PageNavigation
+				page={paged.page}
+				pageCount={paged.pageCount}
+				hrefFor={list.hrefFor}
+				label={t('nav.resourcesLink')}
+			/>
+		{/if}
 	{/if}
 </div>
 

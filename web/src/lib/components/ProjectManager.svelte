@@ -8,7 +8,12 @@
 	import { confirmDialog } from '$lib/forms/confirm-dialog';
 	import { mapServerErrors, type ServerErrors } from '$lib/forms/server-error';
 	import { renderMarkdown } from '$lib/markdown';
-	import { t } from '$lib/i18n/index.svelte';
+	import { localeState, t } from '$lib/i18n/index.svelte';
+	import { nextSort, paginate, sortRows } from '$lib/list-table';
+	import { createListQuery } from '$lib/state/list-query.svelte';
+	import SortHeader from './table/SortHeader.svelte';
+	import PageNavigation from './table/PageNavigation.svelte';
+	import ScrollShadow from './table/ScrollShadow.svelte';
 	import type { Project, ProjectLink, Assignment } from '$lib/types';
 	import {
 		PROJECT_DESCRIPTION_MAX_LENGTH,
@@ -55,6 +60,40 @@
 	});
 
 	const DEFAULT_COLOR = '#4D72F3';
+
+	/**
+	 * 一覧の表 (DESIGN.md「一覧は表。 並び替え・絞り込み・件数・ページ送り」)。
+	 * 絞り込みは案件名と使用技術の部分一致 (技術で案件を探す用途)。
+	 */
+	const SORT_KEYS = ['name', 'assignments'] as const;
+	type SortKey = (typeof SORT_KEYS)[number];
+	const list = createListQuery(SORT_KEYS, { q: '', sort: 'name', dir: 'asc', page: 1 });
+	const query = $derived(list.current);
+
+	const sortValue: Record<SortKey, (p: Project) => string | number> = {
+		name: (p) => p.name,
+		assignments: (p) => assignmentCountByProject.get(p.id) ?? 0
+	};
+
+	const filtered = $derived.by(() => {
+		const q = query.q.toLowerCase();
+		if (!q) return projects;
+		return projects.filter(
+			(p) =>
+				p.name.toLowerCase().includes(q) ||
+				(p.tags ?? []).some((tag) => tag.toLowerCase().includes(q))
+		);
+	});
+	const sorted = $derived(
+		sortRows(filtered, sortValue[query.sort], query.dir, localeState.current)
+	);
+	const paged = $derived(paginate(sorted, query.page));
+
+	function sortBy(key: SortKey) {
+		list.update({ ...nextSort(query, key), page: 1 });
+	}
+
+	const tableId = $props.id();
 
 	let formOpen = $state(false);
 	let editing = $state<Project | null>(null);
@@ -164,41 +203,104 @@
 	<Button class="self-start" onclick={startCreate}>{t('projects.add')}</Button>
 
 	{#if projects.length === 0}
-		<p class="py-4 text-center text-sm text-muted-foreground">{t('projects.empty')}</p>
+		<p class="py-4 text-sm text-muted-foreground">{t('projects.empty')}</p>
 	{:else}
-		<ul class="divide-y divide-border border border-border">
-			{#each projects as p (p.id)}
-				{@const count = assignmentCountByProject.get(p.id) ?? 0}
-				<li class="flex items-center justify-between gap-2 px-3 py-2">
-					<span class="flex items-center gap-2 text-sm">
-						<span
-							class="inline-block h-4 w-4 border border-black/10"
-							style="background-color: {p.color}; border-radius: calc(var(--radius) * 0.4)"
-							aria-hidden="true"
-						></span>
-						{p.name}
-						<span class="text-xs text-muted-foreground"
-							>{t('projects.assignmentCount', { count })}</span
-						>
-					</span>
-					<div class="flex gap-1">
-						<Button size="xs" variant="outline" onclick={() => startEdit(p)}
-							>{t('common.edit')}</Button
-						>
-						<form
-							method="POST"
-							action="/?/deleteProject"
-							use:enhance={makeDeleteSubmit({ name: p.name, count })}
-						>
-							<input type="hidden" name="id" value={p.id} />
-							<Button size="xs" variant="destructive" type="submit">
-								{t('common.delete')}
-							</Button>
-						</form>
-					</div>
-				</li>
-			{/each}
-		</ul>
+		<div class="flex flex-wrap items-end gap-3">
+			<div class="flex flex-col gap-1 text-sm">
+				<label for="{tableId}-q">{t('projects.filterLabel')}</label>
+				<input
+					id="{tableId}-q"
+					type="search"
+					value={query.q}
+					oninput={(e) => list.update({ q: e.currentTarget.value, page: 1 })}
+					class="h-9 w-56 border border-input bg-background px-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+					style="border-radius: calc(var(--radius) * 0.6)"
+				/>
+			</div>
+			<span class="pb-2 text-sm text-muted-foreground" aria-live="polite"
+				>{t('common.count', { count: filtered.length })}</span
+			>
+			{#if query.q}
+				<button
+					type="button"
+					class="cursor-pointer pb-2 text-sm underline underline-offset-4"
+					onclick={() => list.clearFilters()}
+				>
+					{t('common.clearFilters')}
+				</button>
+			{/if}
+		</div>
+
+		{#if filtered.length === 0}
+			<p class="py-4 text-sm text-muted-foreground">{t('projects.noMatches')}</p>
+		{:else}
+			<ScrollShadow labelledby="{tableId}-caption">
+				<table class="w-full border-collapse text-sm">
+					<caption id="{tableId}-caption" class="sr-only">{t('nav.projectsLink')}</caption>
+					<thead class="border-b-2 border-foreground">
+						<tr>
+							<SortHeader
+								label={t('projects.name')}
+								active={query.sort === 'name'}
+								dir={query.dir}
+								onSort={() => sortBy('name')}
+							/>
+							<th scope="col" class="px-3 py-2 text-left font-bold">{t('projects.tagsLabel')}</th>
+							<SortHeader
+								label={t('common.assignmentCount')}
+								active={query.sort === 'assignments'}
+								dir={query.dir}
+								onSort={() => sortBy('assignments')}
+								align="right"
+							/>
+							<th scope="col" class="px-3 py-2 text-right font-bold">{t('common.actions')}</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each paged.items as p (p.id)}
+							{@const count = assignmentCountByProject.get(p.id) ?? 0}
+							<tr class="border-b border-border align-top">
+								<th scope="row" class="px-3 py-2 text-left font-normal whitespace-nowrap">
+									<span class="inline-flex items-center gap-2">
+										<span
+											class="inline-block h-4 w-4 shrink-0 border border-black/10"
+											style="background-color: {p.color}; border-radius: calc(var(--radius) * 0.4)"
+											aria-hidden="true"
+										></span>
+										{p.name}
+									</span>
+								</th>
+								<td class="px-3 py-2">{(p.tags ?? []).join(', ')}</td>
+								<td class="px-3 py-2 text-right tabular-nums">{count}</td>
+								<td class="px-3 py-2">
+									<div class="flex justify-end gap-1">
+										<Button size="xs" variant="outline" onclick={() => startEdit(p)}
+											>{t('common.edit')}</Button
+										>
+										<form
+											method="POST"
+											action="/?/deleteProject"
+											use:enhance={makeDeleteSubmit({ name: p.name, count })}
+										>
+											<input type="hidden" name="id" value={p.id} />
+											<Button size="xs" variant="destructive" type="submit">
+												{t('common.delete')}
+											</Button>
+										</form>
+									</div>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</ScrollShadow>
+			<PageNavigation
+				page={paged.page}
+				pageCount={paged.pageCount}
+				hrefFor={list.hrefFor}
+				label={t('nav.projectsLink')}
+			/>
+		{/if}
 	{/if}
 </div>
 

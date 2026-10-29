@@ -33,9 +33,6 @@
 <main class="mx-auto max-w-[1200px] px-4 py-6">
 	<div class="mb-4 flex items-baseline gap-3">
 		<h1 class="m-0 text-xl font-semibold">{t('nav.resourcesLink')}</h1>
-		<span class="text-sm text-muted-foreground"
-			>{t('common.count', { count: resources.length })}</span
-		>
 	</div>
 	<ResourceManager
 		{resources}

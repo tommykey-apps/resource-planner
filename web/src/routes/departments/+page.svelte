@@ -17,5 +17,5 @@
 			>{t('common.count', { count: data.departments.length })}</span
 		>
 	</div>
-	<DepartmentManager departments={data.departments} />
+	<DepartmentManager departments={data.departments} resources={data.resources} />
 </main>

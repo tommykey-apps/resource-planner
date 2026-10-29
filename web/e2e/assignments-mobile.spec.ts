@@ -32,16 +32,16 @@ async function createOneAssignment(page: import('@playwright/test').Page, suffix
 	// Resource 作成
 	await openSection(page, 'People');
 	await page.getByRole('button', { name: /\+ Add person/ }).click();
-	await page.getByLabel('Name').fill(`r-${suffix}`);
+	await page.getByLabel('Name', { exact: true }).fill(`r-${suffix}`);
 	await page.getByRole('button', { name: /^Create$/ }).click();
-	await expect(page.locator('li', { hasText: `r-${suffix}` })).toBeVisible();
+	await expect(page.locator('tr', { hasText: `r-${suffix}` })).toBeVisible();
 
 	// Project 作成
 	await openSection(page, 'Projects');
 	await page.getByRole('button', { name: /\+ Add project/ }).click();
 	await page.getByLabel('Project name').fill(`p-${suffix}`);
 	await page.getByRole('button', { name: /^Create$/ }).click();
-	await expect(page.locator('li', { hasText: `p-${suffix}` })).toBeVisible();
+	await expect(page.locator('tr', { hasText: `p-${suffix}` })).toBeVisible();
 
 	// Assignment 作成 (AssignmentCreator は label でなく select/date input、 デフォルト値で submit)
 	await openSection(page, 'Timeline');
