@@ -30,7 +30,7 @@ await esbuild.build({
 	sourcemap: 'inline',
 	alias: {
 		// SvelteKit の $lib エイリアスを esbuild 用に手動再現
-		$lib: resolve(ROOT, 'src/lib'),
+		$lib: resolve(ROOT, 'src/lib')
 		// `$app/...` 等は本 handler では使わないが、 もし import 経路に混ざったら build を fail させる
 	},
 	external: [

@@ -45,7 +45,9 @@
 </script>
 
 <header class="sticky top-0 z-40 border-b border-border bg-background">
-	<div class="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-2 gap-y-2 px-4 py-2 md:gap-x-6">
+	<div
+		class="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-2 gap-y-2 px-4 py-2 md:gap-x-6"
+	>
 		<a href="/" class="flex shrink-0 items-center gap-2 no-underline">
 			<img src="/header-icon.png" alt="" width="32" height="32" class="h-8 w-8 shrink-0" />
 			<span class="text-base font-semibold tracking-tight sm:text-lg">{m.app_title()}</span>

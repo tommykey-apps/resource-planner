@@ -21,9 +21,7 @@ const HARD_BOUNCE: SesNotification = {
 	bounce: {
 		bounceType: 'Permanent',
 		bounceSubType: 'General',
-		bouncedRecipients: [
-			{ emailAddress: 'bounce@example.com', action: 'failed', status: '5.1.1' }
-		],
+		bouncedRecipients: [{ emailAddress: 'bounce@example.com', action: 'failed', status: '5.1.1' }],
 		timestamp: '2026-05-12T10:00:00Z',
 		feedbackId: 'fb-1'
 	}
@@ -89,10 +87,7 @@ describe('selectSuppressionsFromNotification (#134)', () => {
 			notificationType: 'Bounce',
 			bounce: {
 				bounceType: 'Permanent',
-				bouncedRecipients: [
-					{ emailAddress: 'a@example.com' },
-					{ emailAddress: 'b@example.com' }
-				],
+				bouncedRecipients: [{ emailAddress: 'a@example.com' }, { emailAddress: 'b@example.com' }],
 				timestamp: '2026-05-12T10:00:00Z'
 			}
 		});

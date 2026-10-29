@@ -53,9 +53,7 @@ export function siblingNameConflict(
 	name: string,
 	excludeId?: string
 ): boolean {
-	return departments.some(
-		(d) => d.parentId === parentId && d.name === name && d.id !== excludeId
-	);
+	return departments.some((d) => d.parentId === parentId && d.name === name && d.id !== excludeId);
 }
 
 /**

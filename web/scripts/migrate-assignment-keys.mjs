@@ -15,11 +15,7 @@
  * 使い方: node scripts/migrate-assignment-keys.mjs [--rollback] [--dry-run] [--team team_default]
  */
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import {
-	DynamoDBDocumentClient,
-	QueryCommand,
-	TransactWriteCommand
-} from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, QueryCommand, TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
 
 /** `ASN#{startDate}#{id}` (旧形式)。 */
 const LEGACY_SK = /^ASN#\d{4}-\d{2}-\d{2}#/;
@@ -93,7 +89,14 @@ async function queryAssignments(ddb, table, teamId) {
  * 移行を実行する (dry-run なら書き込みなし)。
  * @param {{ ddb: DynamoDBDocumentClient, table: string, teamId: string, rollback?: boolean, dryRun?: boolean, log?: (msg: string) => void }} opts
  */
-export async function runMigration({ ddb, table, teamId, rollback = false, dryRun = false, log = console.log }) {
+export async function runMigration({
+	ddb,
+	table,
+	teamId,
+	rollback = false,
+	dryRun = false,
+	log = console.log
+}) {
 	const items = await queryAssignments(ddb, table, teamId);
 	const plan = planAssignmentKeyMigration(items, { rollback });
 

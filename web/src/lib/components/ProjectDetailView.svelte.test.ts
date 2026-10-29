@@ -47,8 +47,9 @@ describe('ProjectDetailView (PR-N4, refs #187)', () => {
 	it('renders tags as <li> chips', async () => {
 		render(ProjectDetailView, { project: FULL, open: true });
 		const dialog = await findInPortal('[role="dialog"]');
-		const tagItems = Array.from(dialog.querySelectorAll('li'))
-			.filter((li) => /TypeScript|AWS/.test(li.textContent ?? ''));
+		const tagItems = Array.from(dialog.querySelectorAll('li')).filter((li) =>
+			/TypeScript|AWS/.test(li.textContent ?? '')
+		);
 		expect(tagItems.length).toBeGreaterThanOrEqual(2);
 	});
 

@@ -47,7 +47,10 @@ function toExclusivePayload<T extends { startDate: string; endDate: string }>(
  * 楽観ロックの expectedVersion (ADR 0012)。 client が read した version を送る。
  * form は FormData (string)、 API は JSON (number) で来るため `z.coerce.number()` で両対応。
  */
-const expectedVersion = z.coerce.number('invalidVersion').int('invalidVersion').min(0, 'invalidVersion');
+const expectedVersion = z.coerce
+	.number('invalidVersion')
+	.int('invalidVersion')
+	.min(0, 'invalidVersion');
 
 export const assignmentCreateSchema = z
 	.object(assignmentBaseShape)

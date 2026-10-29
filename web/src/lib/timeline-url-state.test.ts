@@ -13,9 +13,7 @@ import {
  */
 describe('parseTimelineParams', () => {
 	it('returns Date and ZoomLevel when both d and z are valid', () => {
-		const { viewportStart, zoom } = parseTimelineParams(
-			new URLSearchParams('d=2026-05-11&z=week')
-		);
+		const { viewportStart, zoom } = parseTimelineParams(new URLSearchParams('d=2026-05-11&z=week'));
 		expect(viewportStart?.getFullYear()).toBe(2026);
 		expect(viewportStart?.getMonth()).toBe(4); // May (0-indexed)
 		expect(viewportStart?.getDate()).toBe(11);

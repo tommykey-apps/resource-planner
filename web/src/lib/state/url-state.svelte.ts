@@ -24,10 +24,7 @@
  */
 import { goto } from '$app/navigation';
 
-export function syncStateToUrl<T>(
-	getState: () => T,
-	apply: (url: URL, state: T) => URL
-): void {
+export function syncStateToUrl<T>(getState: () => T, apply: (url: URL, state: T) => URL): void {
 	$effect(() => {
 		if (typeof window === 'undefined') return;
 		const next = apply(new URL(window.location.href), getState());

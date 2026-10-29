@@ -1,15 +1,8 @@
 {
 	"$schema": "https://unpkg.com/knip@5/schema.json",
-	"entry": [
-		"src/auth.ts",
-		"src/lambda/*.ts",
-		"src/routes/**/+*.{ts,svelte}",
-		"e2e/**/*.ts"
-	],
+	"entry": ["src/auth.ts", "src/lambda/*.ts", "src/routes/**/+*.{ts,svelte}", "e2e/**/*.ts"],
 	"project": ["src/**/*.{ts,svelte}"],
-	"ignore": [
-		"src/lib/index.ts"
-	],
+	"ignore": ["src/lib/index.ts"],
 	"ignoreDependencies": [
 		"@fontsource-variable/jetbrains-mono",
 		"tw-animate-css",

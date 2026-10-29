@@ -67,9 +67,7 @@ describe('assertSafeDbEnv', () => {
 	});
 
 	it('allows IPv6 [::1] endpoint when not in Lambda (#143)', () => {
-		expect(() =>
-			assertSafeDbEnv({ isLambda: false, endpoint: 'http://[::1]:8000' })
-		).not.toThrow();
+		expect(() => assertSafeDbEnv({ isLambda: false, endpoint: 'http://[::1]:8000' })).not.toThrow();
 	});
 
 	it('allows any 127.x.x.x loopback (#143)', () => {
@@ -115,9 +113,7 @@ describe('assertSafeDbEnv', () => {
 	});
 
 	it('rejects non-http(s) schemes (#143、 file:// / data: 等 bypass 防止)', () => {
-		expect(() =>
-			assertSafeDbEnv({ isLambda: false, endpoint: 'file:///localhost' })
-		).toThrow();
+		expect(() => assertSafeDbEnv({ isLambda: false, endpoint: 'file:///localhost' })).toThrow();
 	});
 
 	it('rejects malformed URL (parse failure)', () => {

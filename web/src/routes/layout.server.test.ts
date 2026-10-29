@@ -9,7 +9,9 @@ vi.mock('$lib/repository', () => ({
 
 const { load } = await import('./+layout.server');
 
-function makeEvent(opts: { user?: { id: string; email?: string; name?: string }; pathname?: string } = {}) {
+function makeEvent(
+	opts: { user?: { id: string; email?: string; name?: string }; pathname?: string } = {}
+) {
 	return {
 		url: { pathname: opts.pathname ?? '/' },
 		locals: {

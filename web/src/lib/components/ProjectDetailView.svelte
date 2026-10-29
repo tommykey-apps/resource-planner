@@ -59,7 +59,7 @@
 							href={link.url}
 							target="_blank"
 							rel="noopener noreferrer"
-							class="text-primary inline-flex items-center gap-1 underline-offset-4 hover:underline"
+							class="inline-flex items-center gap-1 text-primary underline-offset-4 hover:underline"
 						>
 							{link.label || link.url}
 							<ArrowSquareOut size={14} aria-hidden="true" />
