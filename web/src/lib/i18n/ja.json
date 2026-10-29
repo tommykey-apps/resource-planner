@@ -20,7 +20,15 @@
 		"nextPage": "次のページ",
 		"clearFilters": "絞り込みを解除",
 		"filterByName": "名前で絞り込み",
-		"assignmentCount": "アサイン数"
+		"assignmentCount": "アサイン数",
+		"selectRows": "行を選択",
+		"selectAllRows": "すべての行を選択する",
+		"selectedCount": "{count} 件を選択中",
+		"clearSelection": "選択を解除",
+		"bulkActions": "一括操作",
+		"deleteSelected": "選択した行を削除",
+		"change": "変更",
+		"bulkDeleteFailed": "{count} 件を削除できませんでした。再読み込みして確認してください"
 	},
 	"timeline": {
 		"today": "今日",
@@ -69,7 +77,13 @@
 		"confirmDelete": "「{name}」を削除しますか?",
 		"confirmDeleteWithAssignments": "「{name}」と、関連するアサイン {count} 件を削除しますか?\nこの操作は取り消せません。",
 		"createFailed": "メンバーを追加できませんでした。もう一度お試しください。",
-		"noMatches": "条件に一致するメンバーはいません"
+		"noMatches": "条件に一致するメンバーはいません",
+		"moveSelected": "所属部署を変更",
+		"confirmBulkDelete": "選択したメンバー {count} 名を削除しますか?\nこの操作は取り消せません。",
+		"confirmBulkDeleteWithAssignments": "選択したメンバー {count} 名と、関連するアサイン {assignments} 件を削除しますか?\nこの操作は取り消せません。",
+		"bulkDeleted": "メンバー {count} 名を削除しました",
+		"bulkMoved": "メンバー {count} 名の所属部署を変更しました",
+		"bulkMoveFailed": "所属部署を変更できませんでした。再読み込みしてもう一度お試しください"
 	},
 	"projects": {
 		"add": "+ 案件を追加",
@@ -98,7 +112,10 @@
 		"viewDetail": "詳細を表示",
 		"detailTitle": "{name} の詳細",
 		"noMatches": "条件に一致する案件はありません",
-		"filterLabel": "案件名・使用技術で絞り込み"
+		"filterLabel": "案件名・使用技術で絞り込み",
+		"confirmBulkDelete": "選択した {count} 件の案件を削除しますか?\nこの操作は取り消せません。",
+		"confirmBulkDeleteWithAssignments": "選択した {count} 件の案件と、関連するアサイン {assignments} 件を削除しますか?\nこの操作は取り消せません。",
+		"bulkDeleted": "{count} 件の案件を削除しました"
 	},
 	"nav": {
 		"label": "メインメニュー",

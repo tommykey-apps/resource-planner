@@ -8,12 +8,27 @@ import { ddb, TABLE } from '$lib/db/client';
 import { newId } from '$lib/id';
 import { pk, resourceSk, SK_PREFIX } from './keys';
 import { queryRelatedAssignmentSk } from './assignment';
+import { deleteEach, type BulkDeleteResult } from './bulk';
 import type { Resource } from '$lib/types';
 import type { ResourceCreateInput, ResourceUpdateInput } from '$lib/schemas';
 
 export const TRANSACT_MAX_ITEMS = 100;
 
-export async function createResource(teamId: string, input: ResourceCreateInput): Promise<Resource> {
+/**
+ * 一括操作の対象に存在しないメンバーが混ざっていた (他の利用者が先に削除した等)。
+ * トランザクション全体が取り消されているので、 誰も変わっていない。 action 層が 409 に map する。
+ */
+export class BulkTargetMissingError extends Error {
+	constructor() {
+		super('bulk target missing');
+		this.name = 'BulkTargetMissingError';
+	}
+}
+
+export async function createResource(
+	teamId: string,
+	input: ResourceCreateInput
+): Promise<Resource> {
 	const id = newId();
 	// #239: 未所属 (departmentId なし) は attribute を保存しない (REMOVE semantics、 Project と同規約)。
 	const item: Resource = {
@@ -44,7 +59,8 @@ export async function updateResource(teamId: string, input: ResourceUpdateInput)
 		removes.push('departmentId');
 	}
 
-	const expr = `SET ${sets.join(', ')}` + (removes.length > 0 ? ` REMOVE ${removes.join(', ')}` : '');
+	const expr =
+		`SET ${sets.join(', ')}` + (removes.length > 0 ? ` REMOVE ${removes.join(', ')}` : '');
 
 	await ddb.send(
 		new UpdateCommand({
@@ -125,4 +141,54 @@ export async function queryResourceSkByDepartment(
 		lastKey = out.LastEvaluatedKey;
 	} while (lastKey);
 	return skList;
+}
+
+/** 選んだメンバーをまとめて削除する (1 人ごとに原子的な cascade、 詳細は ./bulk.ts)。 */
+export async function deleteResources(teamId: string, ids: string[]): Promise<BulkDeleteResult> {
+	return deleteEach(ids, (id) => deleteResource(teamId, id));
+}
+
+/**
+ * 選んだメンバーの所属部署をまとめて変える。 1 回の TransactWriteItems で全員を更新し、
+ * 1 人でも存在しなければ (ConditionExpression) 全体を取り消す (全員変わるか、 誰も変わらない)。
+ * `departmentId` が undefined なら未所属 (attribute REMOVE、 updateResource と同規約)。
+ */
+export async function moveResourcesToDepartment(
+	teamId: string,
+	ids: string[],
+	departmentId: string | undefined
+): Promise<void> {
+	if (ids.length > TRANSACT_MAX_ITEMS) {
+		throw new Error(`bulk move exceeds ${TRANSACT_MAX_ITEMS} items (ids: ${ids.length})`);
+	}
+	try {
+		await sendBulkMove(teamId, ids, departmentId);
+	} catch (e) {
+		// assignment.ts / team.ts と同じ name 判定 (instanceof は SDK の re-export で不安定)。
+		// ConditionExpression の失敗は TransactionCanceledException として返る。
+		if ((e as { name?: string }).name === 'TransactionCanceledException') {
+			throw new BulkTargetMissingError();
+		}
+		throw e;
+	}
+}
+
+function sendBulkMove(teamId: string, ids: string[], departmentId: string | undefined) {
+	return ddb.send(
+		new TransactWriteCommand({
+			TransactItems: ids.map((id) => ({
+				Update: {
+					TableName: TABLE,
+					Key: { pk: pk(teamId), sk: resourceSk(id) },
+					...(departmentId
+						? {
+								UpdateExpression: 'SET departmentId = :departmentId',
+								ExpressionAttributeValues: { ':departmentId': departmentId }
+							}
+						: { UpdateExpression: 'REMOVE departmentId' }),
+					ConditionExpression: 'attribute_exists(sk)'
+				}
+			}))
+		})
+	);
 }

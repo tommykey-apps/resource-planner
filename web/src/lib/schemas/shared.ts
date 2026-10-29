@@ -29,3 +29,16 @@ export const colorString = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'invalidColorFo
 export const deleteByIdSchema = z.object({
 	id: z.string({ error: 'required' }).min(1, 'required')
 });
+
+// ── 一括操作 (表で選んだ行) ─────────────────────────────────────────
+// 上限は DynamoDB TransactWriteItems の 100 項目。 部署の一括変更を 1 トランザクション
+// (原子的) で行うため、 これを超える id は受け付けない (1 ページは 50 行なので通常は届かない)。
+export const BULK_MAX_IDS = 100;
+
+export const bulkIdsSchema = z.object({
+	ids: z
+		.array(z.string().min(1, 'required'))
+		.min(1, 'required')
+		.max(BULK_MAX_IDS, 'tooMany')
+		.transform((ids) => [...new Set(ids)])
+});

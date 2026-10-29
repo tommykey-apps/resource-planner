@@ -15,14 +15,17 @@ import {
 	departmentCreateSchema,
 	departmentMoveSchema,
 	departmentRenameSchema,
+	bulkIdsSchema,
 	deleteByIdSchema,
 	projectCreateSchema,
 	projectUpdateSchema,
 	resourceCreateSchema,
-	resourceUpdateSchema
+	resourceUpdateSchema,
+	resourcesMoveSchema
 } from '$lib/schemas';
 import {
 	AssignmentVersionConflictError,
+	BulkTargetMissingError,
 	DepartmentTreeError,
 	createAssignment,
 	createDepartment,
@@ -31,7 +34,10 @@ import {
 	deleteAssignment,
 	deleteDepartment,
 	deleteProject,
+	deleteProjects,
 	deleteResource,
+	deleteResources,
+	moveResourcesToDepartment,
 	moveDepartment,
 	renameDepartment,
 	updateAssignment,
@@ -48,6 +54,19 @@ function departmentTreeFail(action: string, e: DepartmentTreeError) {
 	// nameConflict は name フィールド、 cycle / parentNotFound / notFound は parentId フィールドに紐づける。
 	const field = e.code === 'nameConflict' ? 'name' : 'parentId';
 	return fail(400, { action, errors: { [field]: { code: e.code, field } } });
+}
+
+/** 一括操作の form は ids を繰り返して送るので getAll で読む。 */
+function readBulkInput(formData: FormData): Record<string, unknown> {
+	return { ...Object.fromEntries(formData), ids: formData.getAll('ids') };
+}
+
+/**
+ * 一括削除の結果を返す。 1 件ごとに原子的に削除するので、 一部失敗しても成功分は消えている。
+ * 失敗があれば fail(500) にして client が件数を利用者に伝えられるようにする。
+ */
+function bulkDeleteResult(result: { deleted: string[]; failed: string[] }) {
+	return result.failed.length > 0 ? fail(500, result) : result;
 }
 
 export const actions: Actions = {
@@ -74,6 +93,32 @@ export const actions: Actions = {
 		}
 	}),
 
+	deleteResources: makeFormAction({
+		action: 'deleteResources',
+		schema: bulkIdsSchema,
+		readInput: readBulkInput,
+		run: async (session, parsed) =>
+			bulkDeleteResult(await deleteResources(session.teamId, parsed.ids))
+	}),
+
+	moveResources: makeFormAction({
+		action: 'moveResources',
+		schema: resourcesMoveSchema,
+		readInput: readBulkInput,
+		run: async (session, parsed) => {
+			try {
+				await moveResourcesToDepartment(session.teamId, parsed.ids, parsed.departmentId);
+			} catch (e) {
+				// 削除済みのメンバーが混ざっていた。 トランザクションごと取り消されて誰も変わっていない。
+				if (e instanceof BulkTargetMissingError) {
+					return fail(409, { errors: { ids: { code: 'notFound', field: 'ids' } } });
+				}
+				throw e;
+			}
+			return { moved: parsed.ids.length };
+		}
+	}),
+
 	createProject: makeFormAction({
 		action: 'createProject',
 		schema: projectCreateSchema,
@@ -96,6 +141,14 @@ export const actions: Actions = {
 		run: async (session, parsed) => {
 			await deleteProject(session.teamId, parsed.id);
 		}
+	}),
+
+	deleteProjects: makeFormAction({
+		action: 'deleteProjects',
+		schema: bulkIdsSchema,
+		readInput: readBulkInput,
+		run: async (session, parsed) =>
+			bulkDeleteResult(await deleteProjects(session.teamId, parsed.ids))
 	}),
 
 	// ADR 0013: 部署作成。 兄弟名一意 / 親存在 (#240) を DepartmentTreeError → fail(400) に map する

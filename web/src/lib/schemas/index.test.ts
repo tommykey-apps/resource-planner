@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+	BULK_MAX_IDS,
+	bulkIdsSchema,
+	resourcesMoveSchema,
 	assignmentApiUpdateSchema,
 	assignmentCreateSchema,
 	assignmentUpdateSchema,
@@ -346,7 +349,12 @@ describe('error message contract — i18n codes (#139)', () => {
 		'endBeforeStart'
 	]);
 
-	function collect(schema: { safeParse: (v: unknown) => { success: boolean; error?: { issues: { message: string }[] } } }, input: unknown): string[] {
+	function collect(
+		schema: {
+			safeParse: (v: unknown) => { success: boolean; error?: { issues: { message: string }[] } };
+		},
+		input: unknown
+	): string[] {
 		const r = schema.safeParse(input);
 		if (r.success || !r.error) return [];
 		return r.error.issues.map((i) => i.message);
@@ -390,7 +398,9 @@ describe('error message contract — i18n codes (#139)', () => {
 
 	it('projectCreateSchema: too many tags → "tooMany" (#187)', () => {
 		const tags = Array.from({ length: 21 }, (_, i) => `t${i}`).join(',');
-		expect(collect(projectCreateSchema, { name: 'P', color: '#abcdef', tags })).toContain('tooMany');
+		expect(collect(projectCreateSchema, { name: 'P', color: '#abcdef', tags })).toContain(
+			'tooMany'
+		);
 	});
 
 	it('projectCreateSchema: bad link url → "invalidUrl" (#187)', () => {
@@ -480,5 +490,41 @@ describe('assignmentApiUpdateSchema', () => {
 		expect(assignmentApiUpdateSchema.safeParse({ ...valid, startDate: 'yesterday' }).success).toBe(
 			false
 		);
+	});
+});
+
+/**
+ * 一括操作 (表で選んだ行): ids は 1 件以上。 上限は DynamoDB TransactWriteItems の 100 項目
+ * (部署の一括変更を 1 トランザクションで行うため)。
+ */
+describe('bulkIdsSchema / resourcesMoveSchema', () => {
+	it('ids を配列で受け取る', () => {
+		expect(bulkIdsSchema.parse({ ids: ['a', 'b'] })).toEqual({ ids: ['a', 'b'] });
+	});
+
+	it('ids が空なら required', () => {
+		const r = bulkIdsSchema.safeParse({ ids: [] });
+		expect(r.success).toBe(false);
+		expect(r.error?.issues[0].message).toBe('required');
+	});
+
+	it('ids が 100 件を超えたら tooMany', () => {
+		const ids = Array.from({ length: BULK_MAX_IDS + 1 }, (_, i) => `r${i}`);
+		const r = bulkIdsSchema.safeParse({ ids });
+		expect(r.success).toBe(false);
+		expect(r.error?.issues[0].message).toBe('tooMany');
+		expect(BULK_MAX_IDS).toBe(100);
+	});
+
+	it('同じ id の重複は 1 件にまとめる', () => {
+		expect(bulkIdsSchema.parse({ ids: ['a', 'a', 'b'] })).toEqual({ ids: ['a', 'b'] });
+	});
+
+	it('部署の一括変更: 空の departmentId は未所属 (undefined)', () => {
+		expect(resourcesMoveSchema.parse({ ids: ['a'], departmentId: '' })).toEqual({ ids: ['a'] });
+		expect(resourcesMoveSchema.parse({ ids: ['a'], departmentId: 'd1' })).toEqual({
+			ids: ['a'],
+			departmentId: 'd1'
+		});
 	});
 });

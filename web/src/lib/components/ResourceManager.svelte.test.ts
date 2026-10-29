@@ -132,7 +132,10 @@ function rowNames(container: HTMLElement): string[] {
 describe('ResourceManager の表', () => {
 	it('列は 名前 / 部署 / アサイン数 / 操作。 名前は行見出し', () => {
 		const { getAllByRole, container } = renderTable();
-		expect(getAllByRole('columnheader').map((h) => h.textContent?.trim())).toEqual([
+		const headers = getAllByRole('columnheader');
+		// 先頭は行選択 (全選択のチェックボックス) の列
+		expect(headers[0].querySelector('input[type="checkbox"]')).not.toBeNull();
+		expect(headers.slice(1).map((h) => h.textContent?.trim())).toEqual([
 			'名前',
 			'部署',
 			'アサイン数',
@@ -224,5 +227,50 @@ describe('ResourceManager の表', () => {
 		const { getByRole } = renderTable();
 		const region = getByRole('region', { name: 'メンバー' });
 		expect(region.getAttribute('tabindex')).toBe('0');
+	});
+});
+
+/**
+ * 一括操作 (デジタル庁「テーブル」行の選択 + Carbon Data table batch actions)。
+ * 選んだ行の id を hidden で送る。 全選択の対象は表示中のページだけ。
+ */
+describe('ResourceManager の一括操作', () => {
+	function hiddenIds(form: Element | null): string[] {
+		return Array.from(form?.querySelectorAll('input[name="ids"]') ?? []).map(
+			(i) => (i as HTMLInputElement).value
+		);
+	}
+
+	it('行を選ぶと一括操作バーが出て、 削除と部署変更の form に id が入る', async () => {
+		const { getByRole, queryByRole, container } = renderTable();
+		expect(queryByRole('region', { name: '一括操作' })).toBeNull();
+		await fireEvent.click(getByRole('checkbox', { name: '佐藤' }));
+		const bar = getByRole('region', { name: '一括操作' });
+		expect(within(bar).getByText('1 件を選択中')).toBeInTheDocument();
+		expect(hiddenIds(container.querySelector('form[action="/?/deleteResources"]'))).toEqual(['r2']);
+		const move = container.querySelector('form[action="/?/moveResources"]');
+		expect(hiddenIds(move)).toEqual(['r2']);
+		expect(within(bar).getByRole('combobox', { name: '所属部署を変更' })).toBeInTheDocument();
+	});
+
+	it('全選択は表示中の行だけを選ぶ (絞り込みで隠れた行は含めない)', async () => {
+		setQuery('?q=佐');
+		const { getByRole, container } = renderTable();
+		await fireEvent.click(getByRole('checkbox', { name: '行を選択' }));
+		expect(hiddenIds(container.querySelector('form[action="/?/deleteResources"]'))).toEqual(['r2']);
+	});
+
+	it('一括操作中は行ごとの編集・削除を無効にする', async () => {
+		const { getByRole } = renderTable();
+		await fireEvent.click(getByRole('checkbox', { name: '佐藤' }));
+		const row = getByRole('row', { name: /鈴木/ });
+		for (const b of within(row).getAllByRole('button')) expect(b).toBeDisabled();
+	});
+
+	it('選択を解除でバーが消える', async () => {
+		const { getByRole, queryByRole } = renderTable();
+		await fireEvent.click(getByRole('checkbox', { name: '佐藤' }));
+		await fireEvent.click(getByRole('button', { name: '選択を解除' }));
+		expect(queryByRole('region', { name: '一括操作' })).toBeNull();
 	});
 });
