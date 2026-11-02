@@ -86,6 +86,29 @@ resource "aws_iam_role_policy" "github_actions_iam_readonly" {
   })
 }
 
+# Web Function の revision を作るたびに実行ロールを渡すため、アプリの実行ロールに限って PassRole を許す (ADR 0014)。
+# IAM の変更なので、この policy は admin creds で手動 apply する (#167 の運用)。
+# Ref: https://docs.aws.amazon.com/lambda/latest/dg/web-functions-permissions.html
+resource "aws_iam_role_policy" "github_actions_pass_web_function_role" {
+  name = "pass-web-function-execution-role"
+  role = aws_iam_role.github_actions.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid      = "PassWebFunctionExecutionRole"
+        Effect   = "Allow"
+        Action   = "iam:PassRole"
+        Resource = aws_iam_role.lambda.arn
+        Condition = {
+          StringEquals = { "iam:PassedToService" = "lambda.amazonaws.com" }
+        }
+      }
+    ]
+  })
+}
+
 resource "aws_ssm_parameter" "github_actions_role_arn" {
   name  = "/${var.project}/github-actions-role-arn"
   type  = "String"

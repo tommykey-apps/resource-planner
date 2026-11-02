@@ -45,6 +45,35 @@ describe('detectLambda (#143)', () => {
 	});
 });
 
+/**
+ * Lambda Web Functions は AWS_LAMBDA_FUNCTION_NAME と LAMBDA_TASK_ROOT を設定しない。
+ * 実機 (nodejs24.x) で確認した値: AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs24.x-lambda-web'。
+ * 代わりに Web Functions だけが設定する AWS_LAMBDA_HTTP_ENDPOINT と、
+ * 実行環境ごとの AWS_LAMBDA_METADATA_TOKEN を AND で見る。
+ * Refs: https://docs.aws.amazon.com/lambda/latest/dg/web-functions-revisions-env-vars.html
+ */
+describe('detectLambda (Web Functions)', () => {
+	const webBase = {
+		AWS_EXECUTION_ENV: 'AWS_Lambda_nodejs24.x-lambda-web',
+		AWS_LAMBDA_HTTP_ENDPOINT: '169.254.100.1:8080',
+		AWS_LAMBDA_METADATA_TOKEN: 'token'
+	};
+
+	it('returns true when all 3 Web Function markers are set', () => {
+		expect(detectLambda(webBase)).toBe(true);
+	});
+
+	it('returns false if any single Web Function marker is missing', () => {
+		expect(detectLambda({ ...webBase, AWS_EXECUTION_ENV: undefined })).toBe(false);
+		expect(detectLambda({ ...webBase, AWS_LAMBDA_HTTP_ENDPOINT: undefined })).toBe(false);
+		expect(detectLambda({ ...webBase, AWS_LAMBDA_METADATA_TOKEN: undefined })).toBe(false);
+	});
+
+	it('returns false if AWS_EXECUTION_ENV is not a Lambda runtime', () => {
+		expect(detectLambda({ ...webBase, AWS_EXECUTION_ENV: 'AWS_Fargate_nodejs' })).toBe(false);
+	});
+});
+
 describe('assertSafeDbEnv', () => {
 	it('allows Lambda environment (isLambda=true) regardless of endpoint', () => {
 		expect(() => assertSafeDbEnv({ isLambda: true, endpoint: null })).not.toThrow();
