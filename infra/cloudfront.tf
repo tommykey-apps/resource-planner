@@ -27,9 +27,11 @@ resource "aws_cloudfront_distribution" "app" {
   price_class = "PriceClass_200"
   aliases     = [var.domain]
 
+  # Lambda Web Function (ADR 0014)。OAC で SigV4 署名して呼ぶ。
   origin {
-    domain_name = "${aws_apigatewayv2_api.api.id}.execute-api.${var.region}.amazonaws.com"
-    origin_id   = "apigw"
+    domain_name              = local.web_function_endpoint_domain
+    origin_id                = "web-function"
+    origin_access_control_id = aws_cloudfront_origin_access_control.web_function.id
 
     custom_header {
       name  = "X-Forwarded-Host"
@@ -52,7 +54,7 @@ resource "aws_cloudfront_distribution" "app" {
   default_cache_behavior {
     allowed_methods        = ["GET", "HEAD", "OPTIONS", "PUT", "PATCH", "POST", "DELETE"]
     cached_methods         = ["GET", "HEAD"]
-    target_origin_id       = "apigw"
+    target_origin_id       = "web-function"
     viewer_protocol_policy = "redirect-to-https"
     compress               = true
 
@@ -65,7 +67,7 @@ resource "aws_cloudfront_distribution" "app" {
     path_pattern           = "/_app/*"
     allowed_methods        = ["GET", "HEAD"]
     cached_methods         = ["GET", "HEAD"]
-    target_origin_id       = "apigw"
+    target_origin_id       = "web-function"
     viewer_protocol_policy = "redirect-to-https"
     compress               = true
 
