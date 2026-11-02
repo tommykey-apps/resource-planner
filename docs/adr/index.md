@@ -20,6 +20,7 @@ resource-planner の設計判断を Michael Nygard 形式で記録する。
 | [0011](0011-defer-better-auth-migration.md) | Better Auth への移行は当面据え置く (DynamoDB primary 不適合) | Accepted | 2026-05-26 |
 | [0012](0012-assignment-stable-key-and-optimistic-locking.md) | Assignment の SK を安定キー化し version 楽観ロックで同時編集を扱う | Accepted | 2026-05-28 |
 | [0013](0013-department-grouping-tree.md) | Department を Team 内のグルーピング用ツリー (adjacency list) として追加する | Accepted | 2026-05-29 |
+| [0014](0014-lambda-web-functions.md) | アプリの実行基盤を Lambda Web Functions にする | Accepted | 2026-11-03 |
 
 ## テンプレ
 

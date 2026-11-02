@@ -36,15 +36,22 @@ function isLocalEndpoint(endpoint: string): boolean {
 /**
  * Lambda runtime 判定: 1 つの env だけだと dev 環境で攻撃者が手動 set すれば bypass 可能。
  * AWS Lambda runtime が **すべて** 自動 set する 3 つの marker を AND で判定して paranoid mode に。
+ * Event Function と Web Function は設定する変数が違うため、それぞれ 3 つの組で判定する。
  *
  * 本番 Lambda runtime では 3 つすべて自動 set されるので false negative なし。
  * dev 環境で 3 つ全部偽装するのは現実的に困難。
  */
 export function detectLambda(envSnapshot: Record<string, string | undefined>): boolean {
-	const a = !!envSnapshot.AWS_LAMBDA_FUNCTION_NAME;
-	const b = !!envSnapshot.AWS_EXECUTION_ENV?.startsWith('AWS_Lambda_');
-	const c = !!envSnapshot.LAMBDA_TASK_ROOT;
-	return a && b && c;
+	const isLambdaRuntime = !!envSnapshot.AWS_EXECUTION_ENV?.startsWith('AWS_Lambda_');
+	if (!isLambdaRuntime) return false;
+	// Event Function (従来の Lambda)
+	const isEventFunction = !!envSnapshot.AWS_LAMBDA_FUNCTION_NAME && !!envSnapshot.LAMBDA_TASK_ROOT;
+	// Web Function: AWS_LAMBDA_FUNCTION_NAME と LAMBDA_TASK_ROOT を設定しないので、
+	// Web Functions だけが設定する待ち受け先と、実行環境ごとのメタデータ用トークンで判定する。
+	// Refs: https://docs.aws.amazon.com/lambda/latest/dg/web-functions-revisions-env-vars.html
+	const isWebFunction =
+		!!envSnapshot.AWS_LAMBDA_HTTP_ENDPOINT && !!envSnapshot.AWS_LAMBDA_METADATA_TOKEN;
+	return isEventFunction || isWebFunction;
 }
 
 export function assertSafeDbEnv(opts: {

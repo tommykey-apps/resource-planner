@@ -7,6 +7,11 @@ locals {
     "cloudfront-distribution-id" = aws_cloudfront_distribution.app.id
     "ecr-repository-url"         = aws_ecr_repository.app.repository_url
     "lambda-function-name"       = aws_lambda_function.app.function_name
+    # CD (aws lambda-web deploy) が読む値 (ADR 0014)
+    "cloudfront-distribution-arn"     = aws_cloudfront_distribution.app.arn
+    "web-function-name"               = local.web_function_name
+    "web-function-code-bucket"        = aws_s3_bucket.web_function_code.id
+    "web-function-execution-role-arn" = aws_iam_role.lambda.arn
   }
 }
 

@@ -52,7 +52,7 @@ jobs:
           version: 10
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           registry-url: https://npm.pkg.github.com
           scope: '@tommykey-apps'
           cache: pnpm
@@ -84,6 +84,135 @@ jobs:
         working-directory: infra
         env:
           TF_VAR_allowed_domain: ${{ secrets.ALLOWED_DOMAIN }}
+
+  # Lambda Web Function への配置 (ADR 0014)。
+  # 本体・revision・endpoint は aws provider v6.72.0 の aws_lambdaweb_* が出るまで CLI で作る。
+  # 周辺 (コード置き場、ログ、OAC、設定値) は infra/web_function.tf が持つ。
+  deploy-web-function:
+    needs: [detect-changes, deploy-infra]
+    if: always() && needs.detect-changes.outputs.web == 'true' && (needs.deploy-infra.result == 'success' || needs.deploy-infra.result == 'skipped')
+    runs-on: ubuntu-24.04-arm
+    # revision の作成は前の revision を条件にできないため、同時に1本だけ実行する
+    concurrency:
+      group: web-function-deploy
+      cancel-in-progress: false
+      queue: max
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://npm.pkg.github.com
+          scope: '@tommykey-apps'
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: web
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build
+        run: pnpm build
+        working-directory: web
+
+      - name: Package Web Function
+        run: pnpm package:web-function
+        working-directory: web
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Smoke test Web Function package
+        run: pnpm smoke:web-function
+        working-directory: web
+
+      # `aws lambda-web` はランナー既定の AWS CLI に入っていない版があるため、公式の手順で最新にする
+      # Ref: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+      - name: Update AWS CLI
+        run: |
+          curl -sSf "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "$RUNNER_TEMP/awscliv2.zip"
+          unzip -q "$RUNNER_TEMP/awscliv2.zip" -d "$RUNNER_TEMP"
+          sudo "$RUNNER_TEMP/aws/install" --update
+          aws --version
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy Web Function
+        id: deploy
+        run: |
+          param() { aws ssm get-parameter --name "/resource-planner/$1" --with-decryption --query Parameter.Value --output text; }
+          name=$(param web-function-name)
+          env_json=$(param web-function-env)
+          echo "::add-mask::$(jq -r .ALLOWED_DOMAIN <<<"$env_json")"
+          env_args=()
+          while IFS= read -r kv; do env_args+=(--env "$kv"); done < <(jq -r 'to_entries[] | "\(.key)=\(.value)"' <<<"$env_json")
+          aws lambda-web deploy \
+            --name "$name" \
+            --code web/dist/web-function \
+            --create \
+            --execution-role-arn "$(param web-function-execution-role-arn)" \
+            --bucket-name "$(param web-function-code-bucket)" \
+            --endpoint-name prod \
+            --auth-type IamAuth \
+            --timeout-seconds 30 \
+            "${env_args[@]}"
+          domain=$(aws lambda-web get-web-function-endpoint --function-name "$name" --endpoint-name prod --query domainName --output text)
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "domain=$domain" >> "$GITHUB_OUTPUT"
+          echo "Web Function endpoint: \`$domain\`" >> "$GITHUB_STEP_SUMMARY"
+
+      # CloudFront (OAC) からの呼び出しだけを許す。put-resource-policy は全体を置き換えるので毎回同じ内容を入れる
+      # Ref: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-lambda-web.html
+      - name: Allow CloudFront to invoke the endpoint
+        run: |
+          name=${{ steps.deploy.outputs.name }}
+          function_arn=$(aws lambda-web get-web-function --function-name "$name" --query functionArn --output text)
+          distribution_arn=$(aws ssm get-parameter --name /resource-planner/cloudfront-distribution-arn --query Parameter.Value --output text)
+          policy=$(jq -nc --arg fn "$function_arn" --arg dist "$distribution_arn" '{
+            Version: "2012-10-17",
+            Statement: [{
+              Sid: "AllowCloudFrontOAC",
+              Effect: "Allow",
+              Principal: { Service: "cloudfront.amazonaws.com" },
+              Action: "lambda:InvokeWebFunctionEndpoint",
+              Resource: "\($fn)/endpoint/prod",
+              Condition: { StringEquals: { "aws:SourceArn": $dist } }
+            }]
+          }')
+          aws lambda-web put-resource-policy --resource-arn "$function_arn" --policy "$policy" > /dev/null
+
+      # revision が Active でもサーバーの起動は保証されない (公式文書) ので、署名付きで直接呼んで確かめる。
+      # Ref: https://docs.aws.amazon.com/lambda/latest/dg/web-functions-code-s3.html
+      - name: Smoke test deployed endpoint
+        run: |
+          base="https://${{ steps.deploy.outputs.domain }}"
+          call() {
+            curl -s -o /dev/null -w "%{http_code}" \
+              --aws-sigv4 "aws:amz:${AWS_REGION}:lambda" --user "$AWS_ACCESS_KEY_ID:$AWS_SECRET_ACCESS_KEY" \
+              -H "x-amz-security-token: $AWS_SESSION_TOKEN" -H "x-amz-content-sha256: UNSIGNED-PAYLOAD" "$@"
+          }
+          check() {
+            local expected=$1; shift
+            for i in 1 2 3 4 5; do
+              status=$(call "$@")
+              [ "$status" = "$expected" ] && { echo "ok $* -> $status"; return 0; }
+              sleep 5
+            done
+            echo "::error::$* -> $status (expected $expected)"; return 1
+          }
+          check 200 "$base/_app/version.json"
+          check 200 "$base/sign-in"
+          check 303 "$base/"
 
   deploy-web:
     needs: [detect-changes, deploy-infra]

@@ -17,7 +17,9 @@
 		"test:watch": "vitest",
 		"test:coverage": "vitest run --coverage",
 		"test:e2e": "playwright test",
-		"build:lambda": "node scripts/build-ses-bounce-lambda.mjs"
+		"build:lambda": "node scripts/build-ses-bounce-lambda.mjs",
+		"package:web-function": "node scripts/package-web-function.mjs",
+		"smoke:web-function": "node scripts/smoke-web-function.mjs"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
@@ -32,7 +34,7 @@
 		"@tailwindcss/vite": "^4.2.2",
 		"@testing-library/jest-dom": "^6.9.1",
 		"@testing-library/svelte": "^5.3.1",
-		"@types/node": "^22",
+		"@types/node": "^24",
 		"@vitest/coverage-v8": "^4.1.5",
 		"aws-sdk-client-mock": "^4.1.0",
 		"aws-sdk-client-mock-vitest": "^7.0.1",

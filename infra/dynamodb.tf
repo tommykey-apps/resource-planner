@@ -28,11 +28,21 @@ resource "aws_dynamodb_table" "main" {
     type = "S"
   }
 
+  # aws provider v6 で GSI の hash_key / range_key は非推奨になり、key_schema で書く。
+  # Ref: https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/dynamodb_table#global_secondary_index
   global_secondary_index {
     name            = "GSI1"
-    hash_key        = "GSI1PK"
-    range_key       = "GSI1SK"
     projection_type = "ALL"
+
+    key_schema {
+      attribute_name = "GSI1PK"
+      key_type       = "HASH"
+    }
+
+    key_schema {
+      attribute_name = "GSI1SK"
+      key_type       = "RANGE"
+    }
   }
 
   # Auth.js Session / VerificationToken の自動失効用 (#81)。
