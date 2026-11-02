@@ -5,8 +5,6 @@
 locals {
   app_metadata_ssm_params = {
     "cloudfront-distribution-id" = aws_cloudfront_distribution.app.id
-    "ecr-repository-url"         = aws_ecr_repository.app.repository_url
-    "lambda-function-name"       = aws_lambda_function.app.function_name
     # CD (aws lambda-web deploy) が読む値 (ADR 0014)
     "cloudfront-distribution-arn"     = aws_cloudfront_distribution.app.arn
     "web-function-name"               = local.web_function_name
@@ -25,16 +23,6 @@ resource "aws_ssm_parameter" "app_metadata" {
 moved {
   from = aws_ssm_parameter.cloudfront_distribution_id
   to   = aws_ssm_parameter.app_metadata["cloudfront-distribution-id"]
-}
-
-moved {
-  from = aws_ssm_parameter.ecr_repository_url
-  to   = aws_ssm_parameter.app_metadata["ecr-repository-url"]
-}
-
-moved {
-  from = aws_ssm_parameter.lambda_function_name
-  to   = aws_ssm_parameter.app_metadata["lambda-function-name"]
 }
 
 # Auth.js JWT secret (#85)。`openssl rand -hex 32` で生成し、terraform apply 後に

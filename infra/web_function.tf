@@ -101,7 +101,7 @@ resource "aws_cloudfront_origin_access_control" "web_function" {
 }
 
 # ── CD (aws lambda-web deploy) が読む環境変数 ──
-# ALLOWED_DOMAIN を含むので SecureString にする。旧 aws_lambda_function.app.environment と同じ値。
+# ALLOWED_DOMAIN を含むので SecureString にする。
 resource "aws_ssm_parameter" "web_function_env" {
   name = "/${var.project}/web-function-env"
   type = "SecureString"
