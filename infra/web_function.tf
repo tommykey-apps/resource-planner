@@ -11,6 +11,9 @@
 
 locals {
   web_function_name = var.project
+  # endpoint のドメインは作成時にランダムに決まり、aws provider v6.71 では参照できない。
+  # CD (`aws lambda-web deploy`) が作った prod endpoint の値。aws_lambdaweb_* を import したら参照に置き換える。
+  web_function_endpoint_domain = "mvltq34yrffckw14.gyl.lambda-web.ap-northeast-1.on.aws"
 }
 
 # ── コード置き場 ──
