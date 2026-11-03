@@ -15,6 +15,16 @@ describe('errorMessage', () => {
 		);
 	});
 
+	it('メールアドレスの形式不正と重複を日本語で返す', () => {
+		overwriteGetLocale(() => 'ja');
+		expect(errorMessage('invalidEmail', { field: 'メールアドレス' })).toBe(
+			'メールアドレス の形式が正しくありません'
+		);
+		expect(errorMessage('emailConflict', { field: 'メールアドレス' })).toBe(
+			'このメールアドレスは別のメンバーが使っています'
+		);
+	});
+
 	it('未知の code は undefined (呼び出し側が fallback を決める)', () => {
 		expect(errorMessage('noSuchCode', { field: 'x' })).toBeUndefined();
 		// Object.prototype のキーも未知として扱う
@@ -26,6 +36,10 @@ describe('fieldLabel', () => {
 	it('既知の field は表示名、 未知は field 名そのもの', () => {
 		overwriteGetLocale(() => 'en');
 		expect(fieldLabel('startDate')).toBe('Start date');
+		expect(fieldLabel('email')).toBe('Email');
+		overwriteGetLocale(() => 'ja');
+		expect(fieldLabel('email')).toBe('メールアドレス');
+		overwriteGetLocale(() => 'en');
 		expect(fieldLabel('unknownField')).toBe('unknownField');
 	});
 });

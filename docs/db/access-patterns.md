@@ -31,7 +31,8 @@ resource-planner の DynamoDB 単一テーブルに対するクエリパター�
 
 | # | Use case | API | Operation | ConditionExpression |
 |---|---|---|---|---|
-| 5 | リソース作成 | `createResource(teamId, name)` | `PutItem` | `attribute_not_exists(sk)` で同一 SK の上書き防止 |
+| 5 | リソース作成 | `createResource(teamId, { name, email, departmentId? })` | `PutItem` | `attribute_not_exists(sk)` で同一 SK の上書き防止。 作成前に `begins_with(sk,"RES#")` + `FilterExpression email=:v` を Query し、 別メンバーが使っていれば `ResourceEmailConflictError` → form action が 400 ([ADR 0015](../adr/0015-link-user-and-member-by-email.md)) |
+| 5b | リソース更新 | `updateResource(teamId, { id, name, email, departmentId? })` | `UpdateItem` | `attribute_exists(sk)`。 #5 と同じ Query でメールアドレスの重複を確認する (自分自身は除外) |
 | 6 | 案件作成 | `createProject(teamId, name, color)` | `PutItem` | `attribute_not_exists(sk)` |
 | 7 | アサイン作成 | `createAssignment(teamId, payload)` | `PutItem` | SK=`ASN#{id}`、 `attribute_not_exists(sk)` + `version=1`。フォーム入力 (inclusive `endDate`) → `assignmentCreateSchema.transform()` → `endDateExclusive` ([ADR 0004](../adr/0004-end-date-exclusive-with-form-transform.md)) |
 | 7b | アサイン更新 | `updateAssignment(teamId, payload)` | `PutItem` | SK=`ASN#{id}` 安定キーへ単一 atomic Put。 `attribute_exists(sk) AND version = :expected` で楽観ロック、 version +1。 不一致は `AssignmentVersionConflictError` → API 409 ([ADR 0012](../adr/0012-assignment-stable-key-and-optimistic-locking.md)) |

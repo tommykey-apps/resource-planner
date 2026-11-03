@@ -48,13 +48,41 @@ test('Resource create が tooLong で 400 → dialog 再 open + 入力値が保�
 		setter?.call(el, value);
 		el.dispatchEvent(new Event('input', { bubbles: true }));
 	}, TOO_LONG);
+	const email = `${crypto.randomUUID()}@example.com`;
+	await page.getByLabel('Email', { exact: true }).fill(email);
 	await page.getByRole('button', { name: /^Create$/ }).click();
 
 	// 失敗 path: dialog が再 open し、 入力値も保持
 	const dialog = page.getByRole('dialog', { name: /Add person/ });
 	await expect(dialog).toBeVisible();
 	await expect(name).toHaveValue(TOO_LONG);
+	await expect(page.getByLabel('Email', { exact: true })).toHaveValue(email);
 
 	// translateServerError 経由で en locale の "Name must be at most 100 characters" が表示
 	await expect(dialog).toContainText(/Name must be at most 100 characters/);
+});
+
+test('別のメンバーと同じメールアドレスで追加すると、 欄の直下に重複のエラーを出して入力を保持する (ADR 0015)', async ({
+	page
+}) => {
+	await signIn(page);
+	const email = `${crypto.randomUUID()}@example.com`;
+
+	await openSection(page, 'People');
+	await page.getByRole('button', { name: /\+ Add person/ }).click();
+	await page.getByLabel('Name', { exact: true }).fill(`first-${email}`);
+	await page.getByLabel('Email', { exact: true }).fill(email);
+	await page.getByRole('button', { name: /^Create$/ }).click();
+	await expect(page.getByRole('row', { name: new RegExp(`first-${email}`) })).toBeVisible();
+
+	await page.getByRole('button', { name: /\+ Add person/ }).click();
+	await page.getByLabel('Name', { exact: true }).fill('second');
+	// 大文字でも同じアドレスとして扱う (Auth.js と同じく小文字にそろえる)
+	await page.getByLabel('Email', { exact: true }).fill(email.toUpperCase());
+	await page.getByRole('button', { name: /^Create$/ }).click();
+
+	const dialog = page.getByRole('dialog', { name: /Add person/ });
+	await expect(dialog).toBeVisible();
+	await expect(dialog).toContainText('Another person already uses this email');
+	await expect(page.getByLabel('Name', { exact: true })).toHaveValue('second');
 });

@@ -39,6 +39,7 @@ async function bootstrap1Assignment(page: import('@playwright/test').Page, suffi
 	await openSection(page, 'People');
 	await page.getByRole('button', { name: /\+ Add person/ }).click();
 	await page.locator('input[name="name"]').fill(`r-${suffix}`);
+	await page.locator('input[name="email"]').fill(`${crypto.randomUUID()}@example.com`);
 	await page.getByRole('button', { name: /^Create$/ }).click();
 	await expect(page.locator('tr', { hasText: `r-${suffix}` })).toBeVisible();
 
@@ -112,11 +113,13 @@ test('home: resource rail が最長名に auto-fit する (ui-components 0.9.3 #
 	await openSection(page, 'People');
 	await page.getByRole('button', { name: /\+ Add person/ }).click();
 	await page.locator('input[name="name"]').fill('短');
+	await page.locator('input[name="email"]').fill(`${crypto.randomUUID()}@example.com`);
 	await page.getByRole('button', { name: /^Create$/ }).click();
 	await expect(page.locator('tr', { hasText: '短' }).first()).toBeVisible();
 	await page.getByRole('button', { name: /\+ Add person/ }).click();
 	const longName = `長い名前テスト ${suffix}`;
 	await page.locator('input[name="name"]').fill(longName);
+	await page.locator('input[name="email"]').fill(`${crypto.randomUUID()}@example.com`);
 	await page.getByRole('button', { name: /^Create$/ }).click();
 	await expect(page.locator('tr', { hasText: longName })).toBeVisible();
 

@@ -66,9 +66,12 @@
 	"resources_createTitle": "メンバーを追加",
 	"resources_empty": "メンバーはいません。",
 	"resources_name": "名前",
+	"resources_email": "メールアドレス",
+	"resources_emailHint": "ログインに使うアドレス。ログインしない人は 例: tanaka@example.invalid",
 	"resources_confirmDelete": "「{name}」を削除しますか?",
 	"resources_confirmDeleteWithAssignments": "「{name}」と、関連するアサイン {count} 件を削除しますか?\nこの操作は取り消せません。",
 	"resources_createFailed": "メンバーを追加できませんでした。もう一度お試しください。",
+	"resources_filterByNameOrEmail": "名前・メールアドレスで絞り込み",
 	"resources_noMatches": "条件に一致するメンバーはいません",
 	"resources_moveSelected": "所属部署を変更",
 	"resources_confirmBulkDelete": "選択したメンバー {count} 名を削除しますか?\nこの操作は取り消せません。",
@@ -189,6 +192,8 @@
 	"errors_invalidVersion": "他のユーザーが先に更新しました。再読み込みしてください",
 	"errors_tooMany": "{field} は {max} 件以内で入力してください",
 	"errors_invalidUrl": "{field} は http / https の URL を入力してください",
+	"errors_invalidEmail": "{field} の形式が正しくありません",
+	"errors_emailConflict": "このメールアドレスは別のメンバーが使っています",
 	"errors_nameConflict": "同じ親の下に同名の部署があります",
 	"errors_parentNotFound": "指定した親部署が見つかりません",
 	"errors_cycle": "部署を自分自身またはその配下には移動できません",
@@ -200,5 +205,6 @@
 	"fields_startDate": "開始日",
 	"fields_endDate": "終了日",
 	"fields_resourceId": "メンバー",
-	"fields_projectId": "案件"
+	"fields_projectId": "案件",
+	"fields_email": "メールアドレス"
 }

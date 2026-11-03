@@ -40,6 +40,7 @@ test('Resource delete: confirm dialog が画面に表示されて Cancel で閉�
 	await page.getByRole('button', { name: /\+ Add person/ }).click();
 	const uniqueName = `e2e-${Date.now()}`;
 	await page.getByLabel('Name', { exact: true }).fill(uniqueName);
+	await page.locator('input[name="email"]').fill(`${crypto.randomUUID()}@example.com`);
 	await page.getByRole('button', { name: /^Create$/ }).click();
 
 	// 作成後の一覧で対象 row の「Delete」 を押す

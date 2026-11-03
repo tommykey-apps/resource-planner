@@ -81,6 +81,7 @@ erDiagram
 |---|---|---|
 | `id` | str (ULID) | resource の主キー (sk と内部 attribute の二重保持) |
 | `name` | str | 表示名 |
+| `email` | str | ログインユーザーと照合するメールアドレス ([ADR 0015](../adr/0015-link-user-and-member-by-email.md))。 必須、 チーム内で一意、 小文字で保存。 ログインしない人は `*@example.invalid` |
 | `departmentId` | str (optional) | 所属 [Department](#department) の `id` (#239)。 属性なし = 未所属 |
 
 サンプルアイテム:
@@ -89,7 +90,8 @@ erDiagram
   "pk": "TEAM#team_default",
   "sk": "RES#01HXYZ...",
   "id": "01HXYZ...",
-  "name": "山田 太郎"
+  "name": "山田 太郎",
+  "email": "yamada@example.com"
 }
 ```
 

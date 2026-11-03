@@ -27,6 +27,7 @@ async function signInWithPerson(page: Page) {
 	await openSection(page, 'People');
 	await page.getByRole('button', { name: /\+ Add person/ }).click();
 	await page.locator('input[name="name"]').fill(person);
+	await page.locator('input[name="email"]').fill(`${crypto.randomUUID()}@example.com`);
 	await page.getByRole('button', { name: /^Create$/ }).click();
 	await expect(page.locator('tr', { hasText: person })).toBeVisible();
 }

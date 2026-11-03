@@ -11,6 +11,8 @@ import { z } from 'zod';
  *   invalidDateFormat  — 日付 YYYY-MM-DD パターン不一致
  *   invalidColorFormat — #RRGGBB パターン不一致
  *   invalidUrl         — URL が http(s) でない / 形式不正 (#187)
+ *   invalidEmail       — メールアドレスの形式不正
+ *   emailConflict      — 同じチームの別メンバーが同じメールアドレスを使っている (repository 層で検出)
  *   endBeforeStart     — 終了日 < 開始日 (refine)
  */
 

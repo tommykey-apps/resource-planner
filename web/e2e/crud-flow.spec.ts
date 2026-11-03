@@ -36,6 +36,7 @@ test('Resource + Project の作成 → delete confirm まで一気通貫で機�
 	await openSection(page, 'People');
 	await page.getByRole('button', { name: /\+ Add person/ }).click();
 	await page.getByLabel('Name', { exact: true }).fill(resourceName);
+	await page.locator('input[name="email"]').fill(`${crypto.randomUUID()}@example.com`);
 	await page.getByRole('button', { name: /^Create$/ }).click();
 	await expect(page.locator('tr', { hasText: resourceName })).toBeVisible();
 

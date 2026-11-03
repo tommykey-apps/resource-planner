@@ -25,15 +25,57 @@ export class BulkTargetMissingError extends Error {
 	}
 }
 
+/**
+ * 同じチームの別メンバーが同じメールアドレスを使っている (ADR 0015)。
+ * action 層が fail(400) の `emailConflict` に map する。
+ */
+export class ResourceEmailConflictError extends Error {
+	constructor() {
+		super('resource email conflict');
+		this.name = 'ResourceEmailConflictError';
+	}
+}
+
+/**
+ * `email` を使っている自分以外のメンバーがいれば ResourceEmailConflictError を投げる。
+ * 部署名の重複確認 (department.ts) と同じく読んでから書く。 同時に 2 人が同じアドレスで
+ * 登録する競合は防げない (ADR 0013 と同じ割り切り、 ADR 0015)。
+ */
+async function assertEmailUnused(teamId: string, email: string, selfId?: string): Promise<void> {
+	let lastKey: Record<string, unknown> | undefined;
+	do {
+		const out = await ddb.send(
+			new QueryCommand({
+				TableName: TABLE,
+				KeyConditionExpression: 'pk = :pk AND begins_with(sk, :res)',
+				FilterExpression: 'email = :v',
+				ExpressionAttributeValues: {
+					':pk': pk(teamId),
+					':res': SK_PREFIX.resource,
+					':v': email
+				},
+				ProjectionExpression: 'id',
+				ExclusiveStartKey: lastKey
+			})
+		);
+		if ((out.Items ?? []).some((item) => item.id !== selfId)) {
+			throw new ResourceEmailConflictError();
+		}
+		lastKey = out.LastEvaluatedKey;
+	} while (lastKey);
+}
+
 export async function createResource(
 	teamId: string,
 	input: ResourceCreateInput
 ): Promise<Resource> {
+	await assertEmailUnused(teamId, input.email);
 	const id = newId();
 	// #239: 未所属 (departmentId なし) は attribute を保存しない (REMOVE semantics、 Project と同規約)。
 	const item: Resource = {
 		id,
 		name: input.name,
+		email: input.email,
 		...(input.departmentId ? { departmentId: input.departmentId } : {})
 	};
 	await ddb.send(
@@ -48,9 +90,10 @@ export async function createResource(
 
 export async function updateResource(teamId: string, input: ResourceUpdateInput): Promise<void> {
 	// #239: departmentId は 「指定あり → SET / 未所属 → REMOVE」 を出し分ける (updateProject と同パターン)。
-	const sets = ['#name = :name'];
+	await assertEmailUnused(teamId, input.email, input.id);
+	const sets = ['#name = :name', 'email = :email'];
 	const removes: string[] = [];
-	const values: Record<string, unknown> = { ':name': input.name };
+	const values: Record<string, unknown> = { ':name': input.name, ':email': input.email };
 
 	if (input.departmentId) {
 		sets.push('departmentId = :departmentId');

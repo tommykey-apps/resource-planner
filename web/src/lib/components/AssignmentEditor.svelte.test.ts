@@ -13,8 +13,8 @@ import type { Assignment, Project, Resource } from '$lib/types';
  */
 
 const RESOURCES: Resource[] = [
-	{ id: 'r1', name: 'Alice' },
-	{ id: 'r2', name: 'Bob' }
+	{ id: 'r1', name: 'Alice', email: 'r1@example.com' },
+	{ id: 'r2', name: 'Bob', email: 'r2@example.com' }
 ];
 const PROJECTS: Project[] = [
 	{ id: 'p1', name: 'Project A', color: '#0EA5E9' },

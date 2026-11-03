@@ -40,6 +40,7 @@ test('メンバーを選んで所属部署を一括変更し、 そのまま一�
 	for (const name of names) {
 		await page.getByRole('button', { name: /\+ Add person/ }).click();
 		await page.getByLabel('Name', { exact: true }).fill(name);
+		await page.locator('input[name="email"]').fill(`${crypto.randomUUID()}@example.com`);
 		await page.getByRole('button', { name: /^Create$/ }).click();
 		await expect(page.locator('tr', { hasText: name })).toBeVisible();
 	}

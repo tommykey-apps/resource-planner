@@ -50,6 +50,7 @@ test('表示開始日より前に終わる帯は行の高さに影響しない',
 	await openSection(page, 'People');
 	await page.getByRole('button', { name: /\+ Add person/ }).click();
 	await page.locator('input[name="name"]').fill(person);
+	await page.locator('input[name="email"]').fill(`${crypto.randomUUID()}@example.com`);
 	await page.getByRole('button', { name: /^Create$/ }).click();
 	await expect(page.locator('tr', { hasText: person })).toBeVisible();
 

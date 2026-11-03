@@ -93,6 +93,8 @@
 	"resources_createTitle": "Add person",
 	"resources_empty": "No people.",
 	"resources_name": "Name",
+	"resources_email": "Email",
+	"resources_emailHint": "The address used to sign in. For people who never sign in, e.g. tanaka@example.invalid",
 	"resources_confirmDelete": "Delete \"{name}\"?",
 	"resources_confirmDeleteWithAssignments": [
 		{
@@ -105,6 +107,7 @@
 		}
 	],
 	"resources_createFailed": "Couldn't add the person. Try again.",
+	"resources_filterByNameOrEmail": "Filter by name or email",
 	"resources_noMatches": "No people match the filters",
 	"resources_moveSelected": "Change department",
 	"resources_confirmBulkDelete": [
@@ -320,6 +323,8 @@
 	"errors_invalidVersion": "Someone else updated this first. Reload the page.",
 	"errors_tooMany": "{field} must have at most {max} entries",
 	"errors_invalidUrl": "{field} must be an http or https URL",
+	"errors_invalidEmail": "{field} is not a valid email address",
+	"errors_emailConflict": "Another person already uses this email",
 	"errors_nameConflict": "A sibling department with this name already exists",
 	"errors_parentNotFound": "The specified parent department was not found",
 	"errors_cycle": "A department cannot be moved under itself or its descendants",
@@ -331,5 +336,6 @@
 	"fields_startDate": "Start date",
 	"fields_endDate": "End date",
 	"fields_resourceId": "Person",
-	"fields_projectId": "Project"
+	"fields_projectId": "Project",
+	"fields_email": "Email"
 }
