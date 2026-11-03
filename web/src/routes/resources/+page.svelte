@@ -35,6 +35,7 @@
 		{resources}
 		assignments={data.assignments}
 		departments={data.departments}
+		defaultDepartmentFilter={data.defaultDepartmentFilter}
 		onOptimisticCreate={optimisticAdd}
 		onConfirmCreate={confirmCreate}
 		onRollbackCreate={rollbackCreate}

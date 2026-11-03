@@ -217,6 +217,67 @@ describe('ResourceManager の表', () => {
 		expect(rowNames(container)).toEqual(['鈴木']);
 	});
 
+	it('URL に dept がなければ、 渡された初期値 (ログインユーザーの部署) で絞り込む', () => {
+		const { container, getByRole } = render(ResourceManager, {
+			props: {
+				resources: RESOURCES,
+				assignments: ASSIGNMENTS,
+				departments: DEPTS,
+				defaultDepartmentFilter: 'd3'
+			}
+		});
+		expect(rowNames(container)).toEqual(['佐藤']);
+		expect((getByRole('combobox', { name: '部署' }) as HTMLSelectElement).value).toBe('d3');
+	});
+
+	it('?dept=__all__ なら初期値があっても全員を出す', () => {
+		setQuery('?dept=__all__');
+		const { container, getByRole } = render(ResourceManager, {
+			props: {
+				resources: RESOURCES,
+				assignments: ASSIGNMENTS,
+				departments: DEPTS,
+				defaultDepartmentFilter: 'd3'
+			}
+		});
+		expect(rowNames(container)).toHaveLength(3);
+		expect((getByRole('combobox', { name: '部署' }) as HTMLSelectElement).value).toBe('__all__');
+	});
+
+	it('「すべての部署」を選ぶと dept=__all__ を URL に書く', async () => {
+		const { getByRole } = render(ResourceManager, {
+			props: {
+				resources: RESOURCES,
+				assignments: ASSIGNMENTS,
+				departments: DEPTS,
+				defaultDepartmentFilter: 'd3'
+			}
+		});
+		await fireEvent.change(getByRole('combobox', { name: '部署' }), {
+			target: { value: '__all__' }
+		});
+		expect(goto).toHaveBeenCalledWith('/resources?dept=__all__', expect.anything());
+	});
+
+	it('初期値で絞り込んでいるときも「絞り込みを解除」を出し、 押すと dept=__all__ にする', async () => {
+		const { getByRole } = render(ResourceManager, {
+			props: {
+				resources: RESOURCES,
+				assignments: ASSIGNMENTS,
+				departments: DEPTS,
+				defaultDepartmentFilter: 'd3'
+			}
+		});
+		await fireEvent.click(getByRole('button', { name: '絞り込みを解除' }));
+		expect(goto).toHaveBeenCalledWith('/resources?dept=__all__', expect.anything());
+	});
+
+	it('?dept=__all__ のときは「絞り込みを解除」を出さない', () => {
+		setQuery('?dept=__all__');
+		const { queryByRole } = renderTable();
+		expect(queryByRole('button', { name: '絞り込みを解除' })).toBeNull();
+	});
+
 	it('名前の入力で URL の q を書き換え、 1 ページ目に戻す', async () => {
 		setQuery('?page=2');
 		const { getByLabelText } = renderTable();
@@ -232,7 +293,8 @@ describe('ResourceManager の表', () => {
 		expect(getByText('条件に一致するメンバーはいません')).toBeInTheDocument();
 		expect(queryByRole('table')).toBeNull();
 		await fireEvent.click(getByRole('button', { name: '絞り込みを解除' }));
-		expect(goto).toHaveBeenCalledWith('/resources', expect.anything());
+		// 解除は「すべての部署」を明示する (dept がないと初期値の自分の部署に戻るため)
+		expect(goto).toHaveBeenCalledWith('/resources?dept=__all__', expect.anything());
 	});
 
 	it(`${PAGE_SIZE} 件を超えるとページ送りを出し、 ?page=2 で続きを出す`, () => {

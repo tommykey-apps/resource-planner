@@ -83,6 +83,33 @@ describe('+layout.server.ts load (PR-N4, refs #187)', () => {
 		expect(result.user.id).toBe('u1');
 	});
 
+	it('ログインユーザーの部署を部署プルダウンの初期値として返す (ADR 0015)', async () => {
+		authMock.mockResolvedValue({ user: { id: 'u1', email: 'a@example.com', name: 'A' } });
+		queryAllByTeamMock.mockResolvedValue({
+			resources: [
+				{ id: 'r1', name: 'A', email: 'a@example.com', departmentId: 'd1' },
+				{ id: 'r2', name: 'B', email: 'b@example.com', departmentId: 'd2' }
+			],
+			projects: [],
+			assignments: [],
+			departments: []
+		});
+		const result = (await load(makeEvent())) as { defaultDepartmentFilter: string };
+		expect(result.defaultDepartmentFilter).toBe('d1');
+	});
+
+	it('照合できなければ部署プルダウンの初期値は「すべて」', async () => {
+		authMock.mockResolvedValue({ user: { id: 'u1', email: 'x@example.com', name: 'X' } });
+		queryAllByTeamMock.mockResolvedValue({
+			resources: [{ id: 'r1', name: 'A', email: 'a@example.com', departmentId: 'd1' }],
+			projects: [],
+			assignments: [],
+			departments: []
+		});
+		const result = (await load(makeEvent())) as { defaultDepartmentFilter: string };
+		expect(result.defaultDepartmentFilter).toBe('__all__');
+	});
+
 	it('returns empty arrays for unauthenticated user on /sign-in (no projects to render)', async () => {
 		authMock.mockResolvedValue(null);
 		const result = (await load(makeEvent({ pathname: '/sign-in' }))) as {

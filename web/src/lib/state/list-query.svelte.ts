@@ -9,6 +9,9 @@
  *   (入力のたびに履歴を積まない。 timeline / assignments の syncStateToUrl と同じ方針)
  * - ページ送り: `hrefFor()` の URL を <a> に渡す (デジタル庁「ページナビゲーション」: URL が変わるなら <a>)
  * - 画面固有の絞り込み (メンバーの部署など) は `filterKeys` で受け、 空文字なら URL から消す
+ * - `filterOptions.initial`: URL にキーがないときの値 (ログインユーザーの部署など、 ADR 0015)
+ * - `filterOptions.cleared`: 「絞り込みを解除」で URL に書く値。 initial があるとキーを消しても
+ *   初期値に戻るだけなので、 「すべて」を表す値を明示して残す
  */
 import { goto } from '$app/navigation';
 import { page } from '$app/state';
@@ -17,7 +20,12 @@ import { applyListQuery, parseListQuery, type ListQuery } from '$lib/list-table'
 export function createListQuery<K extends string, F extends string = never>(
 	sortKeys: readonly K[],
 	defaults: ListQuery<K>,
-	filterKeys: readonly F[] = []
+	filterKeys: readonly F[] = [],
+	filterOptions: {
+		/** 関数で渡す (Svelte 公式: props を読むときは遅延評価して最新の値を追う)。 */
+		initial?: () => Partial<Record<F, string>>;
+		cleared?: Partial<Record<F, string>>;
+	} = {}
 ) {
 	const current = $derived(parseListQuery(page.url.searchParams, sortKeys, defaults));
 
@@ -45,14 +53,16 @@ export function createListQuery<K extends string, F extends string = never>(
 			navigate(toHref({ ...current, ...patch }));
 		},
 		filter(key: F): string {
-			return page.url.searchParams.get(key) ?? '';
+			return page.url.searchParams.get(key) ?? filterOptions.initial?.()[key] ?? '';
 		},
 		/** 絞り込みを変えたら結果の件数が変わるので 1 ページ目に戻す。 */
 		setFilter(key: F, value: string) {
 			navigate(toHref({ ...current, page: 1 }, { [key]: value } as Partial<Record<F, string>>));
 		},
 		clearFilters() {
-			const cleared = Object.fromEntries(filterKeys.map((k) => [k, ''])) as Record<F, string>;
+			const cleared = Object.fromEntries(
+				filterKeys.map((k) => [k, filterOptions.cleared?.[k] ?? ''])
+			) as Record<F, string>;
 			navigate(toHref({ ...current, q: defaults.q, page: 1 }, cleared));
 		},
 		hrefFor(pageNumber: number) {

@@ -98,4 +98,13 @@ describe('applyTimelineParams', () => {
 		});
 		expect(cleared.searchParams.get('dept')).toBeNull();
 	});
+
+	it('「すべての部署」は dept=__all__ として URL に残す (再読み込みで初期値に戻さない)', () => {
+		const all = applyTimelineParams(new URL('http://localhost/?dept=d1'), {
+			viewportStart: new Date(2026, 0, 1),
+			zoom: ZOOMS.day,
+			departmentId: '__all__'
+		});
+		expect(all.searchParams.get('dept')).toBe('__all__');
+	});
 });

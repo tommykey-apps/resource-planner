@@ -13,7 +13,8 @@
 	import {
 		flattenDepartmentTree,
 		resourceIdsForDepartmentFilter,
-		DEPARTMENT_FILTER_UNASSIGNED
+		DEPARTMENT_FILTER_UNASSIGNED,
+		DEPARTMENT_FILTER_ALL
 	} from '$lib/repository/department-tree';
 	import { nextSort, paginate, sortRows } from '$lib/list-table';
 	import { createListQuery } from '$lib/state/list-query.svelte';
@@ -32,6 +33,7 @@
 		resources,
 		assignments,
 		departments = [],
+		defaultDepartmentFilter = DEPARTMENT_FILTER_ALL,
 		onOptimisticCreate,
 		onConfirmCreate,
 		onRollbackCreate
@@ -40,6 +42,8 @@
 		assignments: Assignment[];
 		/** #239: 所属部署の選択肢 + グルーピング表示用。 省略時は未所属のみ。 */
 		departments?: Department[];
+		/** ADR 0015: URL に dept がないときの部署の絞り込み (ログインユーザーの部署)。 */
+		defaultDepartmentFilter?: string;
 		/** #121 optimistic UI hooks。create 時に temp → server entity の swap を親で行う。 */
 		onOptimisticCreate?: (temp: Resource) => void;
 		onConfirmCreate?: (temp: Resource, real: Resource) => void;
@@ -71,10 +75,15 @@
 	 */
 	const SORT_KEYS = ['name', 'email', 'department', 'assignments'] as const;
 	type SortKey = (typeof SORT_KEYS)[number];
-	const list = createListQuery(SORT_KEYS, { q: '', sort: 'name', dir: 'asc', page: 1 }, ['dept']);
+	const list = createListQuery(SORT_KEYS, { q: '', sort: 'name', dir: 'asc', page: 1 }, ['dept'], {
+		initial: () => ({ dept: defaultDepartmentFilter }),
+		cleared: { dept: DEPARTMENT_FILTER_ALL }
+	});
 	const query = $derived(list.current);
 	const deptFilter = $derived(list.filter('dept'));
-	const hasFilter = $derived(query.q !== '' || deptFilter !== '');
+	const hasFilter = $derived(
+		query.q !== '' || (deptFilter !== '' && deptFilter !== DEPARTMENT_FILTER_ALL)
+	);
 
 	const sortValue: Record<SortKey, (r: Resource) => string | number> = {
 		name: (r) => r.name,
@@ -300,7 +309,7 @@
 					class="h-9 border border-input bg-background px-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
 					style="border-radius: calc(var(--radius) * 0.6)"
 				>
-					<option value="">{m.departments_allOption()}</option>
+					<option value={DEPARTMENT_FILTER_ALL}>{m.departments_allOption()}</option>
 					<option value={DEPARTMENT_FILTER_UNASSIGNED}>{m.departments_unassigned()}</option>
 					{#each flatTree as { dept, depth } (dept.id)}
 						<option value={dept.id}>{'\u00A0\u00A0'.repeat(depth)}{dept.name}</option>

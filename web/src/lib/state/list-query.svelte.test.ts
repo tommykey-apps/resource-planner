@@ -62,4 +62,21 @@ describe('createListQuery', () => {
 		lq.clearFilters();
 		expect(goto).toHaveBeenCalledWith('/resources?sort=assignments', expect.anything());
 	});
+
+	it('絞り込みの初期値: URL にキーがなければ initial を返す', () => {
+		const lq = createListQuery(KEYS, DEFAULTS, ['dept'], { initial: () => ({ dept: 'mine' }) });
+		expect(lq.filter('dept')).toBe('mine');
+		pageState.url = new URL('http://localhost/resources?dept=d1');
+		expect(lq.filter('dept')).toBe('d1');
+	});
+
+	it('clearFilters は cleared の値を URL に残す (初期値に戻さない)', () => {
+		pageState.url = new URL('http://localhost/resources?q=a&dept=d1');
+		const lq = createListQuery(KEYS, DEFAULTS, ['dept'], {
+			initial: () => ({ dept: 'mine' }),
+			cleared: { dept: '__all__' }
+		});
+		lq.clearFilters();
+		expect(goto).toHaveBeenCalledWith('/resources?dept=__all__', expect.anything());
+	});
 });

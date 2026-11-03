@@ -2,6 +2,8 @@ import { redirect } from '@sveltejs/kit';
 import { queryAllByTeam } from '$lib/repository';
 import { DEFAULT_TEAM_ID } from '$lib/repository/team';
 import { renderMarkdown } from '$lib/markdown';
+import { defaultDepartmentFilter } from '$lib/default-department-filter';
+import { DEPARTMENT_FILTER_ALL } from '$lib/repository/department-tree';
 import type { ProjectWithRenderedDescription } from '$lib/types';
 import type { LayoutServerLoad } from './$types';
 
@@ -20,7 +22,8 @@ export const load: LayoutServerLoad = async (event) => {
 				resources: [],
 				projects: [],
 				assignments: [],
-				departments: []
+				departments: [],
+				defaultDepartmentFilter: DEPARTMENT_FILTER_ALL
 			};
 		}
 		redirect(303, '/sign-in');
@@ -58,6 +61,8 @@ export const load: LayoutServerLoad = async (event) => {
 		resources: data.resources,
 		projects,
 		assignments: data.assignments,
-		departments: data.departments
+		departments: data.departments,
+		// ADR 0015: 部署プルダウン (タイムライン・アサイン一覧・メンバー一覧) の初期値。
+		defaultDepartmentFilter: defaultDepartmentFilter(data.resources, session.user.email)
 	};
 };

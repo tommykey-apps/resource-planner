@@ -18,7 +18,8 @@
 	import {
 		flattenDepartmentTree,
 		resourceIdsForDepartmentFilter,
-		DEPARTMENT_FILTER_UNASSIGNED
+		DEPARTMENT_FILTER_UNASSIGNED,
+		DEPARTMENT_FILTER_ALL
 	} from '$lib/repository/department-tree';
 	import AssignmentCreator from '$lib/components/AssignmentCreator.svelte';
 	import AssignmentEditor from '$lib/components/AssignmentEditor.svelte';
@@ -58,7 +59,10 @@
 	// デフォルトの表示単位は月 (URL `?z=` 指定があればそれを優先)。
 	let zoom = $state(initialUrlState.zoom ?? ZOOMS.month);
 	// #242: 部署フィルタ (子孫含む) も URL (`?dept=`) と同期。
-	let departmentId = $state(initialUrlState.departmentId);
+	// ADR 0015: 状態には利用者が選んだ値 (URL の dept) だけを持つ。 未選択 ('') の間は
+	// ログインユーザーの部署を使う。 props は $derived で読み、 最新の値を追う (Svelte 公式)。
+	let departmentChoice = $state(initialUrlState.departmentId);
+	const departmentId = $derived(departmentChoice || data.defaultDepartmentFilter);
 	syncStateToUrl(() => ({ viewportStart, zoom, departmentId }), applyTimelineParams);
 
 	// #242: 部署 (子孫含む) で resource 行と帯を絞り込む。 null = フィルタなし (全件)。
@@ -186,8 +190,11 @@
 		<!-- #242: 部署フィルタ (子孫含む)。 選ぶと resource 行 + 帯が絞り込まれ、 URL `?dept=` に同期。 -->
 		<div class="dept-filter">
 			<label for="timeline-dept-filter">{m.departments_field()}</label>
-			<select id="timeline-dept-filter" bind:value={departmentId}>
-				<option value="">{m.departments_allOption()}</option>
+			<select
+				id="timeline-dept-filter"
+				bind:value={() => departmentId, (v) => (departmentChoice = v)}
+			>
+				<option value={DEPARTMENT_FILTER_ALL}>{m.departments_allOption()}</option>
 				<option value={DEPARTMENT_FILTER_UNASSIGNED}>{m.departments_unassigned()}</option>
 				{#each departmentOptions as { dept, depth } (dept.id)}
 					<option value={dept.id}>{'\u00A0\u00A0'.repeat(depth)}{dept.name}</option>

@@ -5,7 +5,8 @@ import {
 	siblingNameConflict,
 	flattenDepartmentTree,
 	resourceIdsForDepartmentFilter,
-	DEPARTMENT_FILTER_UNASSIGNED
+	DEPARTMENT_FILTER_UNASSIGNED,
+	DEPARTMENT_FILTER_ALL
 } from './department-tree';
 import type { Department, Resource } from '$lib/types';
 
@@ -113,6 +114,10 @@ describe('resourceIdsForDepartmentFilter (#242 部署フィルタ、 子孫含�
 
 	it('空 (フィルタなし) は null を返す', () => {
 		expect(resourceIdsForDepartmentFilter(deps, resources, '')).toBeNull();
+	});
+
+	it('「すべての部署」を明示した値も null (絞り込みなし)', () => {
+		expect(resourceIdsForDepartmentFilter(deps, resources, DEPARTMENT_FILTER_ALL)).toBeNull();
 	});
 
 	it('部署を指定すると子孫部署の Resource も含む', () => {
