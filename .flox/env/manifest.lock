@@ -7,7 +7,9 @@
         "pkg-path": "awscli2"
       },
       "drawio": {
-        "pkg-path": "drawio"
+        "pkg-path": "drawio",
+        "pkg-group": "drawio",
+        "version": "^32"
       },
       "nodejs_22": {
         "pkg-path": "nodejs_22"
@@ -101,38 +103,6 @@
     {
       "attr_path": "awscli2",
       "broken": false,
-      "derivation": "/nix/store/azp0y8a8g62k3xb46p89kzrzg7p9kx5m-awscli2-2.27.50.drv",
-      "description": "Unified tool to manage your AWS services",
-      "install_id": "awscli2",
-      "license": "Apache-2.0",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=fc02ee70efb805d3b2865908a13ddd4474557ecf",
-      "name": "awscli2-2.27.50",
-      "pname": "awscli2",
-      "rev": "fc02ee70efb805d3b2865908a13ddd4474557ecf",
-      "rev_count": 833752,
-      "rev_date": "2025-07-23T06:00:50Z",
-      "scrape_date": "2025-07-25T01:11:38.872478Z",
-      "stabilities": [
-        "staging",
-        "unstable",
-        "stable"
-      ],
-      "unfree": false,
-      "version": "2.27.50",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "dist": "/nix/store/92rz6l78nqdiv952srximfxfjg0m9a91-awscli2-2.27.50-dist",
-        "out": "/nix/store/dxj0qjhm41qw8akm842akgpcb5zjkkf7-awscli2-2.27.50"
-      },
-      "system": "x86_64-darwin",
-      "group": "toplevel",
-      "priority": 5
-    },
-    {
-      "attr_path": "awscli2",
-      "broken": false,
       "derivation": "/nix/store/fzh9bz8nwzv1z2qqsw8yslj2qaxcf31d-awscli2-2.27.50.drv",
       "description": "Unified tool to manage your AWS services",
       "install_id": "awscli2",
@@ -157,130 +127,6 @@
       "outputs": {
         "dist": "/nix/store/p05rkykwh1h0wfkdmqlc5dy6afqbx434-awscli2-2.27.50-dist",
         "out": "/nix/store/84x45xrqhadw16y11xkmyy9chh4hmd5m-awscli2-2.27.50"
-      },
-      "system": "x86_64-linux",
-      "group": "toplevel",
-      "priority": 5
-    },
-    {
-      "attr_path": "drawio",
-      "broken": false,
-      "derivation": "/nix/store/5d067kv1czrdn26sfadxlwlbsinbspxz-drawio-26.1.1.drv",
-      "description": "Desktop version of draw.io for creating diagrams",
-      "install_id": "drawio",
-      "license": "[ Apache-2.0, Unfree redistributable ]",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=fc02ee70efb805d3b2865908a13ddd4474557ecf",
-      "name": "drawio-26.1.1",
-      "pname": "drawio",
-      "rev": "fc02ee70efb805d3b2865908a13ddd4474557ecf",
-      "rev_count": 833752,
-      "rev_date": "2025-07-23T06:00:50Z",
-      "scrape_date": "2025-07-25T00:29:04.117899Z",
-      "stabilities": [
-        "staging",
-        "unstable",
-        "stable"
-      ],
-      "unfree": true,
-      "version": "26.1.1",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "out": "/nix/store/zq0qmz70rlir6ibpd370df3bgxzbaimc-drawio-26.1.1"
-      },
-      "system": "aarch64-darwin",
-      "group": "toplevel",
-      "priority": 5
-    },
-    {
-      "attr_path": "drawio",
-      "broken": false,
-      "derivation": "/nix/store/b1dsncmm7160bpffrrc08ki1q75npcrf-drawio-26.1.1.drv",
-      "description": "Desktop version of draw.io for creating diagrams",
-      "install_id": "drawio",
-      "license": "[ Apache-2.0, Unfree redistributable ]",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=fc02ee70efb805d3b2865908a13ddd4474557ecf",
-      "name": "drawio-26.1.1",
-      "pname": "drawio",
-      "rev": "fc02ee70efb805d3b2865908a13ddd4474557ecf",
-      "rev_count": 833752,
-      "rev_date": "2025-07-23T06:00:50Z",
-      "scrape_date": "2025-07-25T00:52:21.132351Z",
-      "stabilities": [
-        "staging",
-        "unstable",
-        "stable"
-      ],
-      "unfree": true,
-      "version": "26.1.1",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "out": "/nix/store/ds5s3wgln462adk25c92wg1zqilva8li-drawio-26.1.1"
-      },
-      "system": "aarch64-linux",
-      "group": "toplevel",
-      "priority": 5
-    },
-    {
-      "attr_path": "drawio",
-      "broken": false,
-      "derivation": "/nix/store/2k4a2nmnykhjg90s9irwa3l82q4sls1a-drawio-26.1.1.drv",
-      "description": "Desktop version of draw.io for creating diagrams",
-      "install_id": "drawio",
-      "license": "[ Apache-2.0, Unfree redistributable ]",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=fc02ee70efb805d3b2865908a13ddd4474557ecf",
-      "name": "drawio-26.1.1",
-      "pname": "drawio",
-      "rev": "fc02ee70efb805d3b2865908a13ddd4474557ecf",
-      "rev_count": 833752,
-      "rev_date": "2025-07-23T06:00:50Z",
-      "scrape_date": "2025-07-25T01:11:39.327658Z",
-      "stabilities": [
-        "staging",
-        "unstable",
-        "stable"
-      ],
-      "unfree": true,
-      "version": "26.1.1",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "out": "/nix/store/x29y4fabfjg44ml08nd4s7nv7vqhm3pj-drawio-26.1.1"
-      },
-      "system": "x86_64-darwin",
-      "group": "toplevel",
-      "priority": 5
-    },
-    {
-      "attr_path": "drawio",
-      "broken": false,
-      "derivation": "/nix/store/3w0i0mjfy2w252b10sjrq2c945c19nbk-drawio-26.1.1.drv",
-      "description": "Desktop version of draw.io for creating diagrams",
-      "install_id": "drawio",
-      "license": "[ Apache-2.0, Unfree redistributable ]",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=fc02ee70efb805d3b2865908a13ddd4474557ecf",
-      "name": "drawio-26.1.1",
-      "pname": "drawio",
-      "rev": "fc02ee70efb805d3b2865908a13ddd4474557ecf",
-      "rev_count": 833752,
-      "rev_date": "2025-07-23T06:00:50Z",
-      "scrape_date": "2025-07-25T01:36:32.091825Z",
-      "stabilities": [
-        "staging",
-        "unstable",
-        "stable"
-      ],
-      "unfree": true,
-      "version": "26.1.1",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "out": "/nix/store/7pj62ykdv4542l26xqlwz7fmqg9lcxs4-drawio-26.1.1"
       },
       "system": "x86_64-linux",
       "group": "toplevel",
@@ -349,39 +195,6 @@
         "out": "/nix/store/ywi3gcwj1cjbzb9l0ixqn438z52i3qiw-nodejs-22.17.0"
       },
       "system": "aarch64-linux",
-      "group": "toplevel",
-      "priority": 5
-    },
-    {
-      "attr_path": "nodejs_22",
-      "broken": false,
-      "derivation": "/nix/store/p5byay4vjnbbf91b6fl7bl6ch3zn417g-nodejs-22.17.0.drv",
-      "description": "Event-driven I/O framework for the V8 JavaScript engine",
-      "install_id": "nodejs_22",
-      "license": "MIT",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=fc02ee70efb805d3b2865908a13ddd4474557ecf",
-      "name": "nodejs-22.17.0",
-      "pname": "nodejs_22",
-      "rev": "fc02ee70efb805d3b2865908a13ddd4474557ecf",
-      "rev_count": 833752,
-      "rev_date": "2025-07-23T06:00:50Z",
-      "scrape_date": "2025-07-25T01:11:42.437888Z",
-      "stabilities": [
-        "staging",
-        "unstable",
-        "stable"
-      ],
-      "unfree": false,
-      "version": "22.17.0",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "dev": "/nix/store/8m3dnkmhcfvx1y11nqxaah29siwrn5a3-nodejs-22.17.0-dev",
-        "libv8": "/nix/store/hn6z4a6bz6m1v8852yrw51pwv4pf73xk-nodejs-22.17.0-libv8",
-        "out": "/nix/store/4w47135rza25rjmfq247x63qlm92v4j1-nodejs-22.17.0"
-      },
-      "system": "x86_64-darwin",
       "group": "toplevel",
       "priority": 5
     },
@@ -483,37 +296,6 @@
     {
       "attr_path": "pnpm",
       "broken": false,
-      "derivation": "/nix/store/hpz6gxiwr5ahglymb0wq42k9wk7gf83j-pnpm-10.13.1.drv",
-      "description": "Fast, disk space efficient package manager for JavaScript",
-      "install_id": "pnpm",
-      "license": "MIT",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=fc02ee70efb805d3b2865908a13ddd4474557ecf",
-      "name": "pnpm-10.13.1",
-      "pname": "pnpm",
-      "rev": "fc02ee70efb805d3b2865908a13ddd4474557ecf",
-      "rev_count": 833752,
-      "rev_date": "2025-07-23T06:00:50Z",
-      "scrape_date": "2025-07-25T01:11:47.859853Z",
-      "stabilities": [
-        "staging",
-        "unstable",
-        "stable"
-      ],
-      "unfree": false,
-      "version": "10.13.1",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "out": "/nix/store/ljac08bdv87gy7jj5j2dkxgbzy93bjc1-pnpm-10.13.1"
-      },
-      "system": "x86_64-darwin",
-      "group": "toplevel",
-      "priority": 5
-    },
-    {
-      "attr_path": "pnpm",
-      "broken": false,
       "derivation": "/nix/store/bs0674xgzvv0p245w6rhcg5i3h3srq3k-pnpm-10.13.1.drv",
       "description": "Fast, disk space efficient package manager for JavaScript",
       "install_id": "pnpm",
@@ -601,37 +383,6 @@
         "out": "/nix/store/p423g613paxs9ldbnkr5mcxrgb5ilwfh-terraform-1.12.2"
       },
       "system": "aarch64-linux",
-      "group": "toplevel",
-      "priority": 5
-    },
-    {
-      "attr_path": "terraform",
-      "broken": false,
-      "derivation": "/nix/store/2r85kd8ykw1hs3a55y23krkqn9vbkd9z-terraform-1.12.2.drv",
-      "description": "Tool for building, changing, and versioning infrastructure",
-      "install_id": "terraform",
-      "license": "BUSL-1.1",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=fc02ee70efb805d3b2865908a13ddd4474557ecf",
-      "name": "terraform-1.12.2",
-      "pname": "terraform",
-      "rev": "fc02ee70efb805d3b2865908a13ddd4474557ecf",
-      "rev_count": 833752,
-      "rev_date": "2025-07-23T06:00:50Z",
-      "scrape_date": "2025-07-25T01:12:23.184727Z",
-      "stabilities": [
-        "staging",
-        "unstable",
-        "stable"
-      ],
-      "unfree": true,
-      "version": "1.12.2",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "out": "/nix/store/xn003hjbh4qf2ck38h2qck60wh04h0y9-terraform-1.12.2"
-      },
-      "system": "x86_64-darwin",
       "group": "toplevel",
       "priority": 5
     },
@@ -727,35 +478,6 @@
     {
       "attr_path": "xorg.xvfb",
       "broken": false,
-      "derivation": "/nix/store/i30b1v1gk1y71id9j9dilqmxrrsl44ls-xorg-server-21.1.18.drv",
-      "install_id": "xvfb",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=fc02ee70efb805d3b2865908a13ddd4474557ecf",
-      "name": "xorg-server-21.1.18",
-      "pname": "xvfb",
-      "rev": "fc02ee70efb805d3b2865908a13ddd4474557ecf",
-      "rev_count": 833752,
-      "rev_date": "2025-07-23T06:00:50Z",
-      "scrape_date": "2025-07-25T01:12:46.135814Z",
-      "stabilities": [
-        "staging",
-        "unstable",
-        "stable"
-      ],
-      "unfree": false,
-      "version": "21.1.18",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "out": "/nix/store/xgn7ib7bjh9y5xmlydj1sfm18v0gd0ah-xorg-server-21.1.18"
-      },
-      "system": "x86_64-darwin",
-      "group": "toplevel",
-      "priority": 5
-    },
-    {
-      "attr_path": "xorg.xvfb",
-      "broken": false,
       "derivation": "/nix/store/2nhkl1cxb2x7ciwx0mw58sd259qflgxf-xorg-server-21.1.18.drv",
       "install_id": "xvfb",
       "locked_url": "https://github.com/flox/nixpkgs?rev=fc02ee70efb805d3b2865908a13ddd4474557ecf",
@@ -842,6 +564,93 @@
       },
       "system": "x86_64-linux",
       "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "drawio",
+      "broken": false,
+      "derivation": "/nix/store/0dmvmlpbwnvmfny1v5jh70awz7ydfj1k-drawio-32.6.1.drv",
+      "description": "Desktop version of draw.io for creating diagrams",
+      "install_id": "drawio",
+      "license": "GPL-3.0-only",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=1c89083e451e891152365b799595cf7790a43325",
+      "name": "drawio-32.6.1",
+      "pname": "drawio",
+      "rev": "1c89083e451e891152365b799595cf7790a43325",
+      "rev_count": 1105037,
+      "rev_date": "2026-10-30T06:21:25Z",
+      "scrape_date": "2026-10-31T05:47:33.239026Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "32.6.1",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/gvgcfhjhjxlv8f54lgbzmjq2hqiv10x4-drawio-32.6.1"
+      },
+      "system": "aarch64-darwin",
+      "group": "drawio",
+      "priority": 5
+    },
+    {
+      "attr_path": "drawio",
+      "broken": false,
+      "derivation": "/nix/store/z65xkkzdm00xsrj5wawidz8dikb9fm0m-drawio-32.6.1.drv",
+      "description": "Desktop version of draw.io for creating diagrams",
+      "install_id": "drawio",
+      "license": "GPL-3.0-only",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=1c89083e451e891152365b799595cf7790a43325",
+      "name": "drawio-32.6.1",
+      "pname": "drawio",
+      "rev": "1c89083e451e891152365b799595cf7790a43325",
+      "rev_count": 1105037,
+      "rev_date": "2026-10-30T06:21:25Z",
+      "scrape_date": "2026-10-31T06:15:34.401726Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "32.6.1",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/95d91gy0vzzf4j3pxjayk7z5nqxwsbvi-drawio-32.6.1"
+      },
+      "system": "aarch64-linux",
+      "group": "drawio",
+      "priority": 5
+    },
+    {
+      "attr_path": "drawio",
+      "broken": false,
+      "derivation": "/nix/store/sy9g7iy0z2f4d682xf6rw61x73vw14kc-drawio-32.6.1.drv",
+      "description": "Desktop version of draw.io for creating diagrams",
+      "install_id": "drawio",
+      "license": "GPL-3.0-only",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=1c89083e451e891152365b799595cf7790a43325",
+      "name": "drawio-32.6.1",
+      "pname": "drawio",
+      "rev": "1c89083e451e891152365b799595cf7790a43325",
+      "rev_count": 1105037,
+      "rev_date": "2026-10-30T06:21:25Z",
+      "scrape_date": "2026-10-31T06:45:53.759852Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "32.6.1",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/amsay78drx21if9wx7p1ik5x6lj48661-drawio-32.6.1"
+      },
+      "system": "x86_64-linux",
+      "group": "drawio",
       "priority": 5
     }
   ]

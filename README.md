@@ -118,7 +118,8 @@ ui-components 側の挙動と props 一覧は [tommykey-apps/ui-components READM
 3. ログインはメールのリンクで行う。SES の不達・苦情は SNS 経由で別の Lambda が DynamoDB に記録し、以後の送信を止める
 
 > [docs/architecture.drawio](docs/architecture.drawio) を draw.io で開くと編集できる。
-> 図を更新したら `drawio -x -f svg -o docs/architecture.svg docs/architecture.drawio` で書き出して commit する。
+> 図を更新したら `flox activate -- xvfb-run -a drawio -x -f svg -o docs/architecture.svg docs/architecture.drawio` で書き出して commit する。
+> flox の draw.io (32 系) を使う。31.7 より前の CLI は背景色を書き出さず、GitHub のダークモードで文字が背景に同化する。
 
 ## 設計ドキュメントの読み方
 

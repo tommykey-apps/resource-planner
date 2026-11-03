@@ -11,12 +11,15 @@ nodejs_22.pkg-path = "nodejs_22"
 pnpm.pkg-path = "pnpm"
 awscli2.pkg-path = "awscli2"
 terraform.pkg-path = "terraform"
-# drawio export 用 (`drawio-png` skill が xvfb-run を要求)。
-# drawio 本体は OS パッケージ (/usr/bin/drawio) を利用、xvfb-run のみ flox で導入。
+# 構成図 (docs/architecture.drawio) の書き出し用。画面のない環境では xvfb-run で動かす。
 xvfb.pkg-path = "xorg.xvfb"
 xvfb-run.pkg-path = "xvfb-run"
 xvfb-run.systems = ["x86_64-linux", "aarch64-linux"]
 drawio.pkg-path = "drawio"
+# 31.7 より前は CLI の SVG 書き出しで背景色が落ちる (jgraph/drawio-desktop#2469)。
+# 他の道具と版を独立に上げられるよう、別の群に置く。
+drawio.version = "^32"
+drawio.pkg-group = "drawio"
 # gum.pkg-path = "gum"
 # gum.version = "^0.14.5"
 
