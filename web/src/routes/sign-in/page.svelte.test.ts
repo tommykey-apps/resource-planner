@@ -18,7 +18,8 @@ const stubData = (): PageData => ({
 	resources: [],
 	projects: [],
 	assignments: [],
-	departments: []
+	departments: [],
+	defaultDepartmentFilter: '__all__'
 });
 
 describe('sign-in +page.svelte — email input must remain in form data on submit (#109)', () => {

@@ -17,7 +17,8 @@
 	import {
 		flattenDepartmentTree,
 		resourceIdsForDepartmentFilter,
-		DEPARTMENT_FILTER_UNASSIGNED
+		DEPARTMENT_FILTER_UNASSIGNED,
+		DEPARTMENT_FILTER_ALL
 	} from '$lib/repository/department-tree';
 	import { syncStateToUrl } from '$lib/state/url-state.svelte';
 	import type { Assignment, ProjectWithRenderedDescription } from '$lib/types';
@@ -39,7 +40,10 @@
 	// URL → filter state (初期化 + reactive 更新)。 sync は `syncStateToUrl` helper で集約 (#174)。
 	const initial = parseAssignmentParams(page.url.searchParams);
 	let filters = $state<AssignmentFilters>(initial);
-	syncStateToUrl(() => filters, applyAssignmentParams);
+	// ADR 0015: filters.departmentId には利用者が選んだ値 (URL) だけを持つ。 未選択 ('') の間は
+	// ログインユーザーの部署を使う。 props は $derived で読み、 最新の値を追う (Svelte 公式)。
+	const departmentId = $derived(filters.departmentId || data.defaultDepartmentFilter);
+	syncStateToUrl(() => ({ ...filters, departmentId }), applyAssignmentParams);
 
 	function displayEndDate(a: Assignment): string {
 		return addDays(a.endDateExclusive, -1);
@@ -56,7 +60,7 @@
 
 	// #242: 部署フィルタ (子孫含む) にマッチする resource id 集合。 null = フィルタなし。
 	const deptResourceIds = $derived(
-		resourceIdsForDepartmentFilter(departments, resources, filters.departmentId)
+		resourceIdsForDepartmentFilter(departments, resources, departmentId)
 	);
 
 	const filtered = $derived.by(() => {
@@ -100,7 +104,15 @@
 	}
 
 	function clearFilters() {
-		filters = { q: '', resourceId: '', projectId: '', departmentId: '', from: '', to: '' };
+		// 部署は「すべて」を明示する (空にすると次の読み込みで初期値の自分の部署に戻るため)。
+		filters = {
+			q: '',
+			resourceId: '',
+			projectId: '',
+			departmentId: DEPARTMENT_FILTER_ALL,
+			from: '',
+			to: ''
+		};
 	}
 
 	// PR-N4: project 名 button click で詳細 modal を開く。
@@ -132,11 +144,11 @@
 			class="h-9 rounded border border-input bg-background px-2 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 		/>
 		<select
-			bind:value={filters.departmentId}
+			bind:value={() => departmentId, (v) => (filters.departmentId = v)}
 			aria-label={m.departments_field()}
 			class="h-9 rounded border border-input bg-background px-2 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 		>
-			<option value="">{m.departments_allOption()}</option>
+			<option value={DEPARTMENT_FILTER_ALL}>{m.departments_allOption()}</option>
 			<option value={DEPARTMENT_FILTER_UNASSIGNED}>{m.departments_unassigned()}</option>
 			{#each departmentOptions as { dept, depth } (dept.id)}
 				<option value={dept.id}>{'\u00A0\u00A0'.repeat(depth)}{dept.name}</option>

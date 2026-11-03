@@ -89,6 +89,12 @@ export function flattenDepartmentTree(
 export const DEPARTMENT_FILTER_UNASSIGNED = '__unassigned__';
 
 /**
+ * 部署フィルタの「すべての部署」を明示する sentinel (URL param 値、 ADR 0015)。
+ * URL にキーがないときはログインユーザーの部署を初期値にするので、 「すべて」はキーの不在で表せない。
+ */
+export const DEPARTMENT_FILTER_ALL = '__all__';
+
+/**
  * 部署フィルタ (子孫含む) にマッチする Resource id 集合 (#242)。 timeline / assignments で共用。
  * - `''` (フィルタなし) → `null` (呼び出し側はフィルタをスキップ)
  * - `DEPARTMENT_FILTER_UNASSIGNED` → 部署未所属の Resource
@@ -101,7 +107,7 @@ export function resourceIdsForDepartmentFilter(
 	resources: Resource[],
 	departmentId: string
 ): Set<string> | null {
-	if (!departmentId) return null;
+	if (!departmentId || departmentId === DEPARTMENT_FILTER_ALL) return null;
 	if (departmentId === DEPARTMENT_FILTER_UNASSIGNED) {
 		return new Set(resources.filter((r) => !r.departmentId).map((r) => r.id));
 	}
