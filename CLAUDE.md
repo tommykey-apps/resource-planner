@@ -99,7 +99,7 @@ Single Table Design (詳細: `docs/db/entities.md`、`docs/db/access-patterns.md
 
 | Entity | SK パターン | Attributes |
 |--------|------------|------------|
-| Resource | `RES#{id}` | id, name |
+| Resource | `RES#{id}` | id, name, email (必須・チーム内で一意、 ADR 0015), departmentId |
 | Project | `PRJ#{id}` | id, name, color |
 | Assignment | `ASN#{id}` | id, resourceId, projectId, startDate, endDateExclusive, version (ADR 0012: 安定キー + 楽観ロック) |
 | Team meta | `META` | id, name, createdAt |

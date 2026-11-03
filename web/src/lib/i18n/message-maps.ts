@@ -21,6 +21,8 @@ const errorMessages = new Map<string, (p: ErrorParams) => string>(
 		invalidVersion: () => m.errors_invalidVersion(),
 		tooMany: (p: ErrorParams) => m.errors_tooMany({ field: p.field, max: p.max ?? '' }),
 		invalidUrl: (p: ErrorParams) => m.errors_invalidUrl(p),
+		invalidEmail: (p: ErrorParams) => m.errors_invalidEmail(p),
+		emailConflict: () => m.errors_emailConflict(),
 		nameConflict: () => m.errors_nameConflict(),
 		parentNotFound: () => m.errors_parentNotFound(),
 		cycle: () => m.errors_cycle(),
@@ -37,7 +39,8 @@ const fieldLabels = new Map<string, () => string>(
 		startDate: m.fields_startDate,
 		endDate: m.fields_endDate,
 		resourceId: m.fields_resourceId,
-		projectId: m.fields_projectId
+		projectId: m.fields_projectId,
+		email: m.fields_email
 	})
 );
 

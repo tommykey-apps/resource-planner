@@ -27,6 +27,7 @@ import {
 	AssignmentVersionConflictError,
 	BulkTargetMissingError,
 	DepartmentTreeError,
+	ResourceEmailConflictError,
 	createAssignment,
 	createDepartment,
 	createProject,
@@ -69,19 +70,36 @@ function bulkDeleteResult(result: { deleted: string[]; failed: string[] }) {
 	return result.failed.length > 0 ? fail(500, result) : result;
 }
 
+/** ResourceEmailConflictError を ServerErrors wire format (#179) の fail(400) に map する (ADR 0015)。 */
+function emailConflictFail(action: string) {
+	return fail(400, { action, errors: { email: { code: 'emailConflict', field: 'email' } } });
+}
+
 export const actions: Actions = {
 	createResource: makeFormAction({
 		action: 'createResource',
 		schema: resourceCreateSchema,
 		// #121: 作成された entity を返して optimistic UI の temp → real swap を可能にする。
-		run: async (session, parsed) => ({ resource: await createResource(session.teamId, parsed) })
+		run: async (session, parsed) => {
+			try {
+				return { resource: await createResource(session.teamId, parsed) };
+			} catch (e) {
+				if (e instanceof ResourceEmailConflictError) return emailConflictFail('createResource');
+				throw e;
+			}
+		}
 	}),
 
 	updateResource: makeFormAction({
 		action: 'updateResource',
 		schema: resourceUpdateSchema,
 		run: async (session, parsed) => {
-			await updateResource(session.teamId, parsed);
+			try {
+				await updateResource(session.teamId, parsed);
+			} catch (e) {
+				if (e instanceof ResourceEmailConflictError) return emailConflictFail('updateResource');
+				throw e;
+			}
 		}
 	}),
 

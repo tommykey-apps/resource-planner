@@ -41,8 +41,8 @@ describe('ResourceManager (smoke)', () => {
 		const { getByRole, getByText } = render(ResourceManager, {
 			props: {
 				resources: [
-					{ id: 'r1', name: 'Alice' },
-					{ id: 'r2', name: 'Bob' }
+					{ id: 'r1', name: 'Alice', email: 'r1@example.com' },
+					{ id: 'r2', name: 'Bob', email: 'r2@example.com' }
 				],
 				assignments: []
 			}
@@ -64,7 +64,7 @@ describe('ResourceManager (smoke)', () => {
 
 	it('削除 form は /?/deleteResource に送る (別ページからでも / の action に届く)', () => {
 		const { container } = render(ResourceManager, {
-			props: { resources: [{ id: 'r1', name: 'Alice' }], assignments: [] }
+			props: { resources: [{ id: 'r1', name: 'Alice', email: 'r1@example.com' }], assignments: [] }
 		});
 		expect(container.querySelector('form[action="/?/deleteResource"]')).toBeTruthy();
 	});
@@ -103,9 +103,9 @@ const DEPTS: Department[] = [
 	{ id: 'd3', name: '営業部', parentId: null }
 ];
 const RESOURCES: Resource[] = [
-	{ id: 'r1', name: '鈴木', departmentId: 'd2' },
-	{ id: 'r2', name: '佐藤', departmentId: 'd3' },
-	{ id: 'r3', name: '高橋' }
+	{ id: 'r1', name: '鈴木', email: 'r1@example.com', departmentId: 'd2' },
+	{ id: 'r2', name: '佐藤', email: 'r2@example.com', departmentId: 'd3' },
+	{ id: 'r3', name: '高橋', email: 'r3@example.com' }
 ];
 const asn = (id: string, resourceId: string): Assignment => ({
 	id,
@@ -130,13 +130,14 @@ function rowNames(container: HTMLElement): string[] {
 }
 
 describe('ResourceManager の表', () => {
-	it('列は 名前 / 部署 / アサイン数 / 操作。 名前は行見出し', () => {
+	it('列は 名前 / メールアドレス / 部署 / アサイン数 / 操作。 名前は行見出し', () => {
 		const { getAllByRole, container } = renderTable();
 		const headers = getAllByRole('columnheader');
 		// 先頭は行選択 (全選択のチェックボックス) の列
 		expect(headers[0].querySelector('input[type="checkbox"]')).not.toBeNull();
 		expect(headers.slice(1).map((h) => h.textContent?.trim())).toEqual([
 			'名前',
+			'メールアドレス',
 			'部署',
 			'アサイン数',
 			'操作'
@@ -151,6 +152,31 @@ describe('ResourceManager の表', () => {
 		expect(
 			within(getByRole('row', { name: /鈴木/ })).getByText('バックエンド課')
 		).toBeInTheDocument();
+	});
+
+	it('メールアドレスを列に出す', () => {
+		const { getByRole } = renderTable();
+		expect(
+			within(getByRole('row', { name: /佐藤/ })).getByText('r2@example.com')
+		).toBeInTheDocument();
+	});
+
+	it('?sort=email&dir=desc でメールアドレスの降順', () => {
+		setQuery('?sort=email&dir=desc');
+		const { container } = renderTable();
+		expect(rowNames(container)).toEqual(['高橋', '佐藤', '鈴木']);
+	});
+
+	it('メールアドレスの列見出しを押すと URL の sort を email にする', async () => {
+		const { getByRole } = renderTable();
+		await fireEvent.click(getByRole('button', { name: 'メールアドレス' }));
+		expect(goto).toHaveBeenCalledWith('/resources?sort=email', expect.anything());
+	});
+
+	it('?q= はメールアドレスにも部分一致する (大文字小文字を区別しない)', () => {
+		setQuery('?q=R3@EXAMPLE');
+		const { container } = renderTable();
+		expect(rowNames(container)).toEqual(['高橋']);
 	});
 
 	it('既定は名前の昇順で、 名前の列に aria-sort=ascending', () => {
@@ -181,7 +207,7 @@ describe('ResourceManager の表', () => {
 	// 選択肢の文字が名前に混ざらないよう、 label は for/id で関連付ける。
 	it('絞り込みの入力欄と部署の選択は、 見出しの文字だけを名前に持つ', () => {
 		const { getByRole } = renderTable();
-		expect(getByRole('searchbox', { name: '名前で絞り込み' })).toBeInTheDocument();
+		expect(getByRole('searchbox', { name: '名前・メールアドレスで絞り込み' })).toBeInTheDocument();
 		expect(getByRole('combobox', { name: '部署' })).toBeInTheDocument();
 	});
 
@@ -194,7 +220,9 @@ describe('ResourceManager の表', () => {
 	it('名前の入力で URL の q を書き換え、 1 ページ目に戻す', async () => {
 		setQuery('?page=2');
 		const { getByLabelText } = renderTable();
-		await fireEvent.input(getByLabelText('名前で絞り込み'), { target: { value: '佐' } });
+		await fireEvent.input(getByLabelText('名前・メールアドレスで絞り込み'), {
+			target: { value: '佐' }
+		});
 		expect(goto).toHaveBeenCalledWith('/resources?q=%E4%BD%90', expect.anything());
 	});
 
@@ -210,7 +238,8 @@ describe('ResourceManager の表', () => {
 	it(`${PAGE_SIZE} 件を超えるとページ送りを出し、 ?page=2 で続きを出す`, () => {
 		const many = Array.from({ length: PAGE_SIZE + 1 }, (_, i) => ({
 			id: `m${i}`,
-			name: `member${String(i).padStart(3, '0')}`
+			name: `member${String(i).padStart(3, '0')}`,
+			email: `m${i}@example.com`
 		}));
 		const first = render(ResourceManager, { props: { resources: many, assignments: [] } });
 		expect(rowNames(first.container)).toHaveLength(PAGE_SIZE);

@@ -34,7 +34,7 @@ describe('AssignmentCreator (smoke)', () => {
 	it('作成 form は /?/createAssignment に送る', async () => {
 		const { getByRole } = render(AssignmentCreator, {
 			props: {
-				resources: [{ id: 'r1', name: 'Alice' }],
+				resources: [{ id: 'r1', name: 'Alice', email: 'r1@example.com' }],
 				projects: [{ id: 'p1', name: 'Project A', color: '#0EA5E9' }]
 			}
 		});
@@ -51,7 +51,7 @@ describe('AssignmentCreator (smoke)', () => {
 	it('ダイアログに説明文を置かない', async () => {
 		const { getByRole } = render(AssignmentCreator, {
 			props: {
-				resources: [{ id: 'r1', name: 'Alice' }],
+				resources: [{ id: 'r1', name: 'Alice', email: 'r1@example.com' }],
 				projects: [{ id: 'p1', name: 'Project A', color: '#0EA5E9' }]
 			}
 		});

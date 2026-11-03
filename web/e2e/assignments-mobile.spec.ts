@@ -33,6 +33,7 @@ async function createOneAssignment(page: import('@playwright/test').Page, suffix
 	await openSection(page, 'People');
 	await page.getByRole('button', { name: /\+ Add person/ }).click();
 	await page.getByLabel('Name', { exact: true }).fill(`r-${suffix}`);
+	await page.locator('input[name="email"]').fill(`${crypto.randomUUID()}@example.com`);
 	await page.getByRole('button', { name: /^Create$/ }).click();
 	await expect(page.locator('tr', { hasText: `r-${suffix}` })).toBeVisible();
 

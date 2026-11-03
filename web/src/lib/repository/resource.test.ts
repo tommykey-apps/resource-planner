@@ -16,7 +16,8 @@ import {
 	queryResourceSkByDepartment,
 	moveResourcesToDepartment,
 	deleteResources,
-	BulkTargetMissingError
+	BulkTargetMissingError,
+	ResourceEmailConflictError
 } from './resource';
 
 const ddbMock = mockClient(DynamoDBDocumentClient);
@@ -32,12 +33,17 @@ afterEach(() => {
 });
 
 describe('createResource', () => {
-	it('sends PutCommand with pk/sk/id/name and attribute_not_exists guard', async () => {
+	beforeEach(() => {
+		ddbMock.on(QueryCommand).resolves({ Items: [] });
+	});
+
+	it('sends PutCommand with pk/sk/id/name/email and attribute_not_exists guard', async () => {
 		ddbMock.on(PutCommand).resolves({});
 
-		const result = await createResource(TEAM, { name: 'Alice' });
+		const result = await createResource(TEAM, { name: 'Alice', email: 'alice@example.com' });
 
 		expect(result.name).toBe('Alice');
+		expect(result.email).toBe('alice@example.com');
 		expect(typeof result.id).toBe('string');
 		expect(result.id.length).toBeGreaterThan(0);
 
@@ -50,7 +56,8 @@ describe('createResource', () => {
 			pk: `TEAM#${TEAM}`,
 			sk: `RES#${result.id}`,
 			id: result.id,
-			name: 'Alice'
+			name: 'Alice',
+			email: 'alice@example.com'
 		});
 		// #239: 未所属 (departmentId なし) は attribute を保存しない
 		expect(input.Item).not.toHaveProperty('departmentId');
@@ -58,39 +65,117 @@ describe('createResource', () => {
 
 	it('stores departmentId when assigned (#239)', async () => {
 		ddbMock.on(PutCommand).resolves({});
-		const result = await createResource(TEAM, { name: 'Alice', departmentId: 'd1' });
+		const result = await createResource(TEAM, {
+			name: 'Alice',
+			email: 'alice@example.com',
+			departmentId: 'd1'
+		});
 		expect(result.departmentId).toBe('d1');
 		const input = ddbMock.commandCalls(PutCommand)[0].args[0].input;
 		expect(input.Item).toMatchObject({ departmentId: 'd1' });
 	});
+
+	it('looks up members of the team that already use the email', async () => {
+		ddbMock.on(PutCommand).resolves({});
+
+		await createResource(TEAM, { name: 'Alice', email: 'alice@example.com' });
+
+		const q = ddbMock.commandCalls(QueryCommand)[0].args[0].input;
+		expect(q.KeyConditionExpression).toBe('pk = :pk AND begins_with(sk, :res)');
+		expect(q.FilterExpression).toBe('email = :v');
+		expect(q.ExpressionAttributeValues).toEqual({
+			':pk': `TEAM#${TEAM}`,
+			':res': 'RES#',
+			':v': 'alice@example.com'
+		});
+	});
+
+	it('throws ResourceEmailConflictError and writes nothing when another member uses the email', async () => {
+		ddbMock.on(QueryCommand).resolves({ Items: [{ id: 'other' }] });
+		ddbMock.on(PutCommand).resolves({});
+
+		await expect(
+			createResource(TEAM, { name: 'Alice', email: 'alice@example.com' })
+		).rejects.toBeInstanceOf(ResourceEmailConflictError);
+		expect(ddbMock.commandCalls(PutCommand)).toHaveLength(0);
+	});
+
+	it('finds a conflict on a later Query page (LastEvaluatedKey)', async () => {
+		ddbMock
+			.on(QueryCommand)
+			.resolvesOnce({ Items: [], LastEvaluatedKey: { pk: `TEAM#${TEAM}`, sk: 'RES#x' } })
+			.resolvesOnce({ Items: [{ id: 'other' }] });
+
+		await expect(
+			createResource(TEAM, { name: 'Alice', email: 'alice@example.com' })
+		).rejects.toBeInstanceOf(ResourceEmailConflictError);
+		expect(ddbMock.commandCalls(QueryCommand)).toHaveLength(2);
+	});
 });
 
 describe('updateResource (#239 departmentId set/remove)', () => {
-	it('未所属 (departmentId なし) → SET name + REMOVE departmentId', async () => {
+	beforeEach(() => {
+		ddbMock.on(QueryCommand).resolves({ Items: [] });
+	});
+
+	it('未所属 (departmentId なし) → SET name, email + REMOVE departmentId', async () => {
 		ddbMock.on(UpdateCommand).resolves({});
 
-		await updateResource(TEAM, { id: 'res-1', name: 'Bob' });
+		await updateResource(TEAM, { id: 'res-1', name: 'Bob', email: 'bob@example.com' });
 
 		const calls = ddbMock.commandCalls(UpdateCommand);
 		expect(calls).toHaveLength(1);
 		const input = calls[0].args[0].input;
 		expect(input.TableName).toBe(TABLE);
 		expect(input.Key).toEqual({ pk: `TEAM#${TEAM}`, sk: 'RES#res-1' });
-		expect(input.UpdateExpression).toBe('SET #name = :name REMOVE departmentId');
+		expect(input.UpdateExpression).toBe('SET #name = :name, email = :email REMOVE departmentId');
 		expect(input.ExpressionAttributeNames).toEqual({ '#name': 'name' });
-		expect(input.ExpressionAttributeValues).toEqual({ ':name': 'Bob' });
+		expect(input.ExpressionAttributeValues).toEqual({
+			':name': 'Bob',
+			':email': 'bob@example.com'
+		});
 		expect(input.ExpressionAttributeValues).not.toHaveProperty(':departmentId');
 		expect(input.ConditionExpression).toBe('attribute_exists(sk)');
 	});
 
-	it('departmentId 指定 → SET name + departmentId (REMOVE なし)', async () => {
+	it('departmentId 指定 → SET name, email, departmentId (REMOVE なし)', async () => {
 		ddbMock.on(UpdateCommand).resolves({});
 
-		await updateResource(TEAM, { id: 'res-1', name: 'Bob', departmentId: 'd2' });
+		await updateResource(TEAM, {
+			id: 'res-1',
+			name: 'Bob',
+			email: 'bob@example.com',
+			departmentId: 'd2'
+		});
 
 		const input = ddbMock.commandCalls(UpdateCommand)[0].args[0].input;
-		expect(input.UpdateExpression).toBe('SET #name = :name, departmentId = :departmentId');
-		expect(input.ExpressionAttributeValues).toEqual({ ':name': 'Bob', ':departmentId': 'd2' });
+		expect(input.UpdateExpression).toBe(
+			'SET #name = :name, email = :email, departmentId = :departmentId'
+		);
+		expect(input.ExpressionAttributeValues).toEqual({
+			':name': 'Bob',
+			':email': 'bob@example.com',
+			':departmentId': 'd2'
+		});
+	});
+
+	it('keeps the member own email (the match is the member itself)', async () => {
+		ddbMock.on(QueryCommand).resolves({ Items: [{ id: 'res-1' }] });
+		ddbMock.on(UpdateCommand).resolves({});
+
+		await updateResource(TEAM, { id: 'res-1', name: 'Bob', email: 'bob@example.com' });
+
+		expect(ddbMock.commandCalls(UpdateCommand)).toHaveLength(1);
+	});
+
+	it('throws ResourceEmailConflictError when another member uses the email', async () => {
+		ddbMock.on(QueryCommand).resolves({ Items: [{ id: 'res-1' }, { id: 'res-2' }] });
+		ddbMock.on(UpdateCommand).resolves({});
+
+		await expect(
+			updateResource(TEAM, { id: 'res-1', name: 'Bob', email: 'bob@example.com' })
+		).rejects.toBeInstanceOf(ResourceEmailConflictError);
+		expect(ddbMock.commandCalls(UpdateCommand)).toHaveLength(0);
 	});
 });
 

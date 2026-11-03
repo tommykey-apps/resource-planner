@@ -39,6 +39,8 @@ export async function queryAllByTeam(teamId: string): Promise<TeamData> {
 				const resource: Resource = {
 					id: item.id as string,
 					name: item.name as string,
+					// ADR 0015: 必須だが、 移行前に書かれた行は属性がないので空文字に寄せる。
+					email: typeof item.email === 'string' ? item.email : '',
 					// #239: departmentId は present のときだけ載せる (未所属 = キー不在)。
 					...(typeof item.departmentId === 'string' && item.departmentId.length > 0
 						? { departmentId: item.departmentId }

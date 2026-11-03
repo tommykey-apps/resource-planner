@@ -7,8 +7,7 @@
 	import Dialog from './Dialog.svelte';
 	import { createSubmitState } from '$lib/forms/submit-state.svelte';
 	import { confirmDialog } from '$lib/forms/confirm-dialog';
-	import { translateServerError, type ServerErrors } from '$lib/forms/server-error';
-	import { rollbackRecoverState } from '$lib/forms/optimistic-rollback';
+	import { mapServerErrors, type ServerErrors } from '$lib/forms/server-error';
 	import { m } from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import {
@@ -70,7 +69,7 @@
 	 * 1行1メンバーにし、 部署はグループ見出しではなく列にする
 	 * (デジタル庁「テーブル」アクセシビリティ: グループ行を挟まず 1行1レコード)。
 	 */
-	const SORT_KEYS = ['name', 'department', 'assignments'] as const;
+	const SORT_KEYS = ['name', 'email', 'department', 'assignments'] as const;
 	type SortKey = (typeof SORT_KEYS)[number];
 	const list = createListQuery(SORT_KEYS, { q: '', sort: 'name', dir: 'asc', page: 1 }, ['dept']);
 	const query = $derived(list.current);
@@ -79,6 +78,7 @@
 
 	const sortValue: Record<SortKey, (r: Resource) => string | number> = {
 		name: (r) => r.name,
+		email: (r) => r.email,
 		department: (r) => departmentLabel(r),
 		assignments: (r) => assignmentCountByResource.get(r.id) ?? 0
 	};
@@ -87,7 +87,9 @@
 		const q = query.q.toLowerCase();
 		const deptIds = resourceIdsForDepartmentFilter(departments, resources, deptFilter);
 		return resources.filter(
-			(r) => (!q || r.name.toLowerCase().includes(q)) && (!deptIds || deptIds.has(r.id))
+			(r) =>
+				(!q || r.name.toLowerCase().includes(q) || r.email.includes(q)) &&
+				(!deptIds || deptIds.has(r.id))
 		);
 	});
 	const sorted = $derived(sortRows(filtered, sortValue[query.sort], query.dir, getLocale()));
@@ -138,9 +140,31 @@
 	let formOpen = $state(false);
 	let editing = $state<Resource | null>(null);
 	let formName = $state('');
+	/** ADR 0015: ログインユーザーと照合するメールアドレス (必須)。 */
+	let formEmail = $state('');
 	/** #239: 所属部署 (空文字 = 未所属)。 */
 	let formDepartmentId = $state('');
+	/** 項目の直下に出すエラー (DESIGN.md「エラー文は項目の直下」)。 */
+	let fieldErrors = $state<Record<ResourceFormField, string | undefined>>({
+		name: undefined,
+		email: undefined
+	});
+	/** どの項目にも紐づかないエラー (通信失敗など)。 */
 	let formError = $state<string | null>(null);
+
+	const RESOURCE_FORM_FIELDS = ['name', 'email'] as const;
+	type ResourceFormField = (typeof RESOURCE_FORM_FIELDS)[number];
+
+	function clearErrors() {
+		fieldErrors = { name: undefined, email: undefined };
+		formError = null;
+	}
+
+	/** failure の errors を項目ごとに振り分ける。 どの項目にも当たらなければ汎用のエラーを出す。 */
+	function showErrors(errors: ServerErrors | undefined) {
+		fieldErrors = mapServerErrors(errors, RESOURCE_FORM_FIELDS);
+		formError = fieldErrors.name || fieldErrors.email ? null : m.errors_generic();
+	}
 
 	// 連打抑制 + submitting state (#94)。create / update form 用 (delete は #132 で confirm dialog が modal ブロックするため不要)。
 	const formSubmitState = createSubmitState();
@@ -148,16 +172,18 @@
 	function startCreate() {
 		editing = null;
 		formName = '';
+		formEmail = '';
 		formDepartmentId = '';
-		formError = null;
+		clearErrors();
 		formOpen = true;
 	}
 
 	function startEdit(r: Resource) {
 		editing = r;
 		formName = r.name;
+		formEmail = r.email;
 		formDepartmentId = r.departmentId ?? '';
-		formError = null;
+		clearErrors();
 		formOpen = true;
 	}
 
@@ -173,7 +199,7 @@
 	let pendingTemp: Resource | null = null;
 
 	const formSubmit: SubmitFunction = formSubmitState.wrap(({ formData }) => {
-		formError = null;
+		clearErrors();
 		const isCreate = !editing && !!onOptimisticCreate;
 		if (isCreate) {
 			const name = (formData.get('name') ?? '').toString().trim();
@@ -183,6 +209,8 @@
 				pendingTemp = {
 					id: `temp-${crypto.randomUUID()}`,
 					name,
+					// 正規化 (小文字化) は server の schema が行う。 表示は確定後の値に差し替わる。
+					email: (formData.get('email') ?? '').toString().trim(),
 					...(departmentId ? { departmentId } : {})
 				};
 				onOptimisticCreate(pendingTemp);
@@ -199,17 +227,14 @@
 				} else {
 					// #140: rollback だけでなく form を復活させてユーザーが再入力せずに済むようにする
 					if (onRollbackCreate) onRollbackCreate(tempSnapshot);
-					const recovered = rollbackRecoverState({
-						temp: tempSnapshot,
-						failureData:
-							result.type === 'failure' ? (result.data as { errors?: ServerErrors }) : undefined,
-						translate: translateServerError,
-						fallback: m.errors_generic(),
-						field: 'name'
-					});
-					formName = recovered.formName;
-					formError = recovered.formError;
-					// #239: 選択した部署も復元する (rollbackRecoverState は name のみ対象のため別途)。
+					formName = tempSnapshot.name;
+					formEmail = tempSnapshot.email;
+					showErrors(
+						result.type === 'failure'
+							? (result.data as { errors?: ServerErrors })?.errors
+							: undefined
+					);
+					// #239: 選択した部署も復元する。
 					formDepartmentId = tempSnapshot.departmentId ?? '';
 					formOpen = true;
 				}
@@ -219,8 +244,7 @@
 				formOpen = false;
 				editing = null;
 			} else if (result.type === 'failure') {
-				const errs = (result.data as { errors?: ServerErrors })?.errors;
-				formError = errs?.name ? translateServerError(errs.name) : m.errors_generic();
+				showErrors((result.data as { errors?: ServerErrors })?.errors);
 			}
 			await update();
 		};
@@ -257,7 +281,7 @@
 	{:else}
 		<div class="flex flex-wrap items-end gap-3">
 			<div class="flex flex-col gap-1 text-sm">
-				<label for="{tableId}-q">{m.common_filterByName()}</label>
+				<label for="{tableId}-q">{m.resources_filterByNameOrEmail()}</label>
 				<input
 					id="{tableId}-q"
 					type="search"
@@ -345,6 +369,12 @@
 								onSort={() => sortBy('name')}
 							/>
 							<SortHeader
+								label={m.resources_email()}
+								active={query.sort === 'email'}
+								dir={query.dir}
+								onSort={() => sortBy('email')}
+							/>
+							<SortHeader
 								label={m.departments_field()}
 								active={query.sort === 'department'}
 								dir={query.dir}
@@ -380,6 +410,7 @@
 								>
 									{r.name}
 								</th>
+								<td class="px-3 py-2 whitespace-nowrap">{r.email}</td>
 								<td class="px-3 py-2 whitespace-nowrap">{departmentLabel(r)}</td>
 								<td class="px-3 py-2 text-right tabular-nums">{count}</td>
 								<td class="px-3 py-2">
@@ -428,17 +459,44 @@
 		{#if editing}
 			<input type="hidden" name="id" value={editing.id} />
 		{/if}
-		<label class="flex flex-col gap-1 text-sm">
-			<span>{m.resources_name()}</span>
+		<div class="flex flex-col gap-1 text-sm">
+			<label for="{tableId}-form-name">{m.resources_name()}</label>
 			<Input
+				id="{tableId}-form-name"
 				name="name"
 				type="text"
 				bind:value={formName}
 				required
 				maxlength={100}
 				autocomplete="off"
+				aria-invalid={fieldErrors.name ? 'true' : undefined}
+				aria-describedby={fieldErrors.name ? `${tableId}-form-name-error` : undefined}
 			/>
-		</label>
+			{#if fieldErrors.name}
+				<p id="{tableId}-form-name-error" class="text-destructive">{fieldErrors.name}</p>
+			{/if}
+		</div>
+		<!-- ADR 0015: ログインユーザーと照合するメールアドレス。 入力例は欄の直下 (DESIGN.md「入力」)。 -->
+		<div class="flex flex-col gap-1 text-sm">
+			<label for="{tableId}-form-email">{m.resources_email()}</label>
+			<Input
+				id="{tableId}-form-email"
+				name="email"
+				type="email"
+				bind:value={formEmail}
+				required
+				maxlength={254}
+				autocomplete="off"
+				aria-invalid={fieldErrors.email ? 'true' : undefined}
+				aria-describedby="{tableId}-form-email-hint{fieldErrors.email
+					? ` ${tableId}-form-email-error`
+					: ''}"
+			/>
+			<p id="{tableId}-form-email-hint" class="text-muted-foreground">{m.resources_emailHint()}</p>
+			{#if fieldErrors.email}
+				<p id="{tableId}-form-email-error" class="text-destructive">{fieldErrors.email}</p>
+			{/if}
+		</div>
 		<!-- #239: 所属部署 (空 = 未所属)。 ツリー indent 付き選択は #240。 -->
 		<label class="flex flex-col gap-1 text-sm">
 			<span>{m.departments_field()}</span>

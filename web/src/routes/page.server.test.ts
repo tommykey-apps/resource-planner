@@ -31,29 +31,43 @@ const moveResourcesToDepartmentMock = vi.fn();
 
 // ADR 0012/0013: 競合系を instanceof で判定するため mock でも実クラスを export。 vi.mock factory は
 // 巻き上げられるので vi.hoisted で先に初期化。
-const { AssignmentVersionConflictError, DepartmentTreeError, BulkTargetMissingError } = vi.hoisted(
-	() => {
-		class AssignmentVersionConflictError extends Error {
-			constructor(public readonly assignmentId: string) {
-				super(`assignment ${assignmentId} version conflict`);
-				this.name = 'AssignmentVersionConflictError';
-			}
+const {
+	AssignmentVersionConflictError,
+	DepartmentTreeError,
+	BulkTargetMissingError,
+	ResourceEmailConflictError
+} = vi.hoisted(() => {
+	class AssignmentVersionConflictError extends Error {
+		constructor(public readonly assignmentId: string) {
+			super(`assignment ${assignmentId} version conflict`);
+			this.name = 'AssignmentVersionConflictError';
 		}
-		class DepartmentTreeError extends Error {
-			constructor(public readonly code: 'cycle' | 'nameConflict' | 'parentNotFound' | 'notFound') {
-				super(`department tree violation: ${code}`);
-				this.name = 'DepartmentTreeError';
-			}
-		}
-		class BulkTargetMissingError extends Error {
-			constructor() {
-				super('bulk target missing');
-				this.name = 'BulkTargetMissingError';
-			}
-		}
-		return { AssignmentVersionConflictError, DepartmentTreeError, BulkTargetMissingError };
 	}
-);
+	class DepartmentTreeError extends Error {
+		constructor(public readonly code: 'cycle' | 'nameConflict' | 'parentNotFound' | 'notFound') {
+			super(`department tree violation: ${code}`);
+			this.name = 'DepartmentTreeError';
+		}
+	}
+	class BulkTargetMissingError extends Error {
+		constructor() {
+			super('bulk target missing');
+			this.name = 'BulkTargetMissingError';
+		}
+	}
+	class ResourceEmailConflictError extends Error {
+		constructor() {
+			super('resource email conflict');
+			this.name = 'ResourceEmailConflictError';
+		}
+	}
+	return {
+		AssignmentVersionConflictError,
+		DepartmentTreeError,
+		BulkTargetMissingError,
+		ResourceEmailConflictError
+	};
+});
 
 vi.mock('$lib/session', () => ({
 	requireSession: (event: unknown) => requireSessionMock(event)
@@ -78,7 +92,8 @@ vi.mock('$lib/repository', () => ({
 	moveResourcesToDepartment: (...args: unknown[]) => moveResourcesToDepartmentMock(...args),
 	AssignmentVersionConflictError,
 	DepartmentTreeError,
-	BulkTargetMissingError
+	BulkTargetMissingError,
+	ResourceEmailConflictError
 }));
 
 import { actions } from './+page.server';
@@ -183,20 +198,69 @@ describe('?/createResource action (#121)', () => {
 	});
 
 	it('returns the created resource on success for optimistic UI swap', async () => {
-		createResourceMock.mockResolvedValue({ id: 'res-real-id', name: 'Alice' });
-		const event = makeEvent({ name: 'Alice' });
+		createResourceMock.mockResolvedValue({
+			id: 'res-real-id',
+			name: 'Alice',
+			email: 'alice@example.com'
+		});
+		const event = makeEvent({ name: 'Alice', email: 'alice@example.com' });
 		const result = (await actions.createResource!(event)) as {
 			action: string;
 			success: boolean;
-			resource: { id: string; name: string };
+			resource: { id: string; name: string; email: string };
 		};
 		expect(result.action).toBe('createResource');
 		expect(result.success).toBe(true);
-		expect(result.resource).toEqual({ id: 'res-real-id', name: 'Alice' });
+		expect(result.resource).toEqual({
+			id: 'res-real-id',
+			name: 'Alice',
+			email: 'alice@example.com'
+		});
+	});
+
+	it('passes the normalized email to the repository', async () => {
+		createResourceMock.mockResolvedValue({ id: 'x', name: 'Alice', email: 'alice@example.com' });
+		await actions.createResource!(makeEvent({ name: 'Alice', email: ' Alice@Example.com ' }));
+		expect(createResourceMock).toHaveBeenCalledWith('team_default', {
+			name: 'Alice',
+			email: 'alice@example.com'
+		});
+	});
+
+	it('400 with errors.email = required when email is empty', async () => {
+		const r = (await actions.createResource!(makeEvent({ name: 'Alice', email: '' }))) as {
+			status: number;
+			data: { errors: Record<string, ServerError> };
+		};
+		expect(r.status).toBe(400);
+		expect(r.data.errors.email).toEqual({ code: 'required', field: 'email' });
+		expect(createResourceMock).not.toHaveBeenCalled();
+	});
+
+	it('400 with errors.email = invalidEmail when email is malformed', async () => {
+		const r = (await actions.createResource!(makeEvent({ name: 'Alice', email: 'alice' }))) as {
+			status: number;
+			data: { errors: Record<string, ServerError> };
+		};
+		expect(r.status).toBe(400);
+		expect(r.data.errors.email).toEqual({ code: 'invalidEmail', field: 'email' });
+	});
+
+	it('ResourceEmailConflictError → 400 with errors.email = emailConflict', async () => {
+		createResourceMock.mockRejectedValueOnce(new ResourceEmailConflictError());
+		const r = (await actions.createResource!(
+			makeEvent({ name: 'Alice', email: 'alice@example.com' })
+		)) as {
+			status: number;
+			data: { action: string; errors: Record<string, ServerError> };
+		};
+		expect(r.status).toBe(400);
+		expect(r.data.action).toBe('createResource');
+		expect(r.data.errors.email).toEqual({ code: 'emailConflict', field: 'email' });
 	});
 
 	it('still returns 400 failure for invalid name (no resource in result)', async () => {
-		const event = makeEvent({ name: '' });
+		const event = makeEvent({ name: '', email: 'alice@example.com' });
 		const result = (await actions.createResource!(event)) as {
 			status: number;
 			data: { errors: Record<string, ServerError> };
@@ -257,7 +321,9 @@ describe('#139 server error wire format (code, no localized strings)', () => {
 	});
 
 	it('createResource: name 超過 → { code: tooLong, field: name, max: 100 }', async () => {
-		const r = (await actions.createResource!(makeEvent({ name: 'a'.repeat(101) }))) as {
+		const r = (await actions.createResource!(
+			makeEvent({ name: 'a'.repeat(101), email: 'a@example.com' })
+		)) as {
 			status: number;
 			data: { errors: Record<string, ServerError> };
 		};
@@ -300,13 +366,44 @@ function resetAllMocks() {
 describe('?/updateResource action', () => {
 	beforeEach(resetAllMocks);
 
-	it('calls updateResource(teamId, { id, name }) on valid input', async () => {
-		await actions.updateResource!(makeEvent({ id: 'r1', name: 'Alice' }));
-		expect(updateResourceMock).toHaveBeenCalledWith('team_default', { id: 'r1', name: 'Alice' });
+	it('calls updateResource(teamId, { id, name, email }) on valid input', async () => {
+		await actions.updateResource!(
+			makeEvent({ id: 'r1', name: 'Alice', email: 'alice@example.com' })
+		);
+		expect(updateResourceMock).toHaveBeenCalledWith('team_default', {
+			id: 'r1',
+			name: 'Alice',
+			email: 'alice@example.com'
+		});
+	});
+
+	it('fails with 400 when email is missing', async () => {
+		const r = (await actions.updateResource!(makeEvent({ id: 'r1', name: 'Alice' }))) as {
+			status: number;
+			data: { errors: Record<string, ServerError> };
+		};
+		expect(r.status).toBe(400);
+		expect(r.data.errors.email).toEqual({ code: 'required', field: 'email' });
+		expect(updateResourceMock).not.toHaveBeenCalled();
+	});
+
+	it('ResourceEmailConflictError → 400 with errors.email = emailConflict', async () => {
+		updateResourceMock.mockRejectedValueOnce(new ResourceEmailConflictError());
+		const r = (await actions.updateResource!(
+			makeEvent({ id: 'r1', name: 'Alice', email: 'alice@example.com' })
+		)) as {
+			status: number;
+			data: { action: string; errors: Record<string, ServerError> };
+		};
+		expect(r.status).toBe(400);
+		expect(r.data.action).toBe('updateResource');
+		expect(r.data.errors.email).toEqual({ code: 'emailConflict', field: 'email' });
 	});
 
 	it('fails with 400 when id is missing', async () => {
-		const r = (await actions.updateResource!(makeEvent({ name: 'Alice' }))) as {
+		const r = (await actions.updateResource!(
+			makeEvent({ name: 'Alice', email: 'alice@example.com' })
+		)) as {
 			status: number;
 			data: { errors: Record<string, ServerError> };
 		};
@@ -315,7 +412,9 @@ describe('?/updateResource action', () => {
 	});
 
 	it('fails with 400 when name is empty', async () => {
-		const r = (await actions.updateResource!(makeEvent({ id: 'r1', name: '' }))) as {
+		const r = (await actions.updateResource!(
+			makeEvent({ id: 'r1', name: '', email: 'alice@example.com' })
+		)) as {
 			status: number;
 			data: { errors: Record<string, ServerError> };
 		};

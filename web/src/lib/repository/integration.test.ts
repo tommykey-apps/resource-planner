@@ -7,7 +7,12 @@ import {
 	updateAssignment
 } from './assignment';
 import { createProject, deleteProject, updateProject } from './project';
-import { createResource, deleteResource, updateResource } from './resource';
+import {
+	createResource,
+	deleteResource,
+	updateResource,
+	ResourceEmailConflictError
+} from './resource';
 import { queryAllByTeam } from './index';
 import { addMembership, getOrCreateDefaultTeam, getTeam, getUserTeamIds } from './team';
 
@@ -24,14 +29,14 @@ import { addMembership, getOrCreateDefaultTeam, getTeam, getUserTeamIds } from '
 describe.runIf(process.env.AWS_ENDPOINT_URL)('repository integration (DDB Local)', () => {
 	it('Resource lifecycle: create → query → update → delete', async () => {
 		const teamId = `test-${ulid()}`;
-		const r = await createResource(teamId, { name: 'Alice' });
+		const r = await createResource(teamId, { name: 'Alice', email: 'alice@example.com' });
 
 		let data = await queryAllByTeam(teamId);
-		expect(data.resources).toEqual([{ id: r.id, name: 'Alice' }]);
+		expect(data.resources).toEqual([{ id: r.id, name: 'Alice', email: 'alice@example.com' }]);
 
-		await updateResource(teamId, { id: r.id, name: 'Alicia' });
+		await updateResource(teamId, { id: r.id, name: 'Alicia', email: 'alicia@example.com' });
 		data = await queryAllByTeam(teamId);
-		expect(data.resources).toEqual([{ id: r.id, name: 'Alicia' }]);
+		expect(data.resources).toEqual([{ id: r.id, name: 'Alicia', email: 'alicia@example.com' }]);
 
 		await deleteResource(teamId, r.id);
 		data = await queryAllByTeam(teamId);
@@ -40,7 +45,7 @@ describe.runIf(process.env.AWS_ENDPOINT_URL)('repository integration (DDB Local)
 
 	it('cascade delete removes resource + related assignments atomically', async () => {
 		const teamId = `test-${ulid()}`;
-		const r = await createResource(teamId, { name: 'Bob' });
+		const r = await createResource(teamId, { name: 'Bob', email: 'bob@example.com' });
 		await createAssignment(teamId, {
 			resourceId: r.id,
 			projectId: 'p1',
@@ -66,7 +71,7 @@ describe.runIf(process.env.AWS_ENDPOINT_URL)('repository integration (DDB Local)
 
 	it('Query returns all assignments with version (ADR 0012: SK=ASN#{id}, client sorts by startDate)', async () => {
 		const teamId = `test-${ulid()}`;
-		const r = await createResource(teamId, { name: 'C' });
+		const r = await createResource(teamId, { name: 'C', email: 'c@example.com' });
 
 		// ADR 0012 で SK は startDate を含まない (`ASN#{id}`) ため DB 順は startDate 順を保証しない。
 		// 並び替えは client 側 (assignments/+page.svelte) の責務。 ここでは全件 + version を確認する。
@@ -135,10 +140,18 @@ describe.runIf(process.env.AWS_ENDPOINT_URL)('repository integration (DDB Local)
 
 	it('createResource enforces attribute_not_exists (no duplicate SK)', async () => {
 		const teamId = `test-${ulid()}`;
-		const a = await createResource(teamId, { name: 'A' });
-		const b = await createResource(teamId, { name: 'B' });
+		const a = await createResource(teamId, { name: 'A', email: 'a@example.com' });
+		const b = await createResource(teamId, { name: 'B', email: 'b@example.com' });
 		// Different ULIDs → both succeed
 		expect(a.id).not.toBe(b.id);
+
+		// 同じチームで同じメールアドレスは登録できない。 更新で他人のアドレスに変えることもできない
+		await expect(
+			createResource(teamId, { name: 'A2', email: 'a@example.com' })
+		).rejects.toBeInstanceOf(ResourceEmailConflictError);
+		await expect(
+			updateResource(teamId, { id: b.id, name: 'B', email: 'a@example.com' })
+		).rejects.toBeInstanceOf(ResourceEmailConflictError);
 
 		// cleanup
 		await deleteResource(teamId, a.id);

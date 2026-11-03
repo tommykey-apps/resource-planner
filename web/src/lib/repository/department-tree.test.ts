@@ -104,11 +104,11 @@ describe('flattenDepartmentTree', () => {
 
 describe('resourceIdsForDepartmentFilter (#242 部署フィルタ、 子孫含む)', () => {
 	const resources: Resource[] = [
-		{ id: 'u1', name: 'A', departmentId: 'a' },
-		{ id: 'u2', name: 'B', departmentId: 'a1' },
-		{ id: 'u3', name: 'C', departmentId: 'b' },
-		{ id: 'u4', name: 'D', departmentId: 's' },
-		{ id: 'u5', name: 'E' } // 未所属
+		{ id: 'u1', name: 'A', email: 'u1@example.com', departmentId: 'a' },
+		{ id: 'u2', name: 'B', email: 'u2@example.com', departmentId: 'a1' },
+		{ id: 'u3', name: 'C', email: 'u3@example.com', departmentId: 'b' },
+		{ id: 'u4', name: 'D', email: 'u4@example.com', departmentId: 's' },
+		{ id: 'u5', name: 'E', email: 'u5@example.com' } // 未所属
 	];
 
 	it('空 (フィルタなし) は null を返す', () => {

@@ -36,6 +36,7 @@ async function bootstrap1Assignment(page: import('@playwright/test').Page, suffi
 	await openSection(page, 'People');
 	await page.getByRole('button', { name: /\+ Add person/ }).click();
 	await page.locator('input[name="name"]').fill(`r-${suffix}`);
+	await page.locator('input[name="email"]').fill(`${crypto.randomUUID()}@example.com`);
 	await page.getByRole('button', { name: /^Create$/ }).click();
 	await expect(page.locator('tr', { hasText: `r-${suffix}` })).toBeVisible();
 

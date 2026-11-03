@@ -76,9 +76,9 @@ describe('DepartmentManager rename (#250)', () => {
  */
 describe('DepartmentManager の表', () => {
 	const RESOURCES: Resource[] = [
-		{ id: 'r1', name: '鈴木', departmentId: 'd2' },
-		{ id: 'r2', name: '佐藤', departmentId: 'd2' },
-		{ id: 'r3', name: '高橋', departmentId: 'd1' }
+		{ id: 'r1', name: '鈴木', email: 'r1@example.com', departmentId: 'd2' },
+		{ id: 'r2', name: '佐藤', email: 'r2@example.com', departmentId: 'd2' },
+		{ id: 'r3', name: '高橋', email: 'r3@example.com', departmentId: 'd1' }
 	];
 	const renderTable = () =>
 		render(DepartmentManager, { props: { departments: DEPARTMENTS, resources: RESOURCES } });
