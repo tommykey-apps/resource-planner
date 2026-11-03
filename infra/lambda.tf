@@ -107,38 +107,3 @@ resource "aws_iam_role_policy" "lambda_ses" {
     ]
   })
 }
-
-resource "aws_lambda_function" "app" {
-  function_name = var.project
-  role          = aws_iam_role.lambda.arn
-  package_type  = "Image"
-  image_uri     = "${aws_ecr_repository.app.repository_url}:latest"
-  architectures = ["arm64"]
-  timeout       = 30
-  memory_size   = 1024
-
-  environment {
-    variables = {
-      ORIGIN            = "https://${var.domain}"
-      DYNAMODB_TABLE    = aws_dynamodb_table.main.name
-      ALLOWED_DOMAIN    = var.allowed_domain
-      AUTH_SECRET_PARAM = aws_ssm_parameter.auth_secret.name
-      AUTH_TRUST_HOST   = "true"
-      EMAIL_FROM        = var.email_from
-    }
-  }
-
-  depends_on = [aws_ecr_repository.app]
-
-  lifecycle {
-    ignore_changes = [image_uri]
-  }
-}
-
-resource "aws_lambda_permission" "apigw" {
-  statement_id  = "AllowAPIGatewayInvoke"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.app.function_name
-  principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_apigatewayv2_api.api.execution_arn}/*/*"
-}

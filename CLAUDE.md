@@ -1,6 +1,6 @@
 # resource-planner
 
-要員計画アプリ。SvelteKit (adapter-node) + Lambda + DynamoDB + Auth.js (Email Magic Link) 認証。
+要員計画アプリ。SvelteKit (adapter-node) + Lambda Web Functions + DynamoDB + Auth.js (Email Magic Link) 認証。
 `@tommykey-apps/ui-components` の ResourceTimeline コンポーネントを使用。
 
 ## プロジェクト構成
@@ -11,12 +11,12 @@ resource-planner/
 │   ├── src/
 │   │   ├── routes/
 │   │   └── lib/
-│   ├── Dockerfile            # Lambda container
+│   ├── scripts/              # Web Function の配布物作成とスモークテスト
 │   ├── package.json
 │   └── svelte.config.js
 ├── infra/                    # Terraform
 ├── docs/
-│   ├── architecture.drawio   # アーキテクチャ図
+│   ├── architecture.drawio   # 構成図 (architecture.svg に書き出す)
 │   └── db/                   # DB ドキュメント (tbls + 手書き)
 ├── bin/                      # ローカルツール (tbls など)
 ├── .github/workflows/        # CI/CD
@@ -85,7 +85,7 @@ terraform apply
 ## アーキテクチャ
 
 - **フロントエンド**: SvelteKit (SSR/Server Actions)
-- **ホスティング**: Lambda (container) + CloudFront
+- **ホスティング**: Lambda Web Function (nodejs24.x) + CloudFront (OAC)。詳細: [`docs/adr/0014-lambda-web-functions.md`](docs/adr/0014-lambda-web-functions.md)
 - **認証**: Auth.js (`@auth/sveltekit`) + Email Magic Link、`callbacks.signIn` で許可ドメイン制限
   - 詳細: [`docs/adr/0008-auth-migration-clerk-to-authjs.md`](docs/adr/0008-auth-migration-clerk-to-authjs.md)
   - 将来 Microsoft Entra ID 追加: [#68 runbook](https://github.com/tommykey-apps/resource-planner/issues/68)
@@ -125,7 +125,7 @@ Single Table Design (詳細: `docs/db/entities.md`、`docs/db/access-patterns.md
 1. PR → CI (web build, terraform plan)
 2. main merge → CD
    - infra 変更時: terraform apply
-   - web: docker build → ECR push → Lambda update
+   - web: build → 配布物作成 (`pnpm package:web-function`) → `aws lambda-web deploy` → 署名付き疎通確認 → CloudFront 無効化
 
 ## TDD 運用 (ADR 0007 / #92)
 

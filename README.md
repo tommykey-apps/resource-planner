@@ -6,7 +6,7 @@
 
 | Layer | Tool | Version |
 |---|---|---|
-| Runtime | Node.js | 22 |
+| Runtime | Node.js | 24 |
 | Package Manager | pnpm | 10 |
 | Framework | SvelteKit | 2.58 |
 | UI | Svelte | 5.55+ |
@@ -16,7 +16,7 @@
 | Adapter | `@sveltejs/adapter-node` | 5 |
 | Auth | Auth.js + Email Magic Link | `@auth/sveltekit` 1.11+ |
 | DB | DynamoDB (Single Table Design) | — |
-| Hosting | Lambda (ARM64 container) + API Gateway HTTP API + CloudFront | — |
+| Hosting | Lambda Web Functions + CloudFront ([ADR 0014](docs/adr/0014-lambda-web-functions.md)) | — |
 | Type Checking | TypeScript / svelte-check | 6 / 4 |
 | Linter | ESLint + Prettier | 10 / 3 |
 | Dev Env | flox | 1.11 |
@@ -50,7 +50,7 @@ CI では `secrets.GITHUB_TOKEN` をそのまま使う(`.github/workflows/ci.yam
 ```bash
 make help          # 利用可能なコマンド一覧
 make dev           # SvelteKit dev server (cd web && pnpm dev)
-make build         # 本番ビルド (Lambda container 用)
+make build         # 本番ビルド
 make db            # DynamoDB Local 起動 + table 作成 (port 8000)
 make db-docs       # tbls で docs/db/schema/ 再生成
 make db-docs-diff  # スキーマ drift 確認
@@ -63,7 +63,7 @@ make clean         # docker compose down
 cd web
 pnpm install               # 依存インストール (要 GITHUB_TOKEN)
 pnpm dev                   # Vite dev server
-pnpm build                 # ビルド (build/ に出力、Lambda 用)
+pnpm build                 # ビルド (build/ に出力)
 pnpm check                 # svelte-check
 pnpm format                # Prettier 自動修正
 pnpm test                  # Vitest (unit; DDB Local 起動時は integration も含む)
@@ -111,10 +111,14 @@ ui-components 側の挙動と props 一覧は [tommykey-apps/ui-components READM
 
 ## アーキテクチャ
 
-![Architecture](docs/architecture.png)
+![構成図](docs/architecture.svg)
+
+1. 利用者のブラウザは CloudFront に接続する。CloudFront は OAC で署名して Lambda Web Function を呼ぶ
+2. Lambda Web Function は SvelteKit をそのまま HTTP サーバーとして動かし、DynamoDB を読み書きする
+3. ログインはメールのリンクで行う。SES の不達・苦情は SNS 経由で別の Lambda が DynamoDB に記録し、以後の送信を止める
 
 > [docs/architecture.drawio](docs/architecture.drawio) を draw.io で開くと編集できる。
-> 図を更新したら `drawio-png` skill (またはローカル draw.io GUI) で `docs/architecture.png` を再 export して commit する。
+> 図を更新したら `drawio -x -f svg -o docs/architecture.svg docs/architecture.drawio` で書き出して commit する。
 
 ## 設計ドキュメントの読み方
 
@@ -126,7 +130,7 @@ OpenAPI は使わず、TypeScript 型 + Zod schema を API 仕様の正本とし
 
 | 何が知りたい | どこを見る | Pages |
 |---|---|---|
-| **構造** (どのコンポーネントがどう繋がっているか) | [`docs/architecture.drawio`](docs/architecture.drawio) ([PNG](docs/architecture.png)) — C4 Container 図 | [/architecture.png](https://tommykey-apps.github.io/resource-planner/architecture.png) |
+| **構造** (どのコンポーネントがどう繋がっているか) | [`docs/architecture.drawio`](docs/architecture.drawio) ([SVG](docs/architecture.svg)) — 構成図 | [/architecture.svg](https://tommykey-apps.github.io/resource-planner/architecture.svg) |
 | **なぜ** その判断をしたか | [`docs/adr/`](docs/adr/) — Architecture Decision Records (Michael Nygard 形式) | [/adr/](https://tommykey-apps.github.io/resource-planner/adr/) |
 | **どう動く** か (画面 → action → DB の流れ) | [`docs/use-cases.md`](docs/use-cases.md) — Mermaid sequence diagrams | [/use-cases.html](https://tommykey-apps.github.io/resource-planner/use-cases.html) |
 | **データモデル** (PK / SK / 属性 / クエリパターン) | [`docs/db/`](docs/db/) — tbls 自動生成 + 手書き entities/access-patterns | [/db/](https://tommykey-apps.github.io/resource-planner/db/) |

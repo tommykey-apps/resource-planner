@@ -7,7 +7,7 @@
 
 | 何が知りたい | どこを見る |
 |---|---|
-| **構造** (どのコンポーネントがどう繋がっているか) | [`architecture.png`](architecture.png) — C4 Container 図 |
+| **構造** (どのコンポーネントがどう繋がっているか) | [`architecture.svg`](architecture.svg) — 構成図 |
 | **なぜ** その判断をしたか | [`adr/`](adr/) — Architecture Decision Records (Michael Nygard 形式) |
 | **どう動く** か (画面 → action → DB の流れ) | [`use-cases.md`](use-cases.md) — Mermaid sequence diagrams |
 | **データモデル** (PK / SK / 属性 / クエリパターン) | [`db/`](db/) — tbls 自動生成 + 手書き entities/access-patterns |
@@ -15,10 +15,10 @@
 
 ## アーキテクチャ図
 
-![Architecture](architecture.png)
+![構成図](architecture.svg)
 
 > [`architecture.drawio`](https://github.com/tommykey-apps/resource-planner/blob/main/docs/architecture.drawio) を draw.io で開くと編集できる。
-> 図を更新したら `drawio-png` skill (またはローカル draw.io GUI) で `architecture.png` を再 export して commit する。
+> 図を更新したら `drawio -x -f svg -o docs/architecture.svg docs/architecture.drawio` で書き出して commit する。
 
 ## クイックリンク
 
