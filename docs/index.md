@@ -18,7 +18,8 @@
 ![構成図](architecture.svg)
 
 > [`architecture.drawio`](https://github.com/tommykey-apps/resource-planner/blob/main/docs/architecture.drawio) を draw.io で開くと編集できる。
-> 図を更新したら `drawio -x -f svg -o docs/architecture.svg docs/architecture.drawio` で書き出して commit する。
+> 図を更新したら `flox activate -- xvfb-run -a drawio -x -f svg -o docs/architecture.svg docs/architecture.drawio` で書き出して commit する。
+> flox の draw.io (32 系) を使う。31.7 より前の CLI は背景色を書き出さず、GitHub のダークモードで文字が背景に同化する。
 
 ## クイックリンク
 
