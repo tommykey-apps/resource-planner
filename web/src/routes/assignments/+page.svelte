@@ -14,6 +14,7 @@
 		parseAssignmentParams,
 		type AssignmentFilters
 	} from '$lib/assignments-url-state';
+	import { overlapsPeriod } from '$lib/assignment-period';
 	import {
 		flattenDepartmentTree,
 		resourceIdsForDepartmentFilter,
@@ -38,7 +39,7 @@
 	const projectMap = $derived(new Map(projects.map((p) => [p.id, p])));
 
 	// URL → filter state (初期化 + reactive 更新)。 sync は `syncStateToUrl` helper で集約 (#174)。
-	const initial = parseAssignmentParams(page.url.searchParams);
+	const initial = parseAssignmentParams(page.url.searchParams, new Date());
 	let filters = $state<AssignmentFilters>(initial);
 	// ADR 0015: filters.departmentId には利用者が選んだ値 (URL) だけを持つ。 未選択 ('') の間は
 	// ログインユーザーの部署を使う。 props は $derived で読み、 最新の値を追う (Svelte 公式)。
@@ -70,8 +71,7 @@
 				if (filters.resourceId && a.resourceId !== filters.resourceId) return false;
 				if (filters.projectId && a.projectId !== filters.projectId) return false;
 				if (deptResourceIds && !deptResourceIds.has(a.resourceId)) return false;
-				if (filters.from && a.startDate < filters.from) return false;
-				if (filters.to && a.startDate > filters.to) return false;
+				if (!overlapsPeriod(a, filters.from, filters.to)) return false;
 				if (q) {
 					const resourceName = resourceMap.get(a.resourceId)?.name?.toLowerCase() ?? '';
 					const projectName = projectMap.get(a.projectId)?.name?.toLowerCase() ?? '';
@@ -105,6 +105,7 @@
 
 	function clearFilters() {
 		// 部署は「すべて」を明示する (空にすると次の読み込みで初期値の自分の部署に戻るため)。
+		// 期間の空は URL に空のキーとして残り、 再読み込みしても今月に戻らない。
 		filters = {
 			q: '',
 			resourceId: '',
