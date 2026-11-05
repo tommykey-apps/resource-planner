@@ -8,9 +8,11 @@
  *   - `resourceId`: 特定 resource で絞る
  *   - `projectId`: 特定 project で絞る
  *   - `departmentId`: 部署 (子孫含む) で絞る。 `__unassigned__` で未所属 (#242)
- *   - `from`: YYYY-MM-DD、開始日下限
- *   - `to`: YYYY-MM-DD、開始日上限 (inclusive)
+ *   - `from` / `to`: YYYY-MM-DD、期間の初日と最終日 (両端を含む)。 アサインの期間と重なれば表示する。
+ *     両方のキーがなければ今月にする。 空のキー (`from=&to=`) は利用者が制限なしを選んだ印として
+ *     残し、 再読み込みで今月に戻さない (部署の `__all__` と同じ考え方、 ADR 0015)
  */
+import { currentMonthRange } from './assignment-period';
 
 export type AssignmentFilters = {
 	q: string;
@@ -29,14 +31,17 @@ function readDate(params: URLSearchParams, key: string): string {
 	return DATE_RE.test(v) ? v : '';
 }
 
-export function parseAssignmentParams(params: URLSearchParams): AssignmentFilters {
+export function parseAssignmentParams(params: URLSearchParams, today: Date): AssignmentFilters {
+	const period =
+		params.has('from') || params.has('to')
+			? { from: readDate(params, 'from'), to: readDate(params, 'to') }
+			: currentMonthRange(today);
 	return {
 		q: params.get('q') ?? '',
 		resourceId: params.get('resourceId') ?? '',
 		projectId: params.get('projectId') ?? '',
 		departmentId: params.get('departmentId') ?? '',
-		from: readDate(params, 'from'),
-		to: readDate(params, 'to')
+		...period
 	};
 }
 
@@ -51,7 +56,7 @@ export function applyAssignmentParams(url: URL, filters: AssignmentFilters): URL
 	setOrDelete('resourceId');
 	setOrDelete('projectId');
 	setOrDelete('departmentId');
-	setOrDelete('from');
-	setOrDelete('to');
+	next.searchParams.set('from', filters.from);
+	next.searchParams.set('to', filters.to);
 	return next;
 }
