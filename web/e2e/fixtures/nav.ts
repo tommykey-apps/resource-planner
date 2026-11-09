@@ -21,10 +21,10 @@ export async function openSection(page: Page, name: keyof typeof SECTION_PATHS):
 }
 
 /**
- * 案件一覧の期間を「すべての期間」にする (ADR 0016)。 既定の今月では、 作ったばかりで割り当てのない
+ * 案件一覧を期間「すべての期間」で開く (ADR 0016)。 既定の今月では、 作ったばかりで割り当てのない
  * 案件が一覧に出ないため、 案件を作って一覧で確かめる spec はこれを先に呼ぶ。
+ * 案件が 0 件だと絞り込み欄自体が出ないので、 選択欄ではなく URL で指定する。
  */
 export async function showAllPeriods(page: Page): Promise<void> {
-	await page.getByRole('combobox', { name: 'Period' }).selectOption('all');
-	await expect(page).toHaveURL(/period=all/);
+	await page.goto('/projects?period=all');
 }

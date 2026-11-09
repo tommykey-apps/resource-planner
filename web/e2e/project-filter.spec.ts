@@ -84,14 +84,14 @@ test('既定は自分の部署 × 今月。 期間を「すべて」にすると
 	// 案件を 2 つ作る。 作ったばかりで割り当てがないので、 今月の一覧には出ない。
 	// 部署の初期値はページを読み込んだときのメンバーで決まるので、 開き直す (default-department.spec と同じ)
 	await page.goto('/projects');
+	await createProject(page, active, department);
+	await createProject(page, idle, department);
 	await expect(
 		page.getByRole('combobox', { name: 'Department', exact: true }).locator('option:checked')
 	).toHaveText(department);
 	await expect(page.getByRole('combobox', { name: 'Period' }).locator('option:checked')).toHaveText(
 		'This month'
 	);
-	await createProject(page, active, department);
-	await createProject(page, idle, department);
 	await expect(page.locator('tr', { hasText: active })).toHaveCount(0);
 
 	// 片方に今日の割り当てを入れる
