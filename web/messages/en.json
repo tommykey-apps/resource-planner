@@ -337,5 +337,12 @@
 	"fields_endDate": "End date",
 	"fields_resourceId": "Person",
 	"fields_projectId": "Project",
-	"fields_email": "Email"
+	"fields_email": "Email",
+	"projects_periodLabel": "Period",
+	"projects_period_today": "Today",
+	"projects_period_month": "This month",
+	"projects_period_year": "This year",
+	"projects_period_all": "All periods",
+	"projects_created": "Added \"{name}\"",
+	"departments_confirmDeleteProjects": "Projects in this department: {count}. After deletion these projects will not belong to any department. The projects themselves are kept and can be linked to another department later."
 }

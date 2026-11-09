@@ -19,3 +19,12 @@ export async function openSection(page: Page, name: keyof typeof SECTION_PATHS):
 		.click();
 	await expect(page).toHaveURL(new RegExp(`^http://localhost:4173${SECTION_PATHS[name]}(\\?|$)`));
 }
+
+/**
+ * 案件一覧の期間を「すべての期間」にする (ADR 0016)。 既定の今月では、 作ったばかりで割り当てのない
+ * 案件が一覧に出ないため、 案件を作って一覧で確かめる spec はこれを先に呼ぶ。
+ */
+export async function showAllPeriods(page: Page): Promise<void> {
+	await page.getByRole('combobox', { name: 'Period' }).selectOption('all');
+	await expect(page).toHaveURL(/period=all/);
+}

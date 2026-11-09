@@ -1,4 +1,5 @@
 <script lang="ts">
+	import DepartmentOptions from '$lib/components/DepartmentOptions.svelte';
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import { Button } from '$lib/components/ui/button';
@@ -17,7 +18,7 @@
 	import { overlapsPeriod } from '$lib/assignment-period';
 	import {
 		flattenDepartmentTree,
-		resourceIdsForDepartmentFilter,
+		idsForDepartmentFilter,
 		DEPARTMENT_FILTER_UNASSIGNED,
 		DEPARTMENT_FILTER_ALL
 	} from '$lib/repository/department-tree';
@@ -60,9 +61,7 @@
 	}
 
 	// #242: 部署フィルタ (子孫含む) にマッチする resource id 集合。 null = フィルタなし。
-	const deptResourceIds = $derived(
-		resourceIdsForDepartmentFilter(departments, resources, departmentId)
-	);
+	const deptResourceIds = $derived(idsForDepartmentFilter(departments, resources, departmentId));
 
 	const filtered = $derived.by(() => {
 		const q = filters.q.toLowerCase();
@@ -151,9 +150,7 @@
 		>
 			<option value={DEPARTMENT_FILTER_ALL}>{m.departments_allOption()}</option>
 			<option value={DEPARTMENT_FILTER_UNASSIGNED}>{m.departments_unassigned()}</option>
-			{#each departmentOptions as { dept, depth } (dept.id)}
-				<option value={dept.id}>{'\u00A0\u00A0'.repeat(depth)}{dept.name}</option>
-			{/each}
+			<DepartmentOptions tree={departmentOptions} />
 		</select>
 		<select
 			bind:value={filters.resourceId}

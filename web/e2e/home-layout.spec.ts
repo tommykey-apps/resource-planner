@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { clearMagicLinks, getMagicLinkUrl } from './fixtures/magic-link';
-import { openSection } from './fixtures/nav';
+import { openSection, showAllPeriods } from './fixtures/nav';
 
 /**
  * Home (/) を sign-in 後に開いた時の **visual layout regression** を守る spec。
@@ -44,6 +44,7 @@ async function bootstrap1Assignment(page: import('@playwright/test').Page, suffi
 	await expect(page.locator('tr', { hasText: `r-${suffix}` })).toBeVisible();
 
 	await openSection(page, 'Projects');
+	await showAllPeriods(page);
 	await page.getByRole('button', { name: /\+ Add project/ }).click();
 	await page.locator('input[name="name"]').fill(`p-${suffix}`);
 	await page.getByRole('button', { name: /^Create$/ }).click();

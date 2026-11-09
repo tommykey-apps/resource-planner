@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { clearMagicLinks, getMagicLinkUrl } from './fixtures/magic-link';
-import { openSection } from './fixtures/nav';
+import { openSection, showAllPeriods } from './fixtures/nav';
 
 /**
  * #142: /assignments を 375px 幅で開いたとき 6 列 table が右端で見切れていた問題の regression spec。
@@ -39,6 +39,7 @@ async function createOneAssignment(page: import('@playwright/test').Page, suffix
 
 	// Project 作成
 	await openSection(page, 'Projects');
+	await showAllPeriods(page);
 	await page.getByRole('button', { name: /\+ Add project/ }).click();
 	await page.getByLabel('Project name').fill(`p-${suffix}`);
 	await page.getByRole('button', { name: /^Create$/ }).click();

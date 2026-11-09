@@ -8,7 +8,13 @@ import {
 import { mockClient } from 'aws-sdk-client-mock';
 import 'aws-sdk-client-mock-vitest';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createProject, deleteProject, updateProject, deleteProjects } from './project';
+import {
+	createProject,
+	deleteProject,
+	updateProject,
+	deleteProjects,
+	queryProjectSkByDepartment
+} from './project';
 
 const ddbMock = mockClient(DynamoDBDocumentClient);
 const TEAM = 'team-test';
@@ -77,6 +83,81 @@ describe('createProject', () => {
 	});
 });
 
+describe('createProject の部署 (ADR 0016)', () => {
+	it('部署を指定すると departmentId を保存する', async () => {
+		ddbMock.on(PutCommand).resolves({});
+
+		const result = await createProject(TEAM, {
+			name: 'P',
+			color: '#ff0000',
+			description: undefined,
+			tags: [],
+			links: [],
+			departmentId: 'dept-1'
+		});
+
+		expect(result.departmentId).toBe('dept-1');
+		const input = ddbMock.commandCalls(PutCommand)[0].args[0].input;
+		expect(input.Item).toMatchObject({ departmentId: 'dept-1' });
+	});
+
+	it('部署がなければ departmentId を保存しない (未所属)', async () => {
+		ddbMock.on(PutCommand).resolves({});
+
+		const result = await createProject(TEAM, {
+			name: 'P',
+			color: '#ff0000',
+			description: undefined,
+			tags: [],
+			links: []
+		});
+
+		expect(result).not.toHaveProperty('departmentId');
+		const input = ddbMock.commandCalls(PutCommand)[0].args[0].input;
+		expect(input.Item).not.toHaveProperty('departmentId');
+	});
+});
+
+describe('updateProject の部署 (ADR 0016)', () => {
+	it('部署を指定すると departmentId を SET する', async () => {
+		ddbMock.on(UpdateCommand).resolves({});
+
+		await updateProject(TEAM, {
+			id: 'prj-1',
+			name: 'P',
+			color: '#00ff00',
+			description: undefined,
+			tags: [],
+			links: [],
+			departmentId: 'dept-1'
+		});
+
+		const input = ddbMock.commandCalls(UpdateCommand)[0].args[0].input;
+		expect(input.UpdateExpression).toBe(
+			'SET #name = :name, color = :color, departmentId = :departmentId REMOVE description, tags, links'
+		);
+		expect(input.ExpressionAttributeValues).toMatchObject({ ':departmentId': 'dept-1' });
+	});
+});
+
+describe('queryProjectSkByDepartment', () => {
+	it('PRJ# を Query し、 departmentId で絞った sk を返す', async () => {
+		ddbMock.on(QueryCommand).resolves({ Items: [{ sk: 'PRJ#a' }, { sk: 'PRJ#b' }] });
+
+		const sks = await queryProjectSkByDepartment(TEAM, 'dept-1');
+
+		expect(sks).toEqual(['PRJ#a', 'PRJ#b']);
+		const input = ddbMock.commandCalls(QueryCommand)[0].args[0].input;
+		expect(input.KeyConditionExpression).toContain('begins_with(sk, :prefix)');
+		expect(input.ExpressionAttributeValues).toMatchObject({
+			':pk': `TEAM#${TEAM}`,
+			':prefix': 'PRJ#',
+			':v': 'dept-1'
+		});
+		expect(input.FilterExpression).toBe('departmentId = :v');
+	});
+});
+
 describe('updateProject', () => {
 	it('SETs name/color and REMOVEs description/tags/links when all detail empty', async () => {
 		ddbMock.on(UpdateCommand).resolves({});
@@ -93,7 +174,7 @@ describe('updateProject', () => {
 		const input = ddbMock.commandCalls(UpdateCommand)[0].args[0].input;
 		expect(input.Key).toEqual({ pk: `TEAM#${TEAM}`, sk: 'PRJ#prj-1' });
 		expect(input.UpdateExpression).toBe(
-			'SET #name = :name, color = :color REMOVE description, tags, links'
+			'SET #name = :name, color = :color REMOVE description, tags, links, departmentId'
 		);
 		expect(input.ExpressionAttributeNames).toEqual({ '#name': 'name' });
 		expect(input.ExpressionAttributeValues).toEqual({
@@ -118,7 +199,7 @@ describe('updateProject', () => {
 
 		const input = ddbMock.commandCalls(UpdateCommand)[0].args[0].input;
 		expect(input.UpdateExpression).toBe(
-			'SET #name = :name, color = :color, description = :description, tags = :tags, links = :links'
+			'SET #name = :name, color = :color, description = :description, tags = :tags, links = :links REMOVE departmentId'
 		);
 		expect(input.ExpressionAttributeValues).toEqual({
 			':name': 'Renamed',
@@ -143,7 +224,7 @@ describe('updateProject', () => {
 
 		const input = ddbMock.commandCalls(UpdateCommand)[0].args[0].input;
 		expect(input.UpdateExpression).toBe(
-			'SET #name = :name, color = :color, description = :description REMOVE tags, links'
+			'SET #name = :name, color = :color, description = :description REMOVE tags, links, departmentId'
 		);
 		expect(input.ExpressionAttributeValues).toEqual({
 			':name': 'Renamed',
@@ -166,7 +247,7 @@ describe('updateProject', () => {
 
 		const input = ddbMock.commandCalls(UpdateCommand)[0].args[0].input;
 		expect(input.UpdateExpression).toBe(
-			'SET #name = :name, color = :color REMOVE description, tags, links'
+			'SET #name = :name, color = :color REMOVE description, tags, links, departmentId'
 		);
 		expect(input.ExpressionAttributeValues).toEqual({
 			':name': 'Renamed',

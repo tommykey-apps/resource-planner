@@ -4,7 +4,7 @@ import {
 	wouldCreateCycle,
 	siblingNameConflict,
 	flattenDepartmentTree,
-	resourceIdsForDepartmentFilter,
+	idsForDepartmentFilter,
 	DEPARTMENT_FILTER_UNASSIGNED,
 	DEPARTMENT_FILTER_ALL
 } from './department-tree';
@@ -103,7 +103,7 @@ describe('flattenDepartmentTree', () => {
 	});
 });
 
-describe('resourceIdsForDepartmentFilter (#242 部署フィルタ、 子孫含む)', () => {
+describe('idsForDepartmentFilter (#242 部署フィルタ、 子孫含む)', () => {
 	const resources: Resource[] = [
 		{ id: 'u1', name: 'A', email: 'u1@example.com', departmentId: 'a' },
 		{ id: 'u2', name: 'B', email: 'u2@example.com', departmentId: 'a1' },
@@ -113,31 +113,47 @@ describe('resourceIdsForDepartmentFilter (#242 部署フィルタ、 子孫含�
 	];
 
 	it('空 (フィルタなし) は null を返す', () => {
-		expect(resourceIdsForDepartmentFilter(deps, resources, '')).toBeNull();
+		expect(idsForDepartmentFilter(deps, resources, '')).toBeNull();
 	});
 
 	it('「すべての部署」を明示した値も null (絞り込みなし)', () => {
-		expect(resourceIdsForDepartmentFilter(deps, resources, DEPARTMENT_FILTER_ALL)).toBeNull();
+		expect(idsForDepartmentFilter(deps, resources, DEPARTMENT_FILTER_ALL)).toBeNull();
 	});
 
 	it('部署を指定すると子孫部署の Resource も含む', () => {
 		// r 配下 = a, a1, b → u1, u2, u3
-		expect(resourceIdsForDepartmentFilter(deps, resources, 'r')).toEqual(
-			new Set(['u1', 'u2', 'u3'])
-		);
+		expect(idsForDepartmentFilter(deps, resources, 'r')).toEqual(new Set(['u1', 'u2', 'u3']));
 		// a 配下 = a, a1 → u1, u2
-		expect(resourceIdsForDepartmentFilter(deps, resources, 'a')).toEqual(new Set(['u1', 'u2']));
+		expect(idsForDepartmentFilter(deps, resources, 'a')).toEqual(new Set(['u1', 'u2']));
 		// 葉 s → u4
-		expect(resourceIdsForDepartmentFilter(deps, resources, 's')).toEqual(new Set(['u4']));
+		expect(idsForDepartmentFilter(deps, resources, 's')).toEqual(new Set(['u4']));
 	});
 
 	it('未所属フィルタは departmentId なしの Resource を返す', () => {
-		expect(resourceIdsForDepartmentFilter(deps, resources, DEPARTMENT_FILTER_UNASSIGNED)).toEqual(
+		expect(idsForDepartmentFilter(deps, resources, DEPARTMENT_FILTER_UNASSIGNED)).toEqual(
 			new Set(['u5'])
 		);
 	});
 
 	it('存在しない部署 id は空集合 (該当なし)', () => {
-		expect(resourceIdsForDepartmentFilter(deps, resources, 'ghost')).toEqual(new Set());
+		expect(idsForDepartmentFilter(deps, resources, 'ghost')).toEqual(new Set());
+	});
+});
+
+describe('idsForDepartmentFilter を案件に使う (ADR 0016)', () => {
+	const deps = [
+		{ id: 'r', name: '開発本部', parentId: null },
+		{ id: 'a', name: 'バックエンド課', parentId: 'r' }
+	];
+	const projects = [{ id: 'p1', departmentId: 'a' }, { id: 'p2', departmentId: 'r' }, { id: 'p3' }];
+
+	it('子孫の部署の案件も含む', () => {
+		expect(idsForDepartmentFilter(deps, projects, 'r')).toEqual(new Set(['p1', 'p2']));
+	});
+
+	it('未所属の案件', () => {
+		expect(idsForDepartmentFilter(deps, projects, DEPARTMENT_FILTER_UNASSIGNED)).toEqual(
+			new Set(['p3'])
+		);
 	});
 });

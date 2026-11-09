@@ -206,5 +206,12 @@
 	"fields_endDate": "終了日",
 	"fields_resourceId": "メンバー",
 	"fields_projectId": "案件",
-	"fields_email": "メールアドレス"
+	"fields_email": "メールアドレス",
+	"projects_periodLabel": "期間",
+	"projects_period_today": "今日",
+	"projects_period_month": "今月",
+	"projects_period_year": "今年",
+	"projects_period_all": "すべての期間",
+	"projects_created": "「{name}」を追加しました",
+	"departments_confirmDeleteProjects": "この部署に紐づく案件が {count} 件あります。削除すると、これらの案件はどの部署にも紐づかなくなります。案件そのものは消えず、あとで別の部署に紐づけられます。"
 }

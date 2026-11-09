@@ -17,5 +17,9 @@
 			>{m.common_count({ count: data.departments.length })}</span
 		>
 	</div>
-	<DepartmentManager departments={data.departments} resources={data.resources} />
+	<DepartmentManager
+		departments={data.departments}
+		resources={data.resources}
+		projects={data.projects}
+	/>
 </main>

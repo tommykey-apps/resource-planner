@@ -81,3 +81,4 @@ Resource (人) を部署単位でまとめて見たい。部署は枝分かれ�
 - [ADR 0006](0006-cascade-delete-strategy.md) — cascade delete (本 ADR の削除方針はこれと対比)
 - [CONTEXT.md](../../CONTEXT.md) — Team / Department / Resource / User の用語
 - 実装 issue: tracer-bullet で分割 (本 ADR から起票)
+- 案件 (Project) の部署と、 部署を削除したときの案件の扱いは [ADR 0016](0016-project-department-and-period-filter.md)

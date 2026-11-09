@@ -22,6 +22,7 @@ resource-planner の設計判断を Michael Nygard 形式で記録する。
 | [0013](0013-department-grouping-tree.md) | Department を Team 内のグルーピング用ツリー (adjacency list) として追加する | Accepted | 2026-05-29 |
 | [0014](0014-lambda-web-functions.md) | アプリの実行基盤を Lambda Web Functions にする | Accepted | 2026-11-03 |
 | [0015](0015-link-user-and-member-by-email.md) | ログインユーザーとメンバーをメールアドレスで結び付ける | Accepted | 2026-11-04 |
+| [0016](0016-project-department-and-period-filter.md) | 案件に部署を持たせ、 一覧を部署と期間で絞る | Accepted | 2026-11-10 |
 
 ## テンプレ
 

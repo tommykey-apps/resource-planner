@@ -14,5 +14,10 @@
 	<div class="mb-4 flex items-baseline gap-3">
 		<h1 class="m-0 text-xl font-semibold">{m.nav_projectsLink()}</h1>
 	</div>
-	<ProjectManager projects={data.projects} assignments={data.assignments} />
+	<ProjectManager
+		projects={data.projects}
+		assignments={data.assignments}
+		departments={data.departments}
+		defaultDepartmentFilter={data.defaultDepartmentFilter}
+	/>
 </main>

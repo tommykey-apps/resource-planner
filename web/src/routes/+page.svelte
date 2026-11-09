@@ -1,4 +1,5 @@
 <script lang="ts">
+	import DepartmentOptions from '$lib/components/DepartmentOptions.svelte';
 	import {
 		ResourceTimeline,
 		TimelineToolbar,
@@ -17,7 +18,7 @@
 	import { applyTimelineParams, parseTimelineParams } from '$lib/timeline-url-state';
 	import {
 		flattenDepartmentTree,
-		resourceIdsForDepartmentFilter,
+		idsForDepartmentFilter,
 		DEPARTMENT_FILTER_UNASSIGNED,
 		DEPARTMENT_FILTER_ALL
 	} from '$lib/repository/department-tree';
@@ -70,7 +71,7 @@
 	// フィルタ中は行が出ない (server confirm 後に実 departmentId が付けば再評価される)。 想定どおり。
 	const departmentOptions = $derived(flattenDepartmentTree(data.departments));
 	const deptResourceIds = $derived(
-		resourceIdsForDepartmentFilter(data.departments, resources, departmentId)
+		idsForDepartmentFilter(data.departments, resources, departmentId)
 	);
 	const visibleResources = $derived(
 		deptResourceIds ? resources.filter((r) => deptResourceIds.has(r.id)) : resources
@@ -196,9 +197,7 @@
 			>
 				<option value={DEPARTMENT_FILTER_ALL}>{m.departments_allOption()}</option>
 				<option value={DEPARTMENT_FILTER_UNASSIGNED}>{m.departments_unassigned()}</option>
-				{#each departmentOptions as { dept, depth } (dept.id)}
-					<option value={dept.id}>{'\u00A0\u00A0'.repeat(depth)}{dept.name}</option>
-				{/each}
+				<DepartmentOptions tree={departmentOptions} />
 			</select>
 		</div>
 

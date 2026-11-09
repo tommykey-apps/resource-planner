@@ -64,6 +64,10 @@ export async function queryAllByTeam(teamId: string): Promise<TeamData> {
 						: {}),
 					...(Array.isArray(item.links) && item.links.length > 0
 						? { links: item.links as ProjectLink[] }
+						: {}),
+					// ADR 0016: departmentId は present のときだけ載せる (未所属 = キー不在、 Resource と同じ)。
+					...(typeof item.departmentId === 'string' && item.departmentId.length > 0
+						? { departmentId: item.departmentId }
 						: {})
 				};
 				data.projects.push(project);

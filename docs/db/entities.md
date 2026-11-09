@@ -15,6 +15,7 @@ erDiagram
     Resource   ||--o{ Assignment : "resourceId で参照される"
     Project    ||--o{ Assignment : "projectId で参照される"
     Department ||--o{ Resource   : "departmentId でグルーピング"
+    Department ||--o{ Project    : "departmentId (受注した部署、 ADR 0016)"
     Department ||--o{ Department  : "parentId (adjacency list)"
 
     Assignment {
@@ -112,7 +113,10 @@ erDiagram
 | `description` | str (optional) | 案件説明 markdown raw (最大 10,000 文字、 ADR 0010)。 未設定なら attribute なし |
 | `tags` | list of str (optional) | 使用技術タグ (最大 20 件 / 各 30 文字、 NFC normalize + dedup、 ADR 0010)。 未設定なら attribute なし |
 | `links` | list of map (optional) | 関連リンク (最大 10 件、 http(s) のみ)。 各要素 `{ label?: str, url: str }` (ADR 0010)。 未設定なら attribute なし |
+| `departmentId` | str (optional) | 受注した部署、 または受注を見込む [Department](#department) の `id` (ADR 0016)。 属性なし = 未所属。 部署を削除すると REMOVE される |
 
+> **期間は持たない** (ADR 0016): 案件一覧の期間の絞り込みは、 選んだ期間に重なる Assignment を持つかで判定する。
+>
 > **REMOVE semantics**: description 空文字 / tags 空配列 / links 空配列 は repository 層で 「未設定」 に正規化し、 attribute ごと REMOVE する。 「保存されているけど空」 状態は意図的に作らない (ADR 0010)。
 
 サンプルアイテム (詳細あり):

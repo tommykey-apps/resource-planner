@@ -18,6 +18,15 @@ import { z } from 'zod';
 
 export const dateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'invalidDateFormat');
 
+/**
+ * 所属 Department の id (#239 / ADR 0016)。 Resource と Project で共用する。
+ * 空文字 / 未指定 = 未所属 (undefined → repository で attribute REMOVE)。
+ */
+export const optionalDepartmentId = z.preprocess(
+	(v) => (typeof v === 'string' && v.trim() === '' ? undefined : v),
+	z.string().min(1, 'required').optional()
+);
+
 export const colorString = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'invalidColorFormat');
 
 // ── Delete-by-id (#171) ─────────────────────────────────────────────

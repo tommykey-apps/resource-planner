@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { colorString } from './shared';
+import { colorString, optionalDepartmentId } from './shared';
 import type { ProjectLink } from '$lib/types';
 
 // ── Project ─────────────────────────────────────────────────────────
@@ -104,7 +104,8 @@ const projectBaseShape = {
 	color: colorString,
 	description: descriptionSchema,
 	tags: tagsCsvSchema,
-	linksJson: linksJsonSchema
+	linksJson: linksJsonSchema,
+	departmentId: optionalDepartmentId
 } as const;
 
 interface ProjectInputShape {
@@ -113,6 +114,7 @@ interface ProjectInputShape {
 	description?: string;
 	tags: string[];
 	linksJson: ProjectLink[];
+	departmentId?: string;
 }
 
 interface ProjectOutput {
@@ -121,6 +123,7 @@ interface ProjectOutput {
 	description?: string;
 	tags: string[];
 	links: ProjectLink[];
+	departmentId?: string;
 }
 
 /** transform で linksJson → links rename + 一貫した output 型を生成 (ADR 0001 型駆動)。 */
@@ -129,7 +132,8 @@ const projectTransform = (input: ProjectInputShape): ProjectOutput => ({
 	color: input.color,
 	description: input.description,
 	tags: input.tags,
-	links: input.linksJson
+	links: input.linksJson,
+	departmentId: input.departmentId
 });
 
 export const projectCreateSchema = z.object(projectBaseShape).transform(projectTransform);

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import DepartmentOptions from '$lib/components/DepartmentOptions.svelte';
 	import { enhance } from '$app/forms';
 	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import { toast } from 'svelte-sonner';
@@ -7,12 +8,13 @@
 	import Dialog from './Dialog.svelte';
 	import { createSubmitState } from '$lib/forms/submit-state.svelte';
 	import { confirmDialog } from '$lib/forms/confirm-dialog';
+	import { departmentDeleteMessage } from '$lib/forms/department-delete-message';
 	import { translateServerError, type ServerErrors } from '$lib/forms/server-error';
 	import { m } from '$lib/paraglide/messages.js';
 	import { DEPARTMENT_NAME_MAX_LENGTH } from '$lib/schemas';
 	import { descendantIds, flattenDepartmentTree } from '$lib/repository/department-tree';
 	import ScrollShadow from './table/ScrollShadow.svelte';
-	import type { Department, Resource } from '$lib/types';
+	import type { Department, Project, Resource } from '$lib/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
 
 	/**
@@ -21,11 +23,14 @@
 	 */
 	let {
 		departments,
-		resources = []
+		resources = [],
+		projects = []
 	}: {
 		departments: Department[];
 		/** 所属メンバー数の列に使う。 省略時は 0 人として表示する。 */
 		resources?: Resource[];
+		/** 削除の確認で、 紐づく案件の件数を示すのに使う (ADR 0016)。 */
+		projects?: Project[];
 	} = $props();
 
 	/** DFS 平坦化 (depth 付き、 名前順、 dangling はルート扱い) — indent 表示用。 */
@@ -36,6 +41,15 @@
 		const m = new SvelteMap<string, number>();
 		for (const r of resources) {
 			if (r.departmentId) m.set(r.departmentId, (m.get(r.departmentId) ?? 0) + 1);
+		}
+		return m;
+	});
+
+	/** その部署に直接紐づく案件数 (削除すると未所属になる件数、 ADR 0016)。 */
+	const projectCount = $derived.by(() => {
+		const m = new SvelteMap<string, number>();
+		for (const p of projects) {
+			if (p.departmentId) m.set(p.departmentId, (m.get(p.departmentId) ?? 0) + 1);
 		}
 		return m;
 	});
@@ -131,17 +145,12 @@
 	};
 
 	/**
-	 * 削除 (#241): 配下 (子部署・所属者) は **親へ繰り上がる** ので、 確認で移動先を明示する。
-	 * 親があれば親名へ、 ルートなら「ルート / 未所属」へ移動する旨を出す。
+	 * 削除 (#241 / ADR 0016): 子部署と所属者は親へ繰り上がり、 直接の案件は未所属になる。
+	 * 確認文の組み立ては `departmentDeleteMessage` を参照。
 	 */
 	function makeDeleteSubmit(dept: Department): SubmitFunction {
 		return async ({ cancel }) => {
-			// 親が見つかれば親名へ、 ルート or dangling 親なら「ルート / 未所属」へ
-			// (server も dangling 親はルートに正規化するので表示と挙動が一致する)。
-			const parent = dept.parentId ? departments.find((d) => d.id === dept.parentId) : undefined;
-			const message = parent
-				? m.departments_confirmDelete({ name: dept.name, parent: parent.name })
-				: m.departments_confirmDeleteRoot({ name: dept.name });
+			const message = departmentDeleteMessage(dept, departments, projectCount.get(dept.id) ?? 0);
 			const ok = await confirmDialog({
 				title: m.common_confirm(),
 				message,
@@ -280,9 +289,7 @@
 					style="border-radius: calc(var(--radius) * 0.6)"
 				>
 					<option value="">{m.departments_rootOption()}</option>
-					{#each flatTree as { dept, depth } (dept.id)}
-						<option value={dept.id}>{'\u00A0\u00A0'.repeat(depth)}{dept.name}</option>
-					{/each}
+					<DepartmentOptions tree={flatTree} />
 				</select>
 			</label>
 		{/if}
