@@ -80,7 +80,7 @@
 <Dialog bind:open title={m.assignments_createTitle()}>
 	<form
 		method="POST"
-		action="/?/createAssignment"
+		action="?/createAssignment"
 		use:enhance={formSubmit}
 		class="flex flex-col gap-3"
 	>

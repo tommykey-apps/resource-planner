@@ -205,7 +205,7 @@
 			</Button>
 			<form
 				method="POST"
-				action="/?/deleteAssignment"
+				action="?/deleteAssignment"
 				use:enhance={makeDeleteSubmit({
 					label: `${resource?.name ?? '?'} × ${project?.name ?? '?'} (${a.startDate} 〜 ${displayEndDate(a)})`
 				})}
