@@ -27,9 +27,9 @@ body:
       label: 含むもの (このイシューのスコープ)
       description: 実装するファイル / 機能を箇条書き。スコープ外は「含まないもの」へ。
       placeholder: |
-        - `web/src/routes/.../+page.server.ts` の actions.xxxx
-        - `web/src/lib/schemas/xxxx.ts` (Zod schema)
-        - `web/src/lib/db/xxxx.ts` (DynamoDB アクセス)
+        - `apps/web/src/routes/.../+page.server.ts` の actions.xxxx
+        - `apps/web/src/lib/schemas/xxxx.ts` (Zod schema)
+        - `apps/web/src/lib/db/xxxx.ts` (DynamoDB アクセス)
     validations:
       required: true
 
@@ -80,7 +80,7 @@ body:
       options:
         - label: "Unit test (`*.test.ts`) を `pnpm test` で緑にした (純粋関数、コンポーネント)"
         - label: "Integration test (`*.integration.test.ts`) を緑にした (DDB / 外部依存込み、該当時)"
-        - label: "E2E test (`web/e2e/**/*.spec.ts`) を緑にした (画面遷移を伴う機能、該当時)"
+        - label: "E2E test (`tests/e2e/specs/**/*.spec.ts`) を緑にした (画面遷移を伴う機能、該当時)"
         - label: "既存テストが緑、coverage threshold を下げていない"
 
   - type: textarea

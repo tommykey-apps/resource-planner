@@ -10,7 +10,7 @@ allowed-tools: Bash(pnpm *) Bash(git *) Read Edit Write Grep Glob
 ## Current test status
 
 ```
-!`cd web && pnpm test 2>&1 | tail -30`
+!`cd apps/web && pnpm test 2>&1 | tail -30`
 ```
 
 ## Currently staged files
@@ -30,7 +30,7 @@ allowed-tools: Bash(pnpm *) Bash(git *) Read Edit Write Grep Glob
 ## 進め方 (ユーザーから依頼された task: `$ARGUMENTS`)
 
 1. **失敗するテストを先に書く** (RED)
-   - 該当する `*.test.ts` を新規作成 / 既存に追加。`web/src/lib/**/*.test.ts` は unit、`web/src/lib/repository/integration.test.ts` は DDB Local。
+   - 該当する `*.test.ts` を新規作成 / 既存に追加。`apps/web/src/lib/**/*.test.ts` は unit、`apps/web/src/lib/repository/integration.test.ts` は DDB Local。
    - `pnpm test` を実行して **新しいテストが fail することを確認**。fail メッセージが期待した assertion に一致しているか確認。
    - 「テストが書けない」「テストが pass してしまう」 場合は、依頼内容が曖昧 / 既存挙動と一致 を疑い、ユーザーに確認。
 
@@ -50,7 +50,7 @@ allowed-tools: Bash(pnpm *) Bash(git *) Read Edit Write Grep Glob
 - **境界 / 例外 / null / 0 件 / 100 件超** を最低限カバー (ADR 0007 命名規約)
 - repository 層は `aws-sdk-client-mock` で unit test、DDB Local 統合は `*.integration.test.ts` で `describe.runIf(process.env.AWS_ENDPOINT_URL)` gate
 - Svelte コンポーネントテストはまだ jsdom + `@testing-library/svelte` を導入していないため、必要になった時に同 PR で `pnpm add -D` してから書く
-- Playwright E2E は `web/e2e/*.spec.ts` (未充実、Phase 3 完了後の TODO)
+- Playwright E2E は `tests/e2e/specs/*.spec.ts` (未充実、Phase 3 完了後の TODO)
 - coverage を **下げない**: `pnpm test:coverage` で line/func 割合を確認、減ったら新規実装側に test 追加
 
 ## 参考

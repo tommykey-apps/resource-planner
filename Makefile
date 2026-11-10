@@ -10,10 +10,10 @@ help: ## Show available commands
 # ── Development ──
 
 dev: ## Start SvelteKit dev server
-	cd web && pnpm dev
+	cd apps/web && pnpm dev
 
 build: ## Build SvelteKit for production
-	cd web && pnpm build
+	cd apps/web && pnpm build
 
 # ── Infrastructure ──
 

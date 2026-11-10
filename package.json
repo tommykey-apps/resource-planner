@@ -1,0 +1,14 @@
+{
+	"name": "resource-planner",
+	"private": true,
+	"type": "module",
+	"packageManager": "pnpm@10.13.1",
+	"scripts": {
+		"dev": "pnpm --filter @resource-planner/web dev",
+		"build": "pnpm --filter @resource-planner/web build",
+		"check": "pnpm -r run check",
+		"lint": "pnpm -r run lint",
+		"test": "pnpm -r run test",
+		"test:e2e": "pnpm --filter @resource-planner/e2e test:e2e"
+	}
+}

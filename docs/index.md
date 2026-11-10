@@ -11,7 +11,7 @@
 | **なぜ** その判断をしたか | [`adr/`](adr/) — Architecture Decision Records (Michael Nygard 形式) |
 | **どう動く** か (画面 → action → DB の流れ) | [`use-cases.md`](use-cases.md) — Mermaid sequence diagrams |
 | **データモデル** (PK / SK / 属性 / クエリパターン) | [`db/`](db/) — tbls 自動生成 + 手書き entities/access-patterns |
-| **API 仕様** (関数の入出力) | TypeScript 型 ([`web/src/lib/types.ts`](https://github.com/tommykey-apps/resource-planner/blob/main/web/src/lib/types.ts)、Zod schema) — リポジトリ内のコードを直接読む |
+| **API 仕様** (関数の入出力) | TypeScript 型 ([`apps/web/src/lib/types.ts`](https://github.com/tommykey-apps/resource-planner/blob/main/apps/web/src/lib/types.ts)、Zod schema) — リポジトリ内のコードを直接読む |
 
 ## アーキテクチャ図
 

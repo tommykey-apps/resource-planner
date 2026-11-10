@@ -1,0 +1,12 @@
+{
+	"fileExtensions": ["ts", "svelte", "js"],
+	"tsConfig": {
+		"compilerOptions": {
+			"baseUrl": ".",
+			"paths": {
+				"$lib": ["src/lib"],
+				"$lib/*": ["src/lib/*"]
+			}
+		}
+	}
+}

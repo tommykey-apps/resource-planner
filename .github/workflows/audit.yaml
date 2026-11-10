@@ -13,19 +13,17 @@ jobs:
     continue-on-error: true
     defaults:
       run:
-        working-directory: web
+        working-directory: apps/web
     steps:
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: pnpm
-          cache-dependency-path: web/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install
         env:
@@ -33,7 +31,9 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: knip (unused exports / files / dependencies)
+        # workspace 全体を見るためルートで実行する (設定はルートの knip.json)
         run: pnpm dlx knip --no-config-hints --reporter symbols
+        working-directory: .
         continue-on-error: true
 
       - name: jscpd (duplicate code detection)
@@ -41,5 +41,7 @@ jobs:
         continue-on-error: true
 
       - name: madge (circular dependencies)
-        run: pnpm dlx madge --circular --extensions ts,svelte,js src
+        # 拡張子と `$lib` の別名は apps/web/.madgerc で渡す。madge は baseUrl のない tsconfig の
+        # paths を解決できず、SvelteKit が生成する tsconfig をそのまま渡すと `$lib/...` を辿れない
+        run: pnpm dlx madge --circular src
         continue-on-error: true

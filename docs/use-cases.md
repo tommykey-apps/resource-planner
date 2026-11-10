@@ -45,11 +45,11 @@ SvelteKit form actions / `+page.server.ts` load の動的振る舞い (画面 �
 
 ### 対応コード
 
-- 画面: [`web/src/routes/+page.svelte`](../web/src/routes/+page.svelte) (`<ResourceManager />` 配置)
-- UI コンポーネント: [`web/src/lib/components/ResourceManager.svelte`](../web/src/lib/components/ResourceManager.svelte)
-- Form actions: [`web/src/routes/+page.server.ts`](../web/src/routes/+page.server.ts) の `actions.createResource` / `updateResource` / `deleteResource`
-- 検証 schema: [`web/src/lib/schemas/index.ts`](../web/src/lib/schemas/index.ts) の `resourceCreateSchema` / `resourceUpdateSchema`
-- DB アクセス: [`web/src/lib/repository/resource.ts`](../web/src/lib/repository/resource.ts)
+- 画面: [`apps/web/src/routes/+page.svelte`](../apps/web/src/routes/+page.svelte) (`<ResourceManager />` 配置)
+- UI コンポーネント: [`apps/web/src/lib/components/ResourceManager.svelte`](../apps/web/src/lib/components/ResourceManager.svelte)
+- Form actions: [`apps/web/src/routes/+page.server.ts`](../apps/web/src/routes/+page.server.ts) の `actions.createResource` / `updateResource` / `deleteResource`
+- 検証 schema: [`apps/web/src/lib/schemas/index.ts`](../apps/web/src/lib/schemas/index.ts) の `resourceCreateSchema` / `resourceUpdateSchema`
+- DB アクセス: [`apps/web/src/lib/repository/resource.ts`](../apps/web/src/lib/repository/resource.ts)
 
 ### Mermaid sequence (作成フロー)
 
@@ -144,11 +144,11 @@ sequenceDiagram
 
 ### 対応コード
 
-- 画面: [`web/src/routes/+page.svelte`](../web/src/routes/+page.svelte) (`<ProjectManager />` 配置)
-- UI コンポーネント: [`web/src/lib/components/ProjectManager.svelte`](../web/src/lib/components/ProjectManager.svelte)
-- Form actions: [`web/src/routes/+page.server.ts`](../web/src/routes/+page.server.ts) の `actions.createProject` / `updateProject` / `deleteProject`
-- 検証 schema: [`web/src/lib/schemas/index.ts`](../web/src/lib/schemas/index.ts) の `projectCreateSchema` / `projectUpdateSchema`
-- DB アクセス: [`web/src/lib/repository/project.ts`](../web/src/lib/repository/project.ts)
+- 画面: [`apps/web/src/routes/+page.svelte`](../apps/web/src/routes/+page.svelte) (`<ProjectManager />` 配置)
+- UI コンポーネント: [`apps/web/src/lib/components/ProjectManager.svelte`](../apps/web/src/lib/components/ProjectManager.svelte)
+- Form actions: [`apps/web/src/routes/+page.server.ts`](../apps/web/src/routes/+page.server.ts) の `actions.createProject` / `updateProject` / `deleteProject`
+- 検証 schema: [`apps/web/src/lib/schemas/index.ts`](../apps/web/src/lib/schemas/index.ts) の `projectCreateSchema` / `projectUpdateSchema`
+- DB アクセス: [`apps/web/src/lib/repository/project.ts`](../apps/web/src/lib/repository/project.ts)
 
 ### Mermaid sequence (作成フロー)
 
@@ -213,11 +213,11 @@ UC-01 と同形 (UpdateItem / DeleteItem)。差分は更新対象が `name` + `c
 
 ### 対応コード
 
-- 画面: [`web/src/routes/+page.svelte`](../web/src/routes/+page.svelte) (`<AssignmentCreator />` 配置)
-- UI コンポーネント: [`web/src/lib/components/AssignmentCreator.svelte`](../web/src/lib/components/AssignmentCreator.svelte)
-- Form action: [`web/src/routes/+page.server.ts`](../web/src/routes/+page.server.ts) の `actions.createAssignment`
-- 検証 schema: [`web/src/lib/schemas/index.ts`](../web/src/lib/schemas/index.ts) の `assignmentCreateSchema` (`refine` で `startDate <= endDate`、`.transform()` で `endDateExclusive = addDays(endDate, 1)`)
-- DB アクセス: [`web/src/lib/repository/assignment.ts`](../web/src/lib/repository/assignment.ts)
+- 画面: [`apps/web/src/routes/+page.svelte`](../apps/web/src/routes/+page.svelte) (`<AssignmentCreator />` 配置)
+- UI コンポーネント: [`apps/web/src/lib/components/AssignmentCreator.svelte`](../apps/web/src/lib/components/AssignmentCreator.svelte)
+- Form action: [`apps/web/src/routes/+page.server.ts`](../apps/web/src/routes/+page.server.ts) の `actions.createAssignment`
+- 検証 schema: [`apps/web/src/lib/schemas/index.ts`](../apps/web/src/lib/schemas/index.ts) の `assignmentCreateSchema` (`refine` で `startDate <= endDate`、`.transform()` で `endDateExclusive = addDays(endDate, 1)`)
+- DB アクセス: [`apps/web/src/lib/repository/assignment.ts`](../apps/web/src/lib/repository/assignment.ts)
 
 ### Mermaid sequence
 
@@ -287,11 +287,11 @@ sequenceDiagram
 
 ### 対応コード
 
-- 画面: [`web/src/routes/+page.svelte`](../web/src/routes/+page.svelte) の `handleUpdate` (`onMove` / `onResize` から呼ばれる)
-- API endpoint: [`web/src/routes/api/assignments/[id]/+server.ts`](../web/src/routes/api/assignments/[id]/+server.ts) (PATCH)
-- 検証 schema: [`web/src/lib/schemas/index.ts`](../web/src/lib/schemas/index.ts) の `assignmentApiUpdateSchema` (transform なし、`expectedVersion` で楽観ロック、ADR 0005 / 0012)
-- DB アクセス: [`web/src/lib/repository/assignment.ts`](../web/src/lib/repository/assignment.ts) の `updateAssignment` (SK 安定キーへ単一 atomic Put、`version` 楽観ロック、ADR 0012)
-- トースト: [`svelte-sonner`](https://github.com/wobsoriano/svelte-sonner)、`<Toaster />` を [`+layout.svelte`](../web/src/routes/+layout.svelte) に配置
+- 画面: [`apps/web/src/routes/+page.svelte`](../apps/web/src/routes/+page.svelte) の `handleUpdate` (`onMove` / `onResize` から呼ばれる)
+- API endpoint: [`apps/web/src/routes/api/assignments/[id]/+server.ts`](../apps/web/src/routes/api/assignments/[id]/+server.ts) (PATCH)
+- 検証 schema: [`apps/web/src/lib/schemas/index.ts`](../apps/web/src/lib/schemas/index.ts) の `assignmentApiUpdateSchema` (transform なし、`expectedVersion` で楽観ロック、ADR 0005 / 0012)
+- DB アクセス: [`apps/web/src/lib/repository/assignment.ts`](../apps/web/src/lib/repository/assignment.ts) の `updateAssignment` (SK 安定キーへ単一 atomic Put、`version` 楽観ロック、ADR 0012)
+- トースト: [`svelte-sonner`](https://github.com/wobsoriano/svelte-sonner)、`<Toaster />` を [`+layout.svelte`](../apps/web/src/routes/+layout.svelte) に配置
 
 ### Mermaid sequence (成功フロー)
 
@@ -386,9 +386,9 @@ sequenceDiagram
 
 ### 対応コード
 
-- 画面: [`web/src/routes/assignments/+page.svelte`](../web/src/routes/assignments/+page.svelte) のテーブル行ごとの「削除」ボタン (`action="/?/deleteAssignment"`)
-- Form action: [`web/src/routes/+page.server.ts`](../web/src/routes/+page.server.ts) の `actions.deleteAssignment`
-- DB アクセス: [`web/src/lib/repository/assignment.ts`](../web/src/lib/repository/assignment.ts) の `deleteAssignment(teamId, id)`
+- 画面: [`apps/web/src/routes/assignments/+page.svelte`](../apps/web/src/routes/assignments/+page.svelte) のテーブル行ごとの「削除」ボタン (`action="/?/deleteAssignment"`)
+- Form action: [`apps/web/src/routes/+page.server.ts`](../apps/web/src/routes/+page.server.ts) の `actions.deleteAssignment`
+- DB アクセス: [`apps/web/src/lib/repository/assignment.ts`](../apps/web/src/lib/repository/assignment.ts) の `deleteAssignment(teamId, id)`
 
 ### Mermaid sequence
 
@@ -452,10 +452,10 @@ ResourceManager / ProjectManager に「N 件のアサイン」と関連件数を
 
 ### 対応コード
 
-- 画面: [`web/src/routes/+page.svelte`](../web/src/routes/+page.svelte) (`<ResourceManager />` / `<ProjectManager />` 配置)
-- UI コンポーネント: [`ResourceManager.svelte`](../web/src/lib/components/ResourceManager.svelte) / [`ProjectManager.svelte`](../web/src/lib/components/ProjectManager.svelte)
-- Form actions: [`+page.server.ts`](../web/src/routes/+page.server.ts) の `actions.deleteResource` / `deleteProject` (シグネチャ変更なし、内部実装が cascade 化)
-- DB アクセス: [`repository/resource.ts`](../web/src/lib/repository/resource.ts) / [`repository/project.ts`](../web/src/lib/repository/project.ts) の `deleteResource` / `deleteProject`
+- 画面: [`apps/web/src/routes/+page.svelte`](../apps/web/src/routes/+page.svelte) (`<ResourceManager />` / `<ProjectManager />` 配置)
+- UI コンポーネント: [`ResourceManager.svelte`](../apps/web/src/lib/components/ResourceManager.svelte) / [`ProjectManager.svelte`](../apps/web/src/lib/components/ProjectManager.svelte)
+- Form actions: [`+page.server.ts`](../apps/web/src/routes/+page.server.ts) の `actions.deleteResource` / `deleteProject` (シグネチャ変更なし、内部実装が cascade 化)
+- DB アクセス: [`repository/resource.ts`](../apps/web/src/lib/repository/resource.ts) / [`repository/project.ts`](../apps/web/src/lib/repository/project.ts) の `deleteResource` / `deleteProject`
 
 ### Mermaid sequence (Resource 削除)
 
@@ -529,10 +529,10 @@ Team 内のリソースを **部署ツリー** (本部 / 部 / 課 …) でグ�
 
 ### 対応コード
 
-- UI コンポーネント: [`web/src/lib/components/DepartmentManager.svelte`](../web/src/lib/components/DepartmentManager.svelte) ([`AppHeader.svelte`](../web/src/lib/components/AppHeader.svelte) から起動)
-- Form action: [`web/src/routes/+page.server.ts`](../web/src/routes/+page.server.ts) の `createDepartment` / `renameDepartment` / `moveDepartment` / `deleteDepartment`
-- 検証 schema: [`web/src/lib/schemas/department.ts`](../web/src/lib/schemas/department.ts) の `departmentCreateSchema` / `departmentRenameSchema` / `departmentMoveSchema`
-- DB アクセス: [`web/src/lib/repository/department.ts`](../web/src/lib/repository/department.ts) の `createDepartment` / `renameDepartment` / `moveDepartment` / `deleteDepartment` / `DepartmentTreeError`
+- UI コンポーネント: [`apps/web/src/lib/components/DepartmentManager.svelte`](../apps/web/src/lib/components/DepartmentManager.svelte) ([`AppHeader.svelte`](../apps/web/src/lib/components/AppHeader.svelte) から起動)
+- Form action: [`apps/web/src/routes/+page.server.ts`](../apps/web/src/routes/+page.server.ts) の `createDepartment` / `renameDepartment` / `moveDepartment` / `deleteDepartment`
+- 検証 schema: [`apps/web/src/lib/schemas/department.ts`](../apps/web/src/lib/schemas/department.ts) の `departmentCreateSchema` / `departmentRenameSchema` / `departmentMoveSchema`
+- DB アクセス: [`apps/web/src/lib/repository/department.ts`](../apps/web/src/lib/repository/department.ts) の `createDepartment` / `renameDepartment` / `moveDepartment` / `deleteDepartment` / `DepartmentTreeError`
 - リソースの所属: Resource の `departmentId` 属性 (#239)。timeline / assignments の部署フィルタは子孫含む (#242 / #247)
 
 ### Mermaid sequence (作成 / 付け替え / 削除)

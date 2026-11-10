@@ -49,7 +49,7 @@ CI では `secrets.GITHUB_TOKEN` をそのまま使う(`.github/workflows/ci.yam
 
 ```bash
 make help          # 利用可能なコマンド一覧
-make dev           # SvelteKit dev server (cd web && pnpm dev)
+make dev           # SvelteKit dev server (cd apps/web && pnpm dev)
 make build         # 本番ビルド
 make db            # DynamoDB Local 起動 + table 作成 (port 8000)
 make db-docs       # tbls で docs/db/schema/ 再生成
@@ -57,10 +57,10 @@ make db-docs-diff  # スキーマ drift 確認
 make clean         # docker compose down
 ```
 
-`web/` 直接:
+`apps/web/` 直接:
 
 ```bash
-cd web
+cd apps/web
 pnpm install               # 依存インストール (要 GITHUB_TOKEN)
 pnpm dev                   # Vite dev server
 pnpm build                 # ビルド (build/ に出力)
@@ -73,16 +73,16 @@ pnpm test:coverage         # Vitest + v8 coverage
 
 ### コード品質 audit
 
-Claude Code セッションで `web/src/` を編集すると、 ターン終了時に `/audit` skill 実行が自動推奨される (`.claude/hooks/stop-audit-gate.sh` 経由)。 audit は `pnpm check` / `pnpm test` / `knip` (unused exports) / `jscpd` (重複コード) / `madge` (循環依存) を順次実行し、 大規模変更時は `code-reviewer` subagent も spawn する。 ローカルバイパス防止のため PR 時に CI でも同 audit を走らせる (`.github/workflows/audit.yaml`、 `continue-on-error` で warning レベル)。 詳細は [CLAUDE.md](CLAUDE.md#コード品質-audit-自動化-188) 参照。
+Claude Code セッションで `apps/web/src/` を編集すると、 ターン終了時に `/audit` skill 実行が自動推奨される (`.claude/hooks/stop-audit-gate.sh` 経由)。 audit は `pnpm check` / `pnpm test` / `knip` (unused exports) / `jscpd` (重複コード) / `madge` (循環依存) を順次実行し、 大規模変更時は `code-reviewer` subagent も spawn する。 ローカルバイパス防止のため PR 時に CI でも同 audit を走らせる (`.github/workflows/audit.yaml`、 `continue-on-error` で warning レベル)。 詳細は [CLAUDE.md](CLAUDE.md#コード品質-audit-自動化-188) 参照。
 
 ### 統合テストの実行
 
-`web/src/lib/repository/integration.test.ts` は `AWS_ENDPOINT_URL` が設定されている時のみ実行
+`apps/web/src/lib/repository/integration.test.ts` は `AWS_ENDPOINT_URL` が設定されている時のみ実行
 ([`describe.runIf`](https://vitest.dev/api/#describe-runif))。ローカルで integration まで含めて実行するには:
 
 ```bash
 make db                    # DynamoDB Local 起動 + table 作成
-cd web
+cd apps/web
 AWS_ENDPOINT_URL=http://localhost:8000 \
 AWS_ACCESS_KEY_ID=local AWS_SECRET_ACCESS_KEY=local AWS_DEFAULT_REGION=ap-northeast-1 \
 DYNAMODB_TABLE=resource-planner-local \
@@ -102,7 +102,7 @@ CI では `.github/workflows/ci.yaml` の `test` job が `services.dynamodb` で
 
 | 機能 | 採用箇所 | 関連 ui-components issue |
 |---|---|---|
-| Bar label sticky 化 (long bar / viewport scroll 中も label が常時 viewport 内に貼り付く、旧 hover tooltip は全廃 BREAKING in 1.0.0) | `web/src/routes/+page.svelte` | #84 |
+| Bar label sticky 化 (long bar / viewport scroll 中も label が常時 viewport 内に貼り付く、旧 hover tooltip は全廃 BREAKING in 1.0.0) | `apps/web/src/routes/+page.svelte` | #84 |
 | Bar click → AssignmentEditor 起動 (`onActivate` prop、 click vs drag は threshold 4px で分離) | 同上 | #85 / #92 |
 | Resource rail auto-fit (最長名 + chrome を Canvas measureText で実測、 `resourceColWidth="auto"`) | 同上 | #43 / #47 / #51 / #53 |
 | i18n labels prop | 全 ResourceTimeline 利用箇所 | #33 |
@@ -135,7 +135,7 @@ OpenAPI は使わず、TypeScript 型 + Zod schema を API 仕様の正本とし
 | **なぜ** その判断をしたか | [`docs/adr/`](docs/adr/) — Architecture Decision Records (Michael Nygard 形式) | [/adr/](https://tommykey-apps.github.io/resource-planner/adr/) |
 | **どう動く** か (画面 → action → DB の流れ) | [`docs/use-cases.md`](docs/use-cases.md) — Mermaid sequence diagrams | [/use-cases.html](https://tommykey-apps.github.io/resource-planner/use-cases.html) |
 | **データモデル** (PK / SK / 属性 / クエリパターン) | [`docs/db/`](docs/db/) — tbls 自動生成 + 手書き entities/access-patterns | [/db/](https://tommykey-apps.github.io/resource-planner/db/) |
-| **API 仕様** (関数の入出力) | TypeScript 型 (`web/src/lib/types.ts`, Zod schema) | (コード直読) |
+| **API 仕様** (関数の入出力) | TypeScript 型 (`apps/web/src/lib/types.ts`, Zod schema) | (コード直読) |
 
 ### Architecture Decision Records
 

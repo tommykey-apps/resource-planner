@@ -1,23 +1,23 @@
 # Dependencies
 node_modules
 
-# SvelteKit (in web/)
-web/.svelte-kit
-web/build
+# SvelteKit (apps/web)
+apps/web/.svelte-kit
+apps/web/build
 # Paraglide JS の生成物 (中の .gitignore は ESLint / Prettier が読まないため直下でも除外する)
-web/src/lib/paraglide
-web/project.inlang/*
-!web/project.inlang/settings.json
-web/dist
+apps/web/src/lib/paraglide
+apps/web/project.inlang/*
+!apps/web/project.inlang/settings.json
+apps/web/dist
 infra/ses-bounce-handler.zip
 
 # Vitest
-web/coverage
+apps/web/coverage
 
 # Playwright
-web/test-results
-web/playwright-report
-web/playwright/.cache
+tests/e2e/test-results
+tests/e2e/playwright-report
+tests/e2e/playwright/.cache
 
 # Terraform
 infra/.terraform
