@@ -5,7 +5,7 @@ import { openSection } from '../fixtures/nav';
 /**
  * #132 / #148 で導入した imperative confirmDialog の表示 regression を防ぐ E2E。
  *
- * 元々の単体 test (src/lib/forms/confirm-dialog.test.ts) は store API のみで、
+ * 元々の単体 test (src/lib/shared/dialog/confirm-dialog.test.ts) は store API のみで、
  * `<ConfirmDialog />` を mount したときに body へ Portal される
  * `role="alertdialog"` が画面に出るかは jsdom でも見れない (Portal target は body)。
  * 実機の bits-ui Portal + shadcn の Content の組み合わせがちゃんと render

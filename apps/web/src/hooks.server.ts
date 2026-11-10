@@ -1,9 +1,9 @@
 import { sequence } from '@sveltejs/kit/hooks';
 import type { Handle } from '@sveltejs/kit';
-import { handle as authjsHandle } from './auth';
-import { paraglideMiddleware } from '$lib/paraglide/server';
-import { getTextDirection } from '$lib/paraglide/runtime';
-import { injectInitialModeScript, pickTheme, THEME_COOKIE_NAME } from '$lib/theme';
+import { handle as authjsHandle } from '$lib/features/auth/auth.server';
+import { paraglideMiddleware } from '$lib/shared/i18n/paraglide/server';
+import { getTextDirection } from '$lib/shared/i18n/paraglide/runtime';
+import { injectInitialModeScript, pickTheme, THEME_COOKIE_NAME } from '$lib/shared/theme/theme';
 
 /**
  * 言語の決定 (Paraglide JS のミドルウェア)。 判定順は paraglide.options.js の strategy

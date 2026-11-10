@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { m } from '$lib/paraglide/messages.js';
+	import { m } from '$lib/shared/i18n/paraglide/messages.js';
 </script>
 
 <svelte:head>

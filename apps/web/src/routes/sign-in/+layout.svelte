@@ -1,6 +1,6 @@
 <script lang="ts">
-	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
-	import LocaleSwitcher from '$lib/components/LocaleSwitcher.svelte';
+	import ThemeToggle from '$lib/shared/theme/ThemeToggle.svelte';
+	import LocaleSwitcher from '$lib/shared/i18n/LocaleSwitcher.svelte';
 
 	let { children } = $props();
 </script>

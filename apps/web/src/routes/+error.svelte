@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { Button } from '$lib/components/ui/button';
-	import { m } from '$lib/paraglide/messages.js';
-	import { errorMessage } from '$lib/i18n/message-maps';
+	import { Button } from '$lib/shared/ui/shadcn/button';
+	import { m } from '$lib/shared/i18n/paraglide/messages.js';
+	import { errorMessage } from '$lib/shared/i18n/message-maps';
 
 	const status = $derived(page.status);
 	// #178: server が App.Error.code (i18n key) を載せていたら user locale で翻訳。

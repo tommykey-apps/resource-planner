@@ -4,7 +4,8 @@
 	"type": "module",
 	"exports": {
 		"./keys": "./src/keys.ts",
-		"./suppression-item": "./src/suppression-item.ts"
+		"./suppression-item": "./src/suppression-item.ts",
+		"./entities": "./src/entities.ts"
 	},
 	"scripts": {
 		"check": "tsc --noEmit",

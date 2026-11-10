@@ -3,7 +3,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 const authMock = vi.fn();
 const queryAllByTeamMock = vi.fn();
 
-vi.mock('$lib/repository', () => ({
+vi.mock('$lib/features/team/query-all.server', () => ({
 	queryAllByTeam: (...args: unknown[]) => queryAllByTeamMock(...args)
 }));
 

@@ -1,29 +1,30 @@
 <script lang="ts">
-	import DepartmentOptions from '$lib/components/DepartmentOptions.svelte';
+	import DepartmentOptions from '$lib/features/department/DepartmentOptions.svelte';
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
-	import { Button } from '$lib/components/ui/button';
-	import * as Table from '$lib/components/ui/table';
-	import { addDays, parseLocalDate } from '$lib/date';
-	import { confirmDialog } from '$lib/forms/confirm-dialog';
-	import { m } from '$lib/paraglide/messages.js';
-	import AssignmentCreator from '$lib/components/AssignmentCreator.svelte';
-	import AssignmentEditor from '$lib/components/AssignmentEditor.svelte';
-	import ProjectDetailView from '$lib/components/ProjectDetailView.svelte';
+	import { Button } from '$lib/shared/ui/shadcn/button';
+	import * as Table from '$lib/shared/ui/shadcn/table';
+	import { addDays, parseLocalDate } from '$lib/shared/date/date';
+	import { confirmDialog } from '$lib/shared/dialog/confirm-dialog';
+	import { m } from '$lib/shared/i18n/paraglide/messages.js';
+	import AssignmentCreator from '$lib/features/assignment/AssignmentCreator.svelte';
+	import AssignmentEditor from '$lib/features/assignment/AssignmentEditor.svelte';
+	import ProjectDetailView from '$lib/features/project/ProjectDetailView.svelte';
 	import {
 		applyAssignmentParams,
 		parseAssignmentParams,
 		type AssignmentFilters
-	} from '$lib/assignments-url-state';
-	import { overlapsPeriod } from '$lib/assignment-period';
+	} from '$lib/features/assignment/list-url-state';
+	import { overlapsPeriod } from '$lib/features/assignment/period';
 	import {
 		flattenDepartmentTree,
 		idsForDepartmentFilter,
 		DEPARTMENT_FILTER_UNASSIGNED,
 		DEPARTMENT_FILTER_ALL
-	} from '$lib/repository/department-tree';
-	import { syncStateToUrl } from '$lib/state/url-state.svelte';
-	import type { Assignment, ProjectWithRenderedDescription } from '$lib/types';
+	} from '$lib/features/department/tree';
+	import { syncStateToUrl } from '$lib/shared/url-state/url-state.svelte';
+	import type { Assignment } from '@resource-planner/db/entities';
+	import type { ProjectWithRenderedDescription } from '$lib/features/project/types';
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import type { PageData } from './$types';
 

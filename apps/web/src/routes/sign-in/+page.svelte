@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages.js';
+	import { m } from '$lib/shared/i18n/paraglide/messages.js';
 	import type { PageData } from './$types';
 	let { data }: { data: PageData } = $props();
 

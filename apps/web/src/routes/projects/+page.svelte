@@ -1,6 +1,6 @@
 <script lang="ts">
-	import ProjectManager from '$lib/components/ProjectManager.svelte';
-	import { m } from '$lib/paraglide/messages.js';
+	import ProjectManager from '$lib/features/project/ProjectManager.svelte';
+	import { m } from '$lib/shared/i18n/paraglide/messages.js';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();

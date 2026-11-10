@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import type { ServerError } from '$lib/forms/server-error';
+import type { ServerError } from '$lib/shared/forms/server-error';
 
 /**
  * `?/updateAssignment` action の TDD (#99 item 1)。
@@ -69,31 +69,40 @@ const {
 	};
 });
 
-vi.mock('$lib/session', () => ({
+vi.mock('$lib/features/auth/session.server', () => ({
 	requireSession: (event: unknown) => requireSessionMock(event)
 }));
 
-vi.mock('$lib/repository', () => ({
+vi.mock('$lib/features/resource/repository.server', () => ({
 	createResource: (...args: unknown[]) => createResourceMock(...args),
 	updateResource: (...args: unknown[]) => updateResourceMock(...args),
 	deleteResource: (...args: unknown[]) => deleteResourceMock(...args),
+	deleteResources: (...args: unknown[]) => deleteResourcesMock(...args),
+	moveResourcesToDepartment: (...args: unknown[]) => moveResourcesToDepartmentMock(...args),
+	BulkTargetMissingError,
+	ResourceEmailConflictError
+}));
+
+vi.mock('$lib/features/project/repository.server', () => ({
 	createProject: (...args: unknown[]) => createProjectMock(...args),
 	updateProject: (...args: unknown[]) => updateProjectMock(...args),
 	deleteProject: (...args: unknown[]) => deleteProjectMock(...args),
+	deleteProjects: (...args: unknown[]) => deleteProjectsMock(...args)
+}));
+
+vi.mock('$lib/features/assignment/repository.server', () => ({
 	createAssignment: (...args: unknown[]) => createAssignmentMock(...args),
 	updateAssignment: (...args: unknown[]) => updateAssignmentMock(...args),
 	deleteAssignment: (...args: unknown[]) => deleteAssignmentMock(...args),
+	AssignmentVersionConflictError
+}));
+
+vi.mock('$lib/features/department/repository.server', () => ({
 	createDepartment: (...args: unknown[]) => createDepartmentMock(...args),
 	moveDepartment: (...args: unknown[]) => moveDepartmentMock(...args),
 	renameDepartment: (...args: unknown[]) => renameDepartmentMock(...args),
 	deleteDepartment: (...args: unknown[]) => deleteDepartmentMock(...args),
-	deleteResources: (...args: unknown[]) => deleteResourcesMock(...args),
-	deleteProjects: (...args: unknown[]) => deleteProjectsMock(...args),
-	moveResourcesToDepartment: (...args: unknown[]) => moveResourcesToDepartmentMock(...args),
-	AssignmentVersionConflictError,
-	DepartmentTreeError,
-	BulkTargetMissingError,
-	ResourceEmailConflictError
+	DepartmentTreeError
 }));
 
 import { actions } from './+page.server';

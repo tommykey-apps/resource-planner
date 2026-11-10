@@ -2,7 +2,7 @@
  * #181: SES suppression item の DDB shape を 1 箇所に集約。
  *
  * 旧: `putSuppression` 相当のロジックが 2 ファイル別実装で散在していた:
- *   - `lib/repository/suppression.ts` (本体 app、 `$lib/db/client` 経由で DDB Put)
+ *   - `apps/web/src/lib/features/auth/suppression.server.ts` (本体 app、 `$lib/shared/db/client.server` 経由で DDB Put)
  *   - `lambda/ses-bounce-handler.ts` (別 Lambda artifact、 esbuild bundle)
  * いずれも同じ pk / sk / attributes を持つ DDB item を構築していて、 片方更新時に
  * 他方が忘れられる risk があった。

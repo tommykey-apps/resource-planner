@@ -28,8 +28,8 @@ body:
       description: 実装するファイル / 機能を箇条書き。スコープ外は「含まないもの」へ。
       placeholder: |
         - `apps/web/src/routes/.../+page.server.ts` の actions.xxxx
-        - `apps/web/src/lib/schemas/xxxx.ts` (Zod schema)
-        - `apps/web/src/lib/db/xxxx.ts` (DynamoDB アクセス)
+        - `apps/web/src/lib/features/<業務>/schema.ts` (Zod schema)
+        - `apps/web/src/lib/features/<業務>/repository.server.ts` (DynamoDB アクセス)
     validations:
       required: true
 

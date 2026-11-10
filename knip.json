@@ -1,27 +1,31 @@
 {
-	"$schema": "https://unpkg.com/knip@5/schema.json",
-	"workspaces": {
-		"apps/web": {
-			"entry": ["src/auth.ts", "src/lambda/*.ts", "src/routes/**/+*.{ts,svelte}"],
-			"project": ["src/**/*.{ts,svelte}"],
-			"ignoreDependencies": [
-				"@fontsource-variable/jetbrains-mono",
-				"tw-animate-css",
-				"@tailwindcss/typography"
-			]
-		},
-		"tests/e2e": {
-			"entry": ["specs/**/*.ts"],
-			"project": ["**/*.ts"]
-		},
-		"apps/ses-bounce": {
-			"entry": ["src/handler.ts", "scripts/build.mjs"],
-			"project": ["src/**/*.ts"]
-		},
-		"packages/db": {
-			"entry": ["migrations/*.mjs"],
-			"project": ["src/**/*.ts", "migrations/**/*.{ts,mjs}"]
-		}
-	},
-	"ignoreExportsUsedInFile": true
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "workspaces": {
+    "apps/web": {
+      "entry": [
+        "src/lib/features/auth/auth.server.ts",
+        "src/lambda/*.ts",
+        "src/routes/**/+*.{ts,svelte}"
+      ],
+      "project": ["src/**/*.{ts,svelte}"],
+      "ignoreDependencies": [
+        "@fontsource-variable/jetbrains-mono",
+        "tw-animate-css",
+        "@tailwindcss/typography"
+      ]
+    },
+    "tests/e2e": {
+      "entry": ["specs/**/*.ts"],
+      "project": ["**/*.ts"]
+    },
+    "apps/ses-bounce": {
+      "entry": ["src/handler.ts", "scripts/build.mjs"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/db": {
+      "entry": ["migrations/*.mjs"],
+      "project": ["src/**/*.ts", "migrations/**/*.{ts,mjs}"]
+    }
+  },
+  "ignoreExportsUsedInFile": true
 }

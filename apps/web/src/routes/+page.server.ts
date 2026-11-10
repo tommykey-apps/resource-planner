@@ -11,43 +11,51 @@
 import { fail } from '@sveltejs/kit';
 import {
 	assignmentCreateSchema,
-	assignmentFormUpdateSchema,
+	assignmentFormUpdateSchema
+} from '$lib/features/assignment/schema';
+import {
 	departmentCreateSchema,
 	departmentMoveSchema,
-	departmentRenameSchema,
-	bulkIdsSchema,
-	deleteByIdSchema,
-	projectCreateSchema,
-	projectUpdateSchema,
+	departmentRenameSchema
+} from '$lib/features/department/schema';
+import { bulkIdsSchema, deleteByIdSchema } from '$lib/shared/forms/schema-primitives';
+import { projectCreateSchema, projectUpdateSchema } from '$lib/features/project/schema';
+import {
 	resourceCreateSchema,
 	resourceUpdateSchema,
 	resourcesMoveSchema
-} from '$lib/schemas';
+} from '$lib/features/resource/schema';
 import {
 	AssignmentVersionConflictError,
-	BulkTargetMissingError,
-	DepartmentTreeError,
-	ResourceEmailConflictError,
 	createAssignment,
-	createDepartment,
-	createProject,
-	createResource,
 	deleteAssignment,
-	deleteDepartment,
-	deleteProject,
-	deleteProjects,
+	updateAssignment
+} from '$lib/features/assignment/repository.server';
+import {
+	BulkTargetMissingError,
+	ResourceEmailConflictError,
+	createResource,
 	deleteResource,
 	deleteResources,
 	moveResourcesToDepartment,
-	moveDepartment,
-	renameDepartment,
-	updateAssignment,
-	updateProject,
 	updateResource
-} from '$lib/repository';
-import { makeFormAction } from '$lib/forms/make-form-action';
-import { requireSession } from '$lib/session';
-import { formatZodErrors } from '$lib/forms/server-error';
+} from '$lib/features/resource/repository.server';
+import {
+	DepartmentTreeError,
+	createDepartment,
+	deleteDepartment,
+	moveDepartment,
+	renameDepartment
+} from '$lib/features/department/repository.server';
+import {
+	createProject,
+	deleteProject,
+	deleteProjects,
+	updateProject
+} from '$lib/features/project/repository.server';
+import { makeFormAction } from '$lib/features/auth/form-action.server';
+import { requireSession } from '$lib/features/auth/session.server';
+import { formatZodErrors } from '$lib/shared/forms/server-error';
 import type { Actions } from './$types';
 
 /** DepartmentTreeError を ServerErrors wire format (#179) の fail(400) に map する (#240)。 */

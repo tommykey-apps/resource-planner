@@ -1,0 +1,361 @@
+import {
+	DeleteCommand,
+	DynamoDBDocumentClient,
+	PutCommand,
+	QueryCommand,
+	TransactWriteCommand,
+	UpdateCommand
+} from '@aws-sdk/lib-dynamodb';
+import { mockClient } from 'aws-sdk-client-mock';
+import 'aws-sdk-client-mock-vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import {
+	createResource,
+	deleteResource,
+	updateResource,
+	queryResourceSkByDepartment,
+	moveResourcesToDepartment,
+	deleteResources,
+	BulkTargetMissingError,
+	ResourceEmailConflictError
+} from '$lib/features/resource/repository.server';
+
+const ddbMock = mockClient(DynamoDBDocumentClient);
+const TEAM = 'team-test';
+const TABLE = process.env.DYNAMODB_TABLE ?? 'resource-planner-test';
+
+beforeEach(() => {
+	ddbMock.reset();
+});
+
+afterEach(() => {
+	ddbMock.reset();
+});
+
+describe('createResource', () => {
+	beforeEach(() => {
+		ddbMock.on(QueryCommand).resolves({ Items: [] });
+	});
+
+	it('sends PutCommand with pk/sk/id/name/email and attribute_not_exists guard', async () => {
+		ddbMock.on(PutCommand).resolves({});
+
+		const result = await createResource(TEAM, { name: 'Alice', email: 'alice@example.com' });
+
+		expect(result.name).toBe('Alice');
+		expect(result.email).toBe('alice@example.com');
+		expect(typeof result.id).toBe('string');
+		expect(result.id.length).toBeGreaterThan(0);
+
+		const calls = ddbMock.commandCalls(PutCommand);
+		expect(calls).toHaveLength(1);
+		const input = calls[0].args[0].input;
+		expect(input.TableName).toBe(TABLE);
+		expect(input.ConditionExpression).toBe('attribute_not_exists(sk)');
+		expect(input.Item).toMatchObject({
+			pk: `TEAM#${TEAM}`,
+			sk: `RES#${result.id}`,
+			id: result.id,
+			name: 'Alice',
+			email: 'alice@example.com'
+		});
+		// #239: 未所属 (departmentId なし) は attribute を保存しない
+		expect(input.Item).not.toHaveProperty('departmentId');
+	});
+
+	it('stores departmentId when assigned (#239)', async () => {
+		ddbMock.on(PutCommand).resolves({});
+		const result = await createResource(TEAM, {
+			name: 'Alice',
+			email: 'alice@example.com',
+			departmentId: 'd1'
+		});
+		expect(result.departmentId).toBe('d1');
+		const input = ddbMock.commandCalls(PutCommand)[0].args[0].input;
+		expect(input.Item).toMatchObject({ departmentId: 'd1' });
+	});
+
+	it('looks up members of the team that already use the email', async () => {
+		ddbMock.on(PutCommand).resolves({});
+
+		await createResource(TEAM, { name: 'Alice', email: 'alice@example.com' });
+
+		const q = ddbMock.commandCalls(QueryCommand)[0].args[0].input;
+		expect(q.KeyConditionExpression).toBe('pk = :pk AND begins_with(sk, :res)');
+		expect(q.FilterExpression).toBe('email = :v');
+		expect(q.ExpressionAttributeValues).toEqual({
+			':pk': `TEAM#${TEAM}`,
+			':res': 'RES#',
+			':v': 'alice@example.com'
+		});
+	});
+
+	it('throws ResourceEmailConflictError and writes nothing when another member uses the email', async () => {
+		ddbMock.on(QueryCommand).resolves({ Items: [{ id: 'other' }] });
+		ddbMock.on(PutCommand).resolves({});
+
+		await expect(
+			createResource(TEAM, { name: 'Alice', email: 'alice@example.com' })
+		).rejects.toBeInstanceOf(ResourceEmailConflictError);
+		expect(ddbMock.commandCalls(PutCommand)).toHaveLength(0);
+	});
+
+	it('finds a conflict on a later Query page (LastEvaluatedKey)', async () => {
+		ddbMock
+			.on(QueryCommand)
+			.resolvesOnce({ Items: [], LastEvaluatedKey: { pk: `TEAM#${TEAM}`, sk: 'RES#x' } })
+			.resolvesOnce({ Items: [{ id: 'other' }] });
+
+		await expect(
+			createResource(TEAM, { name: 'Alice', email: 'alice@example.com' })
+		).rejects.toBeInstanceOf(ResourceEmailConflictError);
+		expect(ddbMock.commandCalls(QueryCommand)).toHaveLength(2);
+	});
+});
+
+describe('updateResource (#239 departmentId set/remove)', () => {
+	beforeEach(() => {
+		ddbMock.on(QueryCommand).resolves({ Items: [] });
+	});
+
+	it('未所属 (departmentId なし) → SET name, email + REMOVE departmentId', async () => {
+		ddbMock.on(UpdateCommand).resolves({});
+
+		await updateResource(TEAM, { id: 'res-1', name: 'Bob', email: 'bob@example.com' });
+
+		const calls = ddbMock.commandCalls(UpdateCommand);
+		expect(calls).toHaveLength(1);
+		const input = calls[0].args[0].input;
+		expect(input.TableName).toBe(TABLE);
+		expect(input.Key).toEqual({ pk: `TEAM#${TEAM}`, sk: 'RES#res-1' });
+		expect(input.UpdateExpression).toBe('SET #name = :name, email = :email REMOVE departmentId');
+		expect(input.ExpressionAttributeNames).toEqual({ '#name': 'name' });
+		expect(input.ExpressionAttributeValues).toEqual({
+			':name': 'Bob',
+			':email': 'bob@example.com'
+		});
+		expect(input.ExpressionAttributeValues).not.toHaveProperty(':departmentId');
+		expect(input.ConditionExpression).toBe('attribute_exists(sk)');
+	});
+
+	it('departmentId 指定 → SET name, email, departmentId (REMOVE なし)', async () => {
+		ddbMock.on(UpdateCommand).resolves({});
+
+		await updateResource(TEAM, {
+			id: 'res-1',
+			name: 'Bob',
+			email: 'bob@example.com',
+			departmentId: 'd2'
+		});
+
+		const input = ddbMock.commandCalls(UpdateCommand)[0].args[0].input;
+		expect(input.UpdateExpression).toBe(
+			'SET #name = :name, email = :email, departmentId = :departmentId'
+		);
+		expect(input.ExpressionAttributeValues).toEqual({
+			':name': 'Bob',
+			':email': 'bob@example.com',
+			':departmentId': 'd2'
+		});
+	});
+
+	it('keeps the member own email (the match is the member itself)', async () => {
+		ddbMock.on(QueryCommand).resolves({ Items: [{ id: 'res-1' }] });
+		ddbMock.on(UpdateCommand).resolves({});
+
+		await updateResource(TEAM, { id: 'res-1', name: 'Bob', email: 'bob@example.com' });
+
+		expect(ddbMock.commandCalls(UpdateCommand)).toHaveLength(1);
+	});
+
+	it('throws ResourceEmailConflictError when another member uses the email', async () => {
+		ddbMock.on(QueryCommand).resolves({ Items: [{ id: 'res-1' }, { id: 'res-2' }] });
+		ddbMock.on(UpdateCommand).resolves({});
+
+		await expect(
+			updateResource(TEAM, { id: 'res-1', name: 'Bob', email: 'bob@example.com' })
+		).rejects.toBeInstanceOf(ResourceEmailConflictError);
+		expect(ddbMock.commandCalls(UpdateCommand)).toHaveLength(0);
+	});
+});
+
+describe('deleteResource (cascade)', () => {
+	it('queries related assignments then transact-deletes resource + assignments atomically', async () => {
+		ddbMock.on(QueryCommand).resolves({
+			Items: [{ sk: 'ASN#2026-05-01#a1' }, { sk: 'ASN#2026-05-10#a2' }]
+		});
+		ddbMock.on(TransactWriteCommand).resolves({});
+
+		await deleteResource(TEAM, 'res-1');
+
+		const queryCalls = ddbMock.commandCalls(QueryCommand);
+		expect(queryCalls).toHaveLength(1);
+		const qInput = queryCalls[0].args[0].input;
+		expect(qInput.KeyConditionExpression).toBe('pk = :pk AND begins_with(sk, :asn)');
+		// #172: queryRelatedAssignmentSk に統合、 placeholder は generic な :v
+		expect(qInput.FilterExpression).toBe('resourceId = :v');
+		expect(qInput.ExpressionAttributeValues).toMatchObject({
+			':pk': `TEAM#${TEAM}`,
+			':asn': 'ASN#',
+			':v': 'res-1'
+		});
+
+		const txCalls = ddbMock.commandCalls(TransactWriteCommand);
+		expect(txCalls).toHaveLength(1);
+		const txInput = txCalls[0].args[0].input;
+		expect(txInput.TransactItems).toEqual([
+			{ Delete: { TableName: TABLE, Key: { pk: `TEAM#${TEAM}`, sk: 'RES#res-1' } } },
+			{ Delete: { TableName: TABLE, Key: { pk: `TEAM#${TEAM}`, sk: 'ASN#2026-05-01#a1' } } },
+			{ Delete: { TableName: TABLE, Key: { pk: `TEAM#${TEAM}`, sk: 'ASN#2026-05-10#a2' } } }
+		]);
+	});
+
+	it('paginates Query when LastEvaluatedKey is returned', async () => {
+		ddbMock
+			.on(QueryCommand)
+			.resolvesOnce({
+				Items: [{ sk: 'ASN#2026-05-01#a1' }],
+				LastEvaluatedKey: { pk: `TEAM#${TEAM}`, sk: 'ASN#2026-05-01#a1' }
+			})
+			.resolvesOnce({
+				Items: [{ sk: 'ASN#2026-05-10#a2' }]
+			});
+		ddbMock.on(TransactWriteCommand).resolves({});
+
+		await deleteResource(TEAM, 'res-1');
+
+		expect(ddbMock.commandCalls(QueryCommand)).toHaveLength(2);
+		const txInput = ddbMock.commandCalls(TransactWriteCommand)[0].args[0].input;
+		expect(txInput.TransactItems).toHaveLength(3); // resource + 2 assignments
+	});
+
+	it('throws when cascade exceeds 100 items', async () => {
+		const items = Array.from({ length: 100 }, (_, i) => ({
+			sk: `ASN#2026-05-01#a${i}`
+		}));
+		ddbMock.on(QueryCommand).resolves({ Items: items });
+
+		await expect(deleteResource(TEAM, 'res-1')).rejects.toThrow(/exceeds 100 items/);
+		expect(ddbMock.commandCalls(TransactWriteCommand)).toHaveLength(0);
+	});
+
+	it('handles resource with no related assignments (transact-deletes only the resource)', async () => {
+		ddbMock.on(QueryCommand).resolves({ Items: [] });
+		ddbMock.on(TransactWriteCommand).resolves({});
+
+		await deleteResource(TEAM, 'res-1');
+
+		const txInput = ddbMock.commandCalls(TransactWriteCommand)[0].args[0].input;
+		expect(txInput.TransactItems).toEqual([
+			{ Delete: { TableName: TABLE, Key: { pk: `TEAM#${TEAM}`, sk: 'RES#res-1' } } }
+		]);
+	});
+});
+
+describe('queryResourceSkByDepartment (#241 部署削除の繰り上げ対象)', () => {
+	it('queries RES# with departmentId filter and returns SK list', async () => {
+		ddbMock.on(QueryCommand).resolves({ Items: [{ sk: 'RES#u1' }, { sk: 'RES#u2' }] });
+
+		const sks = await queryResourceSkByDepartment(TEAM, 'd1');
+
+		expect(sks).toEqual(['RES#u1', 'RES#u2']);
+		const input = ddbMock.commandCalls(QueryCommand)[0].args[0].input;
+		expect(input.KeyConditionExpression).toBe('pk = :pk AND begins_with(sk, :prefix)');
+		expect(input.FilterExpression).toBe('departmentId = :v');
+		expect(input.ProjectionExpression).toBe('sk');
+		expect(input.ExpressionAttributeValues).toMatchObject({
+			':pk': `TEAM#${TEAM}`,
+			':prefix': 'RES#',
+			':v': 'd1'
+		});
+	});
+
+	it('paginates when LastEvaluatedKey is returned', async () => {
+		ddbMock
+			.on(QueryCommand)
+			.resolvesOnce({ Items: [{ sk: 'RES#u1' }], LastEvaluatedKey: { sk: 'RES#u1' } })
+			.resolvesOnce({ Items: [{ sk: 'RES#u2' }] });
+
+		const sks = await queryResourceSkByDepartment(TEAM, 'd1');
+		expect(sks).toEqual(['RES#u1', 'RES#u2']);
+		expect(ddbMock.commandCalls(QueryCommand)).toHaveLength(2);
+	});
+});
+
+// Sanity: unrelated DeleteCommand should never be sent by these functions
+it('does not send raw DeleteCommand (delete is via TransactWrite)', async () => {
+	ddbMock.on(QueryCommand).resolves({ Items: [] });
+	ddbMock.on(TransactWriteCommand).resolves({});
+	await deleteResource(TEAM, 'res-1');
+	expect(ddbMock.commandCalls(DeleteCommand)).toHaveLength(0);
+});
+
+/**
+ * 一括操作: 部署の一括変更は 1 回の TransactWriteItems で原子的に行う (全員変わるか、 誰も変わらない)。
+ * 削除したメンバーが混ざっていたら ConditionExpression で全体が失敗する。
+ */
+describe('moveResourcesToDepartment', () => {
+	it('全員の departmentId を 1 トランザクションで SET する', async () => {
+		ddbMock.on(TransactWriteCommand).resolves({});
+		await moveResourcesToDepartment(TEAM, ['r1', 'r2'], 'd1');
+		const calls = ddbMock.commandCalls(TransactWriteCommand);
+		expect(calls).toHaveLength(1);
+		const items = calls[0].args[0].input.TransactItems ?? [];
+		expect(items).toHaveLength(2);
+		expect(items[0].Update).toMatchObject({
+			TableName: TABLE,
+			Key: { pk: `TEAM#${TEAM}`, sk: 'RES#r1' },
+			UpdateExpression: 'SET departmentId = :departmentId',
+			ExpressionAttributeValues: { ':departmentId': 'd1' },
+			ConditionExpression: 'attribute_exists(sk)'
+		});
+	});
+
+	it('未所属にするときは departmentId を REMOVE する', async () => {
+		ddbMock.on(TransactWriteCommand).resolves({});
+		await moveResourcesToDepartment(TEAM, ['r1'], undefined);
+		const item = ddbMock.commandCalls(TransactWriteCommand)[0].args[0].input.TransactItems?.[0];
+		expect(item?.Update?.UpdateExpression).toBe('REMOVE departmentId');
+		expect(item?.Update?.ExpressionAttributeValues).toBeUndefined();
+	});
+
+	it('削除済みのメンバーが混ざって取り消されたら BulkTargetMissingError', async () => {
+		ddbMock
+			.on(TransactWriteCommand)
+			.rejects(Object.assign(new Error('canceled'), { name: 'TransactionCanceledException' }));
+		await expect(moveResourcesToDepartment(TEAM, ['r1'], 'd1')).rejects.toBeInstanceOf(
+			BulkTargetMissingError
+		);
+	});
+
+	it('100 件を超えたら送らずに throw (TransactWriteItems の上限)', async () => {
+		const ids = Array.from({ length: 101 }, (_, i) => `r${i}`);
+		await expect(moveResourcesToDepartment(TEAM, ids, 'd1')).rejects.toThrow(/100/);
+		expect(ddbMock.commandCalls(TransactWriteCommand)).toHaveLength(0);
+	});
+});
+
+/**
+ * 一括削除: メンバー 1 人ごとに既存の原子的な cascade delete を行う。
+ * 関連アサインを含めると 100 項目 (TransactWriteItems の上限) を超えうるため、 全体を 1 トランザクションにしない。
+ * 一部が失敗しても残りは続け、 成功 / 失敗の id を返す。
+ */
+describe('deleteResources', () => {
+	it('1 人ずつ cascade delete し、 削除できた id を返す', async () => {
+		ddbMock.on(QueryCommand).resolves({ Items: [] });
+		ddbMock.on(TransactWriteCommand).resolves({});
+		const result = await deleteResources(TEAM, ['r1', 'r2']);
+		expect(result).toEqual({ deleted: ['r1', 'r2'], failed: [] });
+		expect(ddbMock.commandCalls(TransactWriteCommand)).toHaveLength(2);
+	});
+
+	it('失敗した id は failed に入れ、 残りは続ける', async () => {
+		ddbMock.on(QueryCommand).resolves({ Items: [] });
+		ddbMock
+			.on(TransactWriteCommand)
+			.rejectsOnce(new Error('TransactionCanceledException'))
+			.resolves({});
+		const result = await deleteResources(TEAM, ['r1', 'r2']);
+		expect(result).toEqual({ deleted: ['r2'], failed: ['r1'] });
+	});
+});
