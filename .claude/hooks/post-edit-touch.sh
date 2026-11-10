@@ -9,7 +9,7 @@
 set -euo pipefail
 
 input=$(cat)
-file_path=$(echo "$input" | jq -r '.tool_input.file_path // empty')
+file_path=$(printf '%s' "$input" | node "$(dirname "$0")/lib/tool-file-path.mjs")
 [ -z "$file_path" ] && exit 0
 
 # 監査対象外: build 出力 / node_modules / .claude/state 自身

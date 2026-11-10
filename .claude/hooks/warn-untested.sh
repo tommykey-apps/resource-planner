@@ -16,7 +16,7 @@ set -euo pipefail
 
 # stdin から hook input JSON を読む
 input=$(cat)
-file_path=$(echo "$input" | jq -r '.tool_input.file_path // empty')
+file_path=$(printf '%s' "$input" | node "$(dirname "$0")/lib/tool-file-path.mjs")
 
 # Edit / Write 以外、または file_path が空ならスキップ
 if [ -z "$file_path" ]; then
