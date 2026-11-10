@@ -58,5 +58,5 @@ AWS 公式の指針:
 - [Best practices for handling concurrent updates in DynamoDB (AWS)](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/BestPractices_ImplementingVersionControl.html)
 - [Optimistic locking with version number (AWS)](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/BestPractices_OptimisticLocking.html)
 - [Best practices for using sort keys (AWS)](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/bp-sort-keys.html)
-- 移行 runbook: `web/scripts/migrate-assignment-keys.mjs` (forward / `--rollback` / `--dry-run`)。実行前に必ず `aws dynamodb create-backup` でオンデマンドバックアップを取得する。
+- 移行 runbook: `packages/db/migrations/migrate-assignment-keys.mjs` (forward / `--rollback` / `--dry-run`。`packages/db` で実行)。実行前に必ず `aws dynamodb create-backup` でオンデマンドバックアップを取得する。
 - 関連: ADR 0004 (endDateExclusive), ADR 0005 (drag transport — 本 ADR で expectedVersion / 409 を追補)

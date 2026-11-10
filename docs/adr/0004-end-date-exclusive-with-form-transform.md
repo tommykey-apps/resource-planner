@@ -90,11 +90,11 @@ Inclusive を採用した場合 (= 旧 ADR 0003)、ResourceTimeline / 将来の 
 ## Implementation notes
 
 実装 PR の主な変更:
-- `web/src/lib/date.ts` (新規): `parseLocalDate` / `formatLocalDate` / `addDays` の純粋関数
-- `web/src/lib/types.ts`: `Assignment.endDate` → `endDateExclusive`
-- `web/src/lib/schemas/index.ts`: `assignmentCreateSchema` / `assignmentUpdateSchema` に `.transform()` 追加
-- `web/src/lib/repository/assignment.ts`: 引数型 `AssignmentCreatePayload`、DB attr `endDateExclusive`
-- `web/src/lib/timeline-adapter.ts`: `±1 day` 削除、純粋な型変換のみ
+- `apps/web/src/lib/shared/date/date.ts` (新規): `parseLocalDate` / `formatLocalDate` / `addDays` の純粋関数
+- `packages/db/src/entities.ts`: `Assignment.endDate` → `endDateExclusive`
+- `apps/web/src/lib/features/assignment/schema.ts`: `assignmentCreateSchema` / `assignmentUpdateSchema` に `.transform()` 追加
+- `apps/web/src/lib/features/assignment/repository.server.ts`: 引数型 `AssignmentCreatePayload`、DB attr `endDateExclusive`
+- `apps/web/src/lib/features/assignment/timeline/adapter.ts`: `±1 day` 削除、純粋な型変換のみ
 - `docs/db/entities.md` / `docs/db/access-patterns.md` / `docs/use-cases.md` UC-03: 表記書き換え
 
 フォーム (`AssignmentCreator.svelte`) は **無変更** — `<input name="endDate">` のまま。submit 時に Zod が `.transform()` で `endDateExclusive` に変換する。

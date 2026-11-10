@@ -24,7 +24,7 @@ resource-planner はこれまで「動くコードを書いて手動で確認」
 | E2E | **Playwright** (基盤 PR-T5、実 spec は PR-A3 以降) | サインイン → CRUD のフルパス、 **`+page.svelte` レベルの結合動作も本層が単一の source of truth** |
 
 **設定方針**:
-- `web/vitest.config.ts` は作らず、**`web/vite.config.ts` の `test` block** に併設 (設定一元化)
+- `apps/web/vitest.config.ts` は作らず、**`apps/web/vite.config.ts` の `test` block** に併設 (設定一元化)
 - 既定 `environment: 'node'` (純粋関数テストは jsdom 不要、起動が早い)
 - コンポーネントテストはファイル先頭の `// @vitest-environment jsdom` directive で switch (PR-T2 以降)
 - coverage provider は **`v8`** (Node ネイティブ、c8 不要)
@@ -34,7 +34,7 @@ resource-planner はこれまで「動くコードを書いて手動で確認」
 - `*.test.ts` — unit / integration (Vitest が拾う既定 glob)
 - `*.svelte.test.ts` — Svelte コンポーネントテスト (jsdom directive で switch、PR-T2 以降)
 - `*.integration.test.ts` — DDB Local 等の外部依存込み (PR-T3 で project 分離検討)
-- `e2e/**/*.spec.ts` — Playwright (Vitest の glob からは除外)
+- `tests/e2e/specs/**/*.spec.ts` — Playwright (Vitest の glob からは除外)
 
 **スクリプト**:
 - `pnpm test` — `vitest run` (CI / 一回実行)
@@ -43,9 +43,9 @@ resource-planner はこれまで「動くコードを書いて手動で確認」
 - `pnpm test:e2e` — `playwright test` (PR-T5 で導入、Phase 3 完了後 #112 で CI 有効化、未認証 smoke 段階)
 
 **Playwright 設定**:
-- `web/playwright.config.ts`: ローカル = Chromium / Firefox / WebKit、CI = Chromium のみ
+- `tests/e2e/playwright.config.ts`: ローカル = Chromium / Firefox / WebKit、CI = Chromium のみ
 - `webServer` で `pnpm preview` を auto-start、port 4173
-- spec は `web/e2e/**/*.spec.ts`、結果は `test-results/` (.gitignore 済)
+- spec は `tests/e2e/specs/**/*.spec.ts`、結果は `tests/e2e/test-results/` (.gitignore 済)
 - 実 sign-in fixture が必要なため、本格的な spec は **PR-A3 (Magic Link 移行)** 以降に書く
 - 履歴: PR-T5 (#77) では Phase 3 未完で `if: false` で disable、PR #109 / #110 を経て Phase 3
   完了済となり #112 で test-e2e job を再有効化 (DDB Local + AUTH env stubs、未認証 smoke のみ)。

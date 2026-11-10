@@ -23,12 +23,12 @@
 
 ~~**全層 inclusive 統一**。`endDate = "2026-05-31"` が「5/31 を含む最後の日」を意味する。~~
 
-~~ResourceTimeline 境界 (`web/src/lib/timeline-adapter.ts`) で **2 箇所だけ** ±1 day 変換する:~~
+~~ResourceTimeline 境界 (`apps/web/src/lib/features/assignment/timeline/adapter.ts`) で **2 箇所だけ** ±1 day 変換する:~~
 
 - ~~`toTimelineAssignment(dbAssignment, project)`: DB → timeline 形式 (`endDate += 1 day`)~~
 - ~~`fromTimelineAssignment(timelineAssignment, prev)`: timeline → DB 形式 (`endDate -= 1 day`)~~
 
-~~DB 保存: `YYYY-MM-DD` string (Asia/Tokyo の暦日)。`Date.toISOString().slice(0, 10)` は UTC ベースで JST と日付がずれる可能性があるため、`web/src/lib/timeline-adapter.ts` の `formatLocalDate(d)` で自前 zero-pad 実装する。~~
+~~DB 保存: `YYYY-MM-DD` string (Asia/Tokyo の暦日)。`Date.toISOString().slice(0, 10)` は UTC ベースで JST と日付がずれる可能性があるため、`apps/web/src/lib/features/assignment/timeline/adapter.ts` の `formatLocalDate(d)` で自前 zero-pad 実装する。~~
 
 ## ~~Consequences~~
 
