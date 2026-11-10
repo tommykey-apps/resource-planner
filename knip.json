@@ -4,7 +4,6 @@
 		"apps/web": {
 			"entry": ["src/auth.ts", "src/lambda/*.ts", "src/routes/**/+*.{ts,svelte}"],
 			"project": ["src/**/*.{ts,svelte}"],
-			"ignore": ["src/lib/index.ts"],
 			"ignoreDependencies": [
 				"@fontsource-variable/jetbrains-mono",
 				"tw-animate-css",
