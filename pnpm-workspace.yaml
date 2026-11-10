@@ -1,0 +1,29 @@
+packages:
+  - apps/*
+  - packages/*
+  - tests/*
+
+# apps/web の配布物作成 (scripts/package-web-function.mjs) が使う `pnpm deploy` の前提条件。
+# 共通の lockfile にこの設定が記録されていないと deploy が止まる。開発中は dedupeInjectedDeps
+# (既定で有効) により、peer 依存のない workspace パッケージはシンボリックリンクのまま使われる。
+# Refs:
+# - https://pnpm.io/cli/deploy
+# - https://pnpm.io/settings#injectworkspacepackages
+# - https://pnpm.io/settings#dedupeinjecteddeps
+injectWorkspacePackages: true
+
+onlyBuiltDependencies:
+  - esbuild
+  - '@tailwindcss/oxide'
+
+# Lambda Web Functions の Node は CommonJS から ES モジュールを require できない
+# (--no-experimental-require-module。Lambda の Node 20・22・24 共通の既定)。
+# jsdom 27 以降は ES モジュール専用の @exodus/bytes を require するため起動時に失敗する。
+# jsdom の CHANGELOG はこの環境では 26.1.0 に留めるよう案内し、isomorphic-dompurify も
+# overrides での固定を既知の問題 (#394) の対処として挙げている。vitest が使う jsdom には影響させない。
+# Refs:
+# - https://docs.aws.amazon.com/lambda/latest/dg/lambda-nodejs.html (Experimental Node.js features)
+# - https://github.com/jsdom/jsdom/releases/tag/27.0.1
+# - https://github.com/kkomelin/isomorphic-dompurify#known-issues
+overrides:
+  isomorphic-dompurify>jsdom: 26.1.0

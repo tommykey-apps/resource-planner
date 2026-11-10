@@ -7,19 +7,25 @@
 
 ```
 resource-planner/
-├── web/                      # SvelteKit (adapter-node)
-│   ├── src/
-│   │   ├── routes/
-│   │   └── lib/
-│   ├── scripts/              # Web Function の配布物作成とスモークテスト
-│   ├── package.json
-│   └── svelte.config.js
+├── apps/
+│   └── web/                  # SvelteKit (adapter-node)
+│       ├── src/
+│       │   ├── routes/
+│       │   └── lib/
+│       ├── scripts/          # Web Function の配布物作成とスモークテスト
+│       ├── package.json
+│       └── svelte.config.js
+├── tests/
+│   └── e2e/                  # Playwright (specs/ と fixtures/)
 ├── infra/                    # Terraform
 ├── docs/
 │   ├── architecture.drawio   # 構成図 (architecture.svg に書き出す)
 │   └── db/                   # DB ドキュメント (tbls + 手書き)
 ├── bin/                      # ローカルツール (tbls など)
 ├── .github/workflows/        # CI/CD
+├── package.json              # pnpm workspace のルート (pnpm の版を固定)
+├── pnpm-workspace.yaml       # workspace の範囲と依存の設定
+├── knip.json                 # 未使用コードの検出 (ルートから実行)
 ├── Makefile                  # 開発コマンド
 ├── docker-compose.yml        # DynamoDB Local
 └── .tbls.yml                 # tbls 設定
@@ -37,8 +43,8 @@ flox activate    # nodejs 22 + pnpm 10 + terraform + awscli
 
 ```bash
 git worktree add ../resource-planner-<topic> -b <branch> origin/main
-cp web/.env.local ../resource-planner-<topic>/web/.env.local   # git 管理外なので複製が必要
-cd ../resource-planner-<topic>/web && pnpm install
+cp apps/web/.env.local ../resource-planner-<topic>/apps/web/.env.local   # git 管理外なので複製が必要
+cd ../resource-planner-<topic> && pnpm install
 ```
 
 共有の作業ツリーでは `git switch` / `git stash` / `git checkout` をしない (他セッションの変更やステージ状態を壊す)。
@@ -62,16 +68,18 @@ make db-docs           # DB ドキュメント生成
 make clean             # コンテナ停止
 ```
 
-`web/` 直接 (TDD: ADR 0007 参照):
+`apps/web/` 直接 (TDD: ADR 0007 参照):
 
 ```bash
-cd web
+cd apps/web
 pnpm test              # Vitest (unit; DDB Local 起動時は integration も含む)
 pnpm test:watch        # watch mode
 pnpm test:coverage     # v8 coverage
-pnpm test:e2e          # Playwright (実 spec は今後追加)
 pnpm check             # svelte-check
 ```
+
+E2E (Playwright) は `tests/e2e/` で `pnpm test:e2e`。先に `apps/web` で `pnpm build` を済ませる。
+ルートの `pnpm check` / `pnpm lint` / `pnpm test` は全パッケージで実行する。
 
 ## インフラ
 
@@ -132,7 +140,7 @@ Single Table Design (詳細: `docs/db/entities.md`、`docs/db/access-patterns.md
 Claude Code session 内で本 repo を編集する際は **必ず先にテストを書く**。
 
 - `/tdd <task>` skill で workflow ガイド (`.claude/skills/tdd/SKILL.md`)
-- `web/src/**.{ts,svelte}` の Edit / Write 前に、対応 `*.test.ts` が `git diff --cached` に出るか **PreToolUse hook** が確認 (`.claude/hooks/warn-untested.sh`)
+- `apps/web/src/**.{ts,svelte}` の Edit / Write 前に、対応 `*.test.ts` が `git diff --cached` に出るか **PreToolUse hook** が確認 (`.claude/hooks/warn-untested.sh`)
 - staged されていなければ `permissionDecision: "ask"` で確認 prompt (deny ではなく ask、iterative work を阻害しない)
 - AI / 人間共通の discipline。RED → GREEN → REFACTOR で進める
 

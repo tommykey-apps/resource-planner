@@ -1,0 +1,67 @@
+import { expect, test } from '@playwright/test';
+import { clearMagicLinks, getMagicLinkUrl } from '../fixtures/magic-link';
+import { openSection, showAllPeriods } from '../fixtures/nav';
+
+/**
+ * CRUD full path E2E (#155 で可視化した P0 coverage の埋め)。
+ *
+ * sign-in → Resource 作成 → Project 作成 → /assignments で確認 → ホームに戻って delete →
+ * の一気通貫を 1 spec で固定する。 個々の repository / action / component 単体は別 test で
+ * 担保しているので、 ここは **境界の繋ぎ** + 削除 confirm dialog の interaction を assert する。
+ */
+
+test.describe.configure({ mode: 'serial' });
+
+test.beforeEach(async () => {
+	await clearMagicLinks();
+});
+
+async function signInAsTestUser(page: import('@playwright/test').Page) {
+	await page.goto('/sign-in');
+	await page.fill('input[name="email"]', 'allowed@example.com');
+	await page.click('button[type="submit"]');
+	await expect(page).toHaveURL(/\/sign-in\/check-email/);
+	const url = await getMagicLinkUrl('allowed@example.com');
+	await page.goto(url);
+	await expect(page).toHaveURL(/^http:\/\/localhost:4173\/(\?|$)/);
+}
+
+test('Resource + Project の作成 → delete confirm まで一気通貫で機能 (#155)', async ({ page }) => {
+	await signInAsTestUser(page);
+
+	const resourceName = `e2e-crud-r-${Date.now()}`;
+	const projectName = `e2e-crud-p-${Date.now()}`;
+
+	// ── Resource 作成 (ヘッダのナビ「People」→ 「+ Add person」)
+	await openSection(page, 'People');
+	await page.getByRole('button', { name: /\+ Add person/ }).click();
+	await page.getByLabel('Name', { exact: true }).fill(resourceName);
+	await page.locator('input[name="email"]').fill(`${crypto.randomUUID()}@example.com`);
+	await page.getByRole('button', { name: /^Create$/ }).click();
+	await expect(page.locator('tr', { hasText: resourceName })).toBeVisible();
+
+	// ── Project 作成 (ヘッダのナビ「Projects」→ 「+ Add project」)
+	await openSection(page, 'Projects');
+	await showAllPeriods(page);
+	await expect(page.locator('tr', { hasText: resourceName })).toBeHidden();
+	await page.getByRole('button', { name: /\+ Add project/ }).click();
+	// Project は「Project name」 label
+	await page.getByLabel('Project name').fill(projectName);
+	await page.getByRole('button', { name: /^Create$/ }).click();
+	await expect(page.locator('tr', { hasText: projectName })).toBeVisible();
+
+	// ── Resource を delete → ConfirmDialog が出て Confirm
+	await openSection(page, 'People');
+	const row = page.locator('tr', { hasText: resourceName });
+	await expect(row).toBeVisible();
+	await row.getByRole('button', { name: /^Delete$/ }).click();
+
+	const alert = page.getByRole('alertdialog');
+	await expect(alert).toBeVisible();
+	await expect(alert).toContainText(resourceName);
+	await alert.getByRole('button', { name: /^Delete$/ }).click();
+	await expect(alert).toBeHidden();
+
+	// 削除後は list から消える
+	await expect(page.locator('tr', { hasText: resourceName })).toBeHidden();
+});

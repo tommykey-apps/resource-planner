@@ -3,7 +3,7 @@
 resource-planner の DynamoDB 単一テーブルに対するクエリパターン一覧。
 **前提**: app 層は常に Auth.js session から `teamId` を取得し、PK を `TEAM#{teamId}` で固定する。
 
-> **Note**: 下表の API はいずれも `web/src/lib/repository/` 配下に実装済み。
+> **Note**: 下表の API はいずれも `apps/web/src/lib/repository/` 配下に実装済み。
 > 関数名は実装と対応する (例: `listResources` / `createAssignment` / `deleteResource`)。
 
 ## 一覧
