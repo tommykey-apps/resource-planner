@@ -14,6 +14,14 @@
 		"tests/e2e": {
 			"entry": ["specs/**/*.ts"],
 			"project": ["**/*.ts"]
+		},
+		"apps/ses-bounce": {
+			"entry": ["src/handler.ts", "scripts/build.mjs"],
+			"project": ["src/**/*.ts"]
+		},
+		"packages/db": {
+			"entry": ["migrations/*.mjs"],
+			"project": ["src/**/*.ts", "migrations/**/*.{ts,mjs}"]
 		}
 	},
 	"ignoreExportsUsedInFile": true

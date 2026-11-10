@@ -8,10 +8,10 @@
  * 受け、 DDB に `SUPPRESS#{email}` レコードを Put する。
  *
  * **設計上の制約**:
- *   - 本 Lambda は SvelteKit と独立してるので `$lib/db/client` (= `$app/environment` 依存) は
+ *   - 本 Lambda は SvelteKit と独立してるので web アプリの DB client (= `$app/environment` 依存) は
  *     import できない。 DDB client / TABLE 名を直に持つ。
- *   - 一方で `suppressionPk` / `suppressionMetaSk` だけは `$lib/repository/keys` から
- *     import する。 これらは `$app/...` を import しない純粋関数で、 PK フォーマットを
+ *   - 一方で項目の形 (pk / sk を含む) は web アプリと共有する `@resource-planner/db` から
+ *     import する。 `$app/...` を import しない純粋関数で、 PK フォーマットを
  *     アプリ側と完全一致させる必要があるため (signIn callback での Get と整合)。
  *
  * **policy**:
@@ -24,7 +24,7 @@
  */
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
-import { buildSuppressionItem, type SuppressionInput } from '$lib/repository/suppression-item';
+import { buildSuppressionItem, type SuppressionInput } from '@resource-planner/db/suppression-item';
 
 type SnsEventRecord = {
 	Sns: {

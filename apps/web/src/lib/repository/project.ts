@@ -1,7 +1,7 @@
 import { PutCommand, UpdateCommand, TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
 import { ddb, TABLE } from '$lib/db/client';
 import { newId } from '$lib/id';
-import { pk, projectSk, SK_PREFIX } from './keys';
+import { pk, projectSk, SK_PREFIX } from '@resource-planner/db/keys';
 import { queryRelatedAssignmentSk } from './assignment';
 import { deleteEach, type BulkDeleteResult } from './bulk';
 import { querySkByDepartment } from './by-department';

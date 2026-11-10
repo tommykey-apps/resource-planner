@@ -15,7 +15,7 @@
  *   aws dynamodb create-backup --table-name <table> --backup-name pre-project-department-<date>
  *
  * env:  DYNAMODB_TABLE (必須) / AWS_REGION / AWS_ENDPOINT_URL (DDB Local 用、任意)
- * 使い方: node scripts/migrate-project-departments.mjs [--dry-run] [--team team_default]
+ * 使い方 (packages/db で実行): node migrations/migrate-project-departments.mjs [--dry-run] [--team team_default]
  */
 import { ConditionalCheckFailedException, DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';

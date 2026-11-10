@@ -1,6 +1,6 @@
 import { QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { ddb, TABLE } from '$lib/db/client';
-import { pk, SK_PREFIX } from './keys';
+import { pk, SK_PREFIX } from '@resource-planner/db/keys';
 import type { TeamData, Resource, Project, ProjectLink, Assignment, Department } from '$lib/types';
 
 export * from './resource';

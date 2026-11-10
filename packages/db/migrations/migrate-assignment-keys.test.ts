@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 // scripts/ の one-off 移行スクリプトの純粋ロジックを検証する (ADR 0012)。
-import { planAssignmentKeyMigration } from '../../../scripts/migrate-assignment-keys.mjs';
+import { planAssignmentKeyMigration } from './migrate-assignment-keys.mjs';
 
 const legacy = {
 	pk: 'TEAM#team_default',

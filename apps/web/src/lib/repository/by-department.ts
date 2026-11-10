@@ -1,6 +1,6 @@
 import { QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { ddb, TABLE } from '$lib/db/client';
-import { pk, SK_PREFIX } from './keys';
+import { pk, SK_PREFIX } from '@resource-planner/db/keys';
 
 /**
  * `departmentId` が一致する item の SK 一覧を返す (#241 / ADR 0016 部署削除の付け替え対象)。

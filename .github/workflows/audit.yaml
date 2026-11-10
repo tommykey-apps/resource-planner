@@ -37,11 +37,11 @@ jobs:
         continue-on-error: true
 
       - name: jscpd (duplicate code detection)
-        run: pnpm dlx jscpd src --min-tokens 50 --reporters consoleSummary
+        run: pnpm dlx jscpd src ../ses-bounce/src ../../packages/db/src --min-tokens 50 --reporters consoleSummary
         continue-on-error: true
 
       - name: madge (circular dependencies)
         # 拡張子と `$lib` の別名は apps/web/.madgerc で渡す。madge は baseUrl のない tsconfig の
         # paths を解決できず、SvelteKit が生成する tsconfig をそのまま渡すと `$lib/...` を辿れない
-        run: pnpm dlx madge --circular src
+        run: pnpm dlx madge --circular src ../ses-bounce/src ../../packages/db/src
         continue-on-error: true

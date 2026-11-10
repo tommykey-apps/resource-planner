@@ -192,7 +192,7 @@ jobs:
       - uses: actions/checkout@v4
 
       # #134: SES bounce handler Lambda の bundle 必要。
-      # `data "archive_file" "ses_bounce_handler"` が apps/web/dist/lambda/... を参照するため、
+      # `data "archive_file" "ses_bounce_handler"` が apps/ses-bounce/dist を参照するため、
       # terraform plan / validate 前に esbuild bundle を完了させる。
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
@@ -207,8 +207,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Build SES bounce handler Lambda
-        run: pnpm build:lambda
-        working-directory: apps/web
+        run: pnpm --filter @resource-planner/ses-bounce build
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:

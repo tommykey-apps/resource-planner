@@ -1,7 +1,7 @@
 import { PutCommand, DeleteCommand, GetCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { ddb, TABLE } from '$lib/db/client';
 import { newId } from '$lib/id';
-import { pk, assignmentSk, SK_PREFIX } from './keys';
+import { pk, assignmentSk, SK_PREFIX } from '@resource-planner/db/keys';
 import type { Assignment } from '$lib/types';
 import type { AssignmentCreatePayload, AssignmentUpdatePayload } from '$lib/schemas';
 

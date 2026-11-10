@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 // scripts/ の one-off 移行スクリプトの純粋ロジックを検証する (ADR 0016)。
-import { planProjectDepartments } from '../../../scripts/migrate-project-departments.mjs';
+import { planProjectDepartments } from './migrate-project-departments.mjs';
 
 const resources = [
 	{ id: 'r1', departmentId: 'd1' },

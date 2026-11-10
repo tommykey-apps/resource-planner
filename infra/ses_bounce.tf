@@ -8,8 +8,8 @@
  * magic link 送信を抑止する (アプリ側 `shouldAllowSignIn`)。 これで SES の
  * sender reputation を維持し、 sandbox 解除後の送信評価低下を防ぐ。
  *
- * **deploy 前提**: 本 Lambda の zip artifact は CI / CD で `pnpm build:lambda` から生成される
- * (apps/web/dist/lambda/ses-bounce-handler.zip)。 ローカル apply 時も同 zip を事前生成する必要あり。
+ * **deploy 前提**: 本 Lambda の zip artifact は CI / CD で `pnpm --filter @resource-planner/ses-bounce build` から生成される
+ * (apps/ses-bounce/dist)。 ローカル apply 時も同 zip を事前生成する必要あり。
  */
 
 # ── SNS topics: bounce / complaint で分けて publish 順序を保つ ──
@@ -68,10 +68,10 @@ resource "aws_iam_role_policy" "ses_bounce_handler_ddb" {
 
 # ── Lambda function ──
 # zip artifact は CI で esbuild → ./ses-bounce-handler.zip に出力されている前提。
-# ローカル apply の場合は `cd ../apps/web && pnpm build:lambda` を先に実行。
+# ローカル apply の場合は `pnpm --filter @resource-planner/ses-bounce build` を先に実行。
 data "archive_file" "ses_bounce_handler" {
   type        = "zip"
-  source_dir  = "${path.module}/../apps/web/dist/lambda/ses-bounce-handler"
+  source_dir  = "${path.module}/../apps/ses-bounce/dist"
   output_path = "${path.module}/ses-bounce-handler.zip"
 }
 
