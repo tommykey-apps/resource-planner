@@ -354,7 +354,7 @@
 			<p class="py-4 text-sm text-muted-foreground">{m.projects_noMatches()}</p>
 		{:else}
 			<BulkActionBar count={selection.ids.length} onClear={selection.clear}>
-				<form method="POST" action="/?/deleteProjects" use:enhance={bulkDeleteSubmit}>
+				<form method="POST" action="?/deleteProjects" use:enhance={bulkDeleteSubmit}>
 					{#each selection.ids as id (id)}
 						<input type="hidden" name="ids" value={id} />
 					{/each}
@@ -431,7 +431,7 @@
 										>
 										<form
 											method="POST"
-											action="/?/deleteProject"
+											action="?/deleteProject"
 											use:enhance={makeDeleteSubmit({ name: p.name, count })}
 										>
 											<input type="hidden" name="id" value={p.id} />
@@ -459,7 +459,7 @@
 <Dialog bind:open={formOpen} title={editing ? m.projects_editTitle() : m.projects_createTitle()}>
 	<form
 		method="POST"
-		action={editing ? '/?/updateProject' : '/?/createProject'}
+		action={editing ? '?/updateProject' : '?/createProject'}
 		use:enhance={formSubmit}
 		class="flex flex-col gap-3"
 	>

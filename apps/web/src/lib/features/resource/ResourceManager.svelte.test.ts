@@ -34,7 +34,7 @@ beforeEach(() => {
  * helper レベルで保証済 (#94)。本 test は render が壊れていないことだけ確認する。
  *
  * header 標準化: 一覧はダイアログではなく `/resources` ページの本文に直接出す。
- * form action は `/` に集約されたままなので、 別ページから送れるよう `/?/...` の絶対パスにする。
+ * form action は `/resources` の `+page.server.ts` にあるので、 相対の `?/...` で送る。
  */
 describe('ResourceManager (smoke)', () => {
 	it('一覧と追加 button をダイアログを開かずに直接 render する', () => {
@@ -62,11 +62,11 @@ describe('ResourceManager (smoke)', () => {
 		expect(getByText('メンバーはいません。')).toBeInTheDocument();
 	});
 
-	it('削除 form は /?/deleteResource に送る (別ページからでも / の action に届く)', () => {
+	it('削除 form は ?/deleteResource に送る (/resources の action)', () => {
 		const { container } = render(ResourceManager, {
 			props: { resources: [{ id: 'r1', name: 'Alice', email: 'r1@example.com' }], assignments: [] }
 		});
-		expect(container.querySelector('form[action="/?/deleteResource"]')).toBeTruthy();
+		expect(container.querySelector('form[action="?/deleteResource"]')).toBeTruthy();
 	});
 
 	/**
@@ -338,8 +338,8 @@ describe('ResourceManager の一括操作', () => {
 		await fireEvent.click(getByRole('checkbox', { name: '佐藤' }));
 		const bar = getByRole('region', { name: '一括操作' });
 		expect(within(bar).getByText('1 件を選択中')).toBeInTheDocument();
-		expect(hiddenIds(container.querySelector('form[action="/?/deleteResources"]'))).toEqual(['r2']);
-		const move = container.querySelector('form[action="/?/moveResources"]');
+		expect(hiddenIds(container.querySelector('form[action="?/deleteResources"]'))).toEqual(['r2']);
+		const move = container.querySelector('form[action="?/moveResources"]');
 		expect(hiddenIds(move)).toEqual(['r2']);
 		expect(within(bar).getByRole('combobox', { name: '所属部署を変更' })).toBeInTheDocument();
 	});
@@ -348,7 +348,7 @@ describe('ResourceManager の一括操作', () => {
 		setQuery('?q=佐');
 		const { getByRole, container } = renderTable();
 		await fireEvent.click(getByRole('checkbox', { name: '行を選択' }));
-		expect(hiddenIds(container.querySelector('form[action="/?/deleteResources"]'))).toEqual(['r2']);
+		expect(hiddenIds(container.querySelector('form[action="?/deleteResources"]'))).toEqual(['r2']);
 	});
 
 	it('一括操作中は行ごとの編集・削除を無効にする', async () => {

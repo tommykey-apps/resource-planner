@@ -31,7 +31,7 @@ describe('AssignmentCreator (smoke)', () => {
 	});
 
 	// / と /assignments の両方に置くので、 action は / の絶対パスで送る。
-	it('作成 form は /?/createAssignment に送る', async () => {
+	it('作成 form は ?/createAssignment に送る', async () => {
 		const { getByRole } = render(AssignmentCreator, {
 			props: {
 				resources: [{ id: 'r1', name: 'Alice', email: 'r1@example.com' }],
@@ -40,7 +40,7 @@ describe('AssignmentCreator (smoke)', () => {
 		});
 		await fireEvent.click(getByRole('button', { name: /アサインを追加/ }));
 		const form = await waitFor(() => {
-			const f = document.querySelector('form[action="/?/createAssignment"]');
+			const f = document.querySelector('form[action="?/createAssignment"]');
 			if (!f) throw new Error('createAssignment form not rendered');
 			return f;
 		});

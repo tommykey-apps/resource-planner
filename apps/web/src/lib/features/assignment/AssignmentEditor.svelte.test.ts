@@ -43,14 +43,14 @@ describe('AssignmentEditor (#100)', () => {
 		render(AssignmentEditor, {
 			props: { open: false, assignment: SAMPLE, resources: RESOURCES, projects: PROJECTS }
 		});
-		expect(document.querySelector('form[action="/?/updateAssignment"]')).toBeNull();
+		expect(document.querySelector('form[action="?/updateAssignment"]')).toBeNull();
 	});
 
 	it('open=true で assignment を渡すと form が描画され、 hidden の id / expectedVersion が assignment に一致', async () => {
 		render(AssignmentEditor, {
 			props: { open: true, assignment: SAMPLE, resources: RESOURCES, projects: PROJECTS }
 		});
-		const form = await findInPortal<HTMLFormElement>('form[action="/?/updateAssignment"]');
+		const form = await findInPortal<HTMLFormElement>('form[action="?/updateAssignment"]');
 		const idInput = form.querySelector('input[name="id"]') as HTMLInputElement;
 		const version = form.querySelector('input[name="expectedVersion"]') as HTMLInputElement;
 		expect(idInput.value).toBe('asn-1');
@@ -61,7 +61,7 @@ describe('AssignmentEditor (#100)', () => {
 		render(AssignmentEditor, {
 			props: { open: true, assignment: SAMPLE, resources: RESOURCES, projects: PROJECTS }
 		});
-		await findInPortal('form[action="/?/updateAssignment"]');
+		await findInPortal('form[action="?/updateAssignment"]');
 		const resourceSelect = document.querySelector('select[name="resourceId"]') as HTMLSelectElement;
 		const projectSelect = document.querySelector('select[name="projectId"]') as HTMLSelectElement;
 		expect(Array.from(resourceSelect.options).map((o) => o.value)).toEqual(['r1', 'r2']);
@@ -74,7 +74,7 @@ describe('AssignmentEditor (#100)', () => {
 		render(AssignmentEditor, {
 			props: { open: true, assignment: SAMPLE, resources: RESOURCES, projects: PROJECTS }
 		});
-		await findInPortal('form[action="/?/updateAssignment"]');
+		await findInPortal('form[action="?/updateAssignment"]');
 		const endDate = document.querySelector('input[name="endDate"]') as HTMLInputElement;
 		const startDate = document.querySelector('input[name="startDate"]') as HTMLInputElement;
 		expect(startDate.value).toBe('2026-05-01');
@@ -85,7 +85,7 @@ describe('AssignmentEditor (#100)', () => {
 		render(AssignmentEditor, {
 			props: { open: true, assignment: SAMPLE, resources: RESOURCES, projects: PROJECTS }
 		});
-		await findInPortal('form[action="/?/updateAssignment"]');
+		await findInPortal('form[action="?/updateAssignment"]');
 		const endDate = document.querySelector('input[name="endDate"]') as HTMLInputElement;
 		expect(endDate.getAttribute('min')).toBe('2026-05-01');
 	});
@@ -94,7 +94,7 @@ describe('AssignmentEditor (#100)', () => {
 		render(AssignmentEditor, {
 			props: { open: true, assignment: SAMPLE, resources: RESOURCES, projects: PROJECTS }
 		});
-		await findInPortal('form[action="/?/updateAssignment"]');
+		await findInPortal('form[action="?/updateAssignment"]');
 		const buttons = Array.from(document.querySelectorAll('button[type]')) as HTMLButtonElement[];
 		const submitBtns = buttons.filter((b) => b.type === 'submit');
 		const cancelBtns = buttons.filter((b) => b.type === 'button');
@@ -106,7 +106,7 @@ describe('AssignmentEditor (#100)', () => {
 		render(AssignmentEditor, {
 			props: { open: true, assignment: null, resources: RESOURCES, projects: PROJECTS }
 		});
-		const form = await findInPortal<HTMLFormElement>('form[action="/?/updateAssignment"]');
+		const form = await findInPortal<HTMLFormElement>('form[action="?/updateAssignment"]');
 		expect(form.querySelector('input[name="id"]')).toBeNull();
 		expect(form.querySelector('input[name="expectedVersion"]')).toBeNull();
 	});

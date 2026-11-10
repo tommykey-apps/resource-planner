@@ -216,7 +216,7 @@
 										{m.departments_addChild()}
 									</Button>
 									<!-- 付け替え (move): 親を選んだ瞬間に submit。 -->
-									<form method="POST" action="/?/moveDepartment" use:enhance={moveSubmit}>
+									<form method="POST" action="?/moveDepartment" use:enhance={moveSubmit}>
 										<input type="hidden" name="id" value={dept.id} />
 										<select
 											name="parentId"
@@ -235,7 +235,7 @@
 									<!-- 削除 (#241): 配下は親へ繰り上げ。 確認 dialog は makeDeleteSubmit が出す。 -->
 									<form
 										method="POST"
-										action="/?/deleteDepartment"
+										action="?/deleteDepartment"
 										use:enhance={makeDeleteSubmit(dept)}
 									>
 										<input type="hidden" name="id" value={dept.id} />
@@ -259,7 +259,7 @@
 >
 	<form
 		method="POST"
-		action={editing ? '/?/renameDepartment' : '/?/createDepartment'}
+		action={editing ? '?/renameDepartment' : '?/createDepartment'}
 		use:enhance={formSubmit}
 		class="flex flex-col gap-3"
 	>

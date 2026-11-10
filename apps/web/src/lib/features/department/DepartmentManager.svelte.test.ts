@@ -57,7 +57,7 @@ describe('DepartmentManager rename (#250)', () => {
 		await openEditFor('バックエンド課');
 		const input = (await screen.findByDisplayValue('バックエンド課')) as HTMLInputElement;
 		const form = input.closest('form')!;
-		expect(form.getAttribute('action')).toBe('/?/renameDepartment');
+		expect(form.getAttribute('action')).toBe('?/renameDepartment');
 		expect((form.querySelector('input[name="id"]') as HTMLInputElement).value).toBe('d2');
 	});
 

@@ -335,7 +335,7 @@
 			<BulkActionBar count={selection.ids.length} onClear={selection.clear}>
 				<form
 					method="POST"
-					action="/?/moveResources"
+					action="?/moveResources"
 					use:enhance={bulkMoveSubmit}
 					class="flex items-center gap-2"
 				>
@@ -355,7 +355,7 @@
 					</select>
 					<Button size="xs" variant="outline" type="submit">{m.common_change()}</Button>
 				</form>
-				<form method="POST" action="/?/deleteResources" use:enhance={bulkDeleteSubmit}>
+				<form method="POST" action="?/deleteResources" use:enhance={bulkDeleteSubmit}>
 					{#each selection.ids as id (id)}
 						<input type="hidden" name="ids" value={id} />
 					{/each}
@@ -430,7 +430,7 @@
 										>
 										<form
 											method="POST"
-											action="/?/deleteResource"
+											action="?/deleteResource"
 											use:enhance={makeDeleteSubmit({ name: r.name, count })}
 										>
 											<input type="hidden" name="id" value={r.id} />
@@ -458,7 +458,7 @@
 <Dialog bind:open={formOpen} title={editing ? m.resources_editTitle() : m.resources_createTitle()}>
 	<form
 		method="POST"
-		action={editing ? '/?/updateResource' : '/?/createResource'}
+		action={editing ? '?/updateResource' : '?/createResource'}
 		use:enhance={formSubmit}
 		class="flex flex-col gap-3"
 	>

@@ -58,11 +58,11 @@ describe('ProjectManager (smoke)', () => {
 		expect(getByText('案件はありません。')).toBeInTheDocument();
 	});
 
-	it('削除 form は /?/deleteProject に送る (別ページからでも / の action に届く)', () => {
+	it('削除 form は ?/deleteProject に送る (/projects の action)', () => {
 		const { container } = render(ProjectManager, {
 			props: { projects: [{ id: 'p1', name: 'Project A', color: '#ff0000' }], assignments: [] }
 		});
-		expect(container.querySelector('form[action="/?/deleteProject"]')).toBeTruthy();
+		expect(container.querySelector('form[action="?/deleteProject"]')).toBeTruthy();
 	});
 });
 
@@ -82,7 +82,7 @@ describe('ProjectManager form (PR-N3, refs #187)', () => {
 		});
 		await fireEvent.click(addBtn);
 		const form = await waitFor(() => {
-			const f = document.querySelector('form[action="/?/createProject"]') as HTMLFormElement;
+			const f = document.querySelector('form[action="?/createProject"]') as HTMLFormElement;
 			if (!f) throw new Error('createProject form not rendered');
 			return f;
 		});
@@ -98,7 +98,7 @@ describe('ProjectManager form (PR-N3, refs #187)', () => {
 		});
 		await fireEvent.click(editBtn);
 		const form = await waitFor(() => {
-			const f = document.querySelector('form[action="/?/updateProject"]') as HTMLFormElement;
+			const f = document.querySelector('form[action="?/updateProject"]') as HTMLFormElement;
 			if (!f) throw new Error('updateProject form not rendered');
 			return f;
 		});
@@ -215,7 +215,7 @@ describe('ProjectManager Markdown Write/Preview tabs', () => {
 		});
 		await fireEvent.click(addBtn);
 		const form = await waitFor(() => {
-			const f = document.querySelector('form[action="/?/createProject"]') as HTMLFormElement;
+			const f = document.querySelector('form[action="?/createProject"]') as HTMLFormElement;
 			if (!f) throw new Error('createProject form not rendered');
 			return f;
 		});
@@ -366,7 +366,7 @@ describe('ProjectManager の一括操作', () => {
 			props: { projects: [{ id: 'p1', name: 'Project A', color: '#ff0000' }], assignments: [] }
 		});
 		await fireEvent.click(getByRole('checkbox', { name: 'Project A' }));
-		const form = container.querySelector('form[action="/?/deleteProjects"]');
+		const form = container.querySelector('form[action="?/deleteProjects"]');
 		expect(
 			Array.from(form?.querySelectorAll('input[name="ids"]') ?? []).map(
 				(i) => (i as HTMLInputElement).value
@@ -488,7 +488,7 @@ describe('ProjectManager の部署と期間 (ADR 0016)', () => {
 		await fireEvent.click(getByRole('button', { name: /案件を追加/ }));
 		const select = await waitFor(() => {
 			const el = document.querySelector(
-				'form[action="/?/createProject"] select[name="departmentId"]'
+				'form[action="?/createProject"] select[name="departmentId"]'
 			) as HTMLSelectElement | null;
 			if (!el) throw new Error('departmentId select not rendered');
 			return el;
@@ -502,7 +502,7 @@ describe('ProjectManager の部署と期間 (ADR 0016)', () => {
 		await fireEvent.click(getByRole('button', { name: /案件を追加/ }));
 		const select = await waitFor(() => {
 			const el = document.querySelector(
-				'form[action="/?/createProject"] select[name="departmentId"]'
+				'form[action="?/createProject"] select[name="departmentId"]'
 			) as HTMLSelectElement | null;
 			if (!el) throw new Error('departmentId select not rendered');
 			return el;
@@ -517,7 +517,7 @@ describe('ProjectManager の部署と期間 (ADR 0016)', () => {
 		await fireEvent.click(within(row).getByRole('button', { name: '編集' }));
 		const select = await waitFor(() => {
 			const el = document.querySelector(
-				'form[action="/?/updateProject"] select[name="departmentId"]'
+				'form[action="?/updateProject"] select[name="departmentId"]'
 			) as HTMLSelectElement | null;
 			if (!el) throw new Error('departmentId select not rendered');
 			return el;
