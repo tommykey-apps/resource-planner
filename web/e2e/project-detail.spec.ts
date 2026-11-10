@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { clearMagicLinks, getMagicLinkUrl } from './fixtures/magic-link';
-import { openSection } from './fixtures/nav';
+import { openSection, showAllPeriods } from './fixtures/nav';
 
 /**
  * E2E for Project detail modal (PR-N5, refs #187)。
@@ -43,6 +43,7 @@ async function createResource(page: Page, name: string): Promise<void> {
 
 async function openProjectForm(page: Page): Promise<void> {
 	await openSection(page, 'Projects');
+	await showAllPeriods(page);
 	await page.getByRole('button', { name: /\+ Add project/ }).click();
 }
 
@@ -121,8 +122,8 @@ test('Project detail: form CRUD で description/tags/links を save → reload �
 	await expect(page.locator('tr', { hasText: projectName })).toBeVisible();
 
 	// ── reload: ProjectManager → Edit で値復元
+	// 一覧は ?period=all のまま再読み込みする (ADR 0016: 既定の今月では割り当てのない案件が出ない)
 	await page.reload();
-	await openSection(page, 'Projects');
 	await page
 		.locator('tr', { hasText: projectName })
 		.getByRole('button', { name: /^Edit$/ })
@@ -141,8 +142,8 @@ test('Project detail: form CRUD で description/tags/links を save → reload �
 	await submitProjectForm(page, 'update');
 
 	// ── reload で再確認 → 全部空
+	// 一覧は ?period=all のまま再読み込みする (ADR 0016: 既定の今月では割り当てのない案件が出ない)
 	await page.reload();
-	await openSection(page, 'Projects');
 	await page
 		.locator('tr', { hasText: projectName })
 		.getByRole('button', { name: /^Edit$/ })

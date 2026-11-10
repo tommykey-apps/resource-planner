@@ -24,6 +24,7 @@ describe('queryAllByTeam', () => {
 				}, // #239: 部署所属
 				{ sk: 'RES#r2', id: 'r2', name: 'Bob', email: 'bob@example.com' }, // 未所属 (departmentId 属性なし)
 				{ sk: 'PRJ#p1', id: 'p1', name: 'Project A', color: '#ff0000' },
+				{ sk: 'PRJ#p2', id: 'p2', name: 'Project B', color: '#00ff00', departmentId: 'd1' }, // ADR 0016
 				{
 					sk: 'ASN#a1',
 					id: 'a1',
@@ -44,7 +45,10 @@ describe('queryAllByTeam', () => {
 			{ id: 'r1', name: 'Alice', email: 'alice@example.com', departmentId: 'd2' },
 			{ id: 'r2', name: 'Bob', email: 'bob@example.com' } // 未所属 = departmentId キー不在
 		]);
-		expect(data.projects).toEqual([{ id: 'p1', name: 'Project A', color: '#ff0000' }]);
+		expect(data.projects).toEqual([
+			{ id: 'p1', name: 'Project A', color: '#ff0000' }, // 未所属 = departmentId キー不在
+			{ id: 'p2', name: 'Project B', color: '#00ff00', departmentId: 'd1' }
+		]);
 		expect(data.assignments).toEqual([
 			{
 				id: 'a1',

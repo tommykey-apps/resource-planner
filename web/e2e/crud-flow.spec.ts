@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { clearMagicLinks, getMagicLinkUrl } from './fixtures/magic-link';
-import { openSection } from './fixtures/nav';
+import { openSection, showAllPeriods } from './fixtures/nav';
 
 /**
  * CRUD full path E2E (#155 で可視化した P0 coverage の埋め)。
@@ -42,6 +42,7 @@ test('Resource + Project の作成 → delete confirm まで一気通貫で機�
 
 	// ── Project 作成 (ヘッダのナビ「Projects」→ 「+ Add project」)
 	await openSection(page, 'Projects');
+	await showAllPeriods(page);
 	await expect(page.locator('tr', { hasText: resourceName })).toBeHidden();
 	await page.getByRole('button', { name: /\+ Add project/ }).click();
 	// Project は「Project name」 label

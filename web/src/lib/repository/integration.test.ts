@@ -7,6 +7,7 @@ import {
 	updateAssignment
 } from './assignment';
 import { createProject, deleteProject, updateProject } from './project';
+import { createDepartment, deleteDepartment } from './department';
 import {
 	createResource,
 	deleteResource,
@@ -230,6 +231,45 @@ describe.runIf(process.env.AWS_ENDPOINT_URL)('repository integration (DDB Local)
 
 		// cleanup
 		await deleteProject(teamId, p.id);
+	});
+
+	it('ADR 0016: 案件の部署が往復し、 部署を消すと案件は未所属・メンバーは親へ移る', async () => {
+		const teamId = `test-${ulid()}`;
+		const root = await createDepartment(teamId, { name: '開発本部' });
+		const child = await createDepartment(teamId, { name: 'バックエンド課', parentId: root.id });
+		const r = await createResource(teamId, {
+			name: 'Carol',
+			email: 'carol@example.com',
+			departmentId: child.id
+		});
+		const p = await createProject(teamId, {
+			name: 'P',
+			color: '#123456',
+			description: undefined,
+			tags: [],
+			links: [],
+			departmentId: child.id
+		});
+
+		let data = await queryAllByTeam(teamId);
+		expect(data.projects.find((x) => x.id === p.id)?.departmentId).toBe(child.id);
+
+		await deleteDepartment(teamId, child.id);
+		data = await queryAllByTeam(teamId);
+		expect(data.projects.find((x) => x.id === p.id)).not.toHaveProperty('departmentId');
+		expect(data.resources.find((x) => x.id === r.id)?.departmentId).toBe(root.id);
+
+		await updateProject(teamId, {
+			id: p.id,
+			name: 'P',
+			color: '#123456',
+			description: undefined,
+			tags: [],
+			links: [],
+			departmentId: root.id
+		});
+		data = await queryAllByTeam(teamId);
+		expect(data.projects.find((x) => x.id === p.id)?.departmentId).toBe(root.id);
 	});
 
 	it('getOrCreateDefaultTeam is idempotent', async () => {

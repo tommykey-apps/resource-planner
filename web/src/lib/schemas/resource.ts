@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { bulkIdsSchema } from './shared';
+import { bulkIdsSchema, optionalDepartmentId } from './shared';
 
 // ── Resource ────────────────────────────────────────────────────────
 
@@ -24,10 +24,7 @@ export const resourceCreateSchema = z.object({
 	name: z.string().min(1, 'required').max(100, 'tooLong'),
 	email: memberEmail,
 	// #239: 所属 Department。 空文字 / 未指定 = 未所属 (undefined → repository で attribute REMOVE)。
-	departmentId: z.preprocess(
-		(v) => (typeof v === 'string' && v.trim() === '' ? undefined : v),
-		z.string().min(1, 'required').optional()
-	)
+	departmentId: optionalDepartmentId
 });
 
 export const resourceUpdateSchema = resourceCreateSchema.extend({

@@ -9,6 +9,7 @@ import { newId } from '$lib/id';
 import { pk, departmentSk, SK_PREFIX } from './keys';
 import { wouldCreateCycle, siblingNameConflict } from './department-tree';
 import { queryResourceSkByDepartment, TRANSACT_MAX_ITEMS } from './resource';
+import { queryProjectSkByDepartment } from './project';
 import type { Department } from '$lib/types';
 import type { DepartmentCreateInput } from '$lib/schemas';
 
@@ -166,6 +167,8 @@ export async function renameDepartment(teamId: string, id: string, name: string)
  *
  * - 子 Department の parentId を削除ノードの親へ (ルート削除なら REMOVE = ルート化)
  * - 所属 Resource の departmentId を削除ノードの親へ (ルート削除なら REMOVE = 未所属)
+ * - 直接属する Project の departmentId は親の有無にかかわらず REMOVE (未所属)。 案件の部署は
+ *   「どこが受注したか」 の事実で、 親の部署が受注したことにはならないため (ADR 0016)
  * - これらと本体 Delete を **1 つの TransactWriteItems で原子的に** 実行
  * - Assignment は department を参照しないので無関係 (一切触れない)
  *
@@ -184,11 +187,12 @@ export async function deleteDepartment(teamId: string, id: string): Promise<void
 		node.parentId !== null && existing.some((d) => d.id === node.parentId) ? node.parentId : null;
 	const childSks = existing.filter((d) => d.parentId === id).map((d) => departmentSk(d.id));
 	const resourceSks = await queryResourceSkByDepartment(teamId, id);
+	const projectSks = await queryProjectSkByDepartment(teamId, id);
 
-	const total = childSks.length + resourceSks.length + 1; // 繰り上げ + 本体 Delete
+	const total = childSks.length + resourceSks.length + projectSks.length + 1; // 付け替え + 本体 Delete
 	if (total > TRANSACT_MAX_ITEMS) {
 		throw new Error(
-			`department delete exceeds ${TRANSACT_MAX_ITEMS} items (children: ${childSks.length}, resources: ${resourceSks.length})`
+			`department delete exceeds ${TRANSACT_MAX_ITEMS} items (children: ${childSks.length}, resources: ${resourceSks.length}, projects: ${projectSks.length})`
 		);
 	}
 
@@ -216,6 +220,13 @@ export async function deleteDepartment(teamId: string, id: string): Promise<void
 			TransactItems: [
 				...childSks.map((sk) => reparent(sk, 'parentId')),
 				...resourceSks.map((sk) => reparent(sk, 'departmentId')),
+				...projectSks.map((sk) => ({
+					Update: {
+						TableName: TABLE,
+						Key: { pk: teamPk, sk },
+						UpdateExpression: 'REMOVE departmentId'
+					}
+				})),
 				{
 					Delete: {
 						TableName: TABLE,

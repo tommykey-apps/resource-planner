@@ -232,12 +232,13 @@ describe('listDepartments', () => {
 
 describe('deleteDepartment (ADR 0013 / #241 reparent)', () => {
 	/**
-	 * deleteDepartment は 2 query (DEPT# / RES#) → 1 TransactWrite を出す。
-	 * 部署一覧と「departmentId が一致する Resource の SK」を別々に mock する。
+	 * deleteDepartment は 3 query (DEPT# / RES# / PRJ#) → 1 TransactWrite を出す。
+	 * 部署一覧と「departmentId が一致する Resource / Project の SK」を別々に mock する。
 	 */
 	function mockDeleteScene(opts: {
 		departments: { id: string; name: string; parentId?: string }[];
 		resourceSks: string[];
+		projectSks?: string[];
 	}) {
 		ddbMock
 			.on(QueryCommand, { KeyConditionExpression: 'pk = :pk AND begins_with(sk, :dept)' })
@@ -251,8 +252,11 @@ describe('deleteDepartment (ADR 0013 / #241 reparent)', () => {
 				}))
 			});
 		ddbMock
-			.on(QueryCommand, { KeyConditionExpression: 'pk = :pk AND begins_with(sk, :res)' })
+			.on(QueryCommand, { ExpressionAttributeValues: { ':prefix': 'RES#' } })
 			.resolves({ Items: opts.resourceSks.map((sk) => ({ sk })) });
+		ddbMock
+			.on(QueryCommand, { ExpressionAttributeValues: { ':prefix': 'PRJ#' } })
+			.resolves({ Items: (opts.projectSks ?? []).map((sk) => ({ sk })) });
 		ddbMock.on(TransactWriteCommand).resolves({});
 	}
 
@@ -373,6 +377,38 @@ describe('deleteDepartment (ADR 0013 / #241 reparent)', () => {
 	it('存在しないノード → no-op (TransactWrite を出さない、 idempotent)', async () => {
 		mockDeleteScene({ departments: tree, resourceSks: [] });
 		await deleteDepartment(TEAM, 'ghost');
+		expect(ddbMock.commandCalls(TransactWriteCommand)).toHaveLength(0);
+	});
+
+	it('ADR 0016: 直接属する案件は親の有無にかかわらず未所属 (REMOVE departmentId)', async () => {
+		// a(親 r) を削除 → メンバーは親 r へ移るが、 案件は r へ移さず未所属にする。
+		mockDeleteScene({ departments: tree, resourceSks: ['RES#u1'], projectSks: ['PRJ#p1'] });
+		await deleteDepartment(TEAM, 'a');
+
+		const items = transactItems();
+		expect(items).toContainEqual({
+			Update: {
+				TableName: TABLE,
+				Key: { pk: `TEAM#${TEAM}`, sk: 'PRJ#p1' },
+				UpdateExpression: 'REMOVE departmentId'
+			}
+		});
+		expect(items).toContainEqual({
+			Update: {
+				TableName: TABLE,
+				Key: { pk: `TEAM#${TEAM}`, sk: 'RES#u1' },
+				UpdateExpression: 'SET departmentId = :p',
+				ExpressionAttributeValues: { ':p': 'r' }
+			}
+		});
+		expect(items).toHaveLength(4); // 子 a1 + メンバー + 案件 + 本体
+	});
+
+	it('ADR 0016: 案件の数も上限 (100) に数える', async () => {
+		const resources = Array.from({ length: 50 }, (_, i) => `RES#u${i}`);
+		const projects = Array.from({ length: 50 }, (_, i) => `PRJ#p${i}`);
+		mockDeleteScene({ departments: tree, resourceSks: resources, projectSks: projects });
+		await expect(deleteDepartment(TEAM, 's')).rejects.toThrow(/projects: 50/);
 		expect(ddbMock.commandCalls(TransactWriteCommand)).toHaveLength(0);
 	});
 

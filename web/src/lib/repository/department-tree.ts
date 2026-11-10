@@ -1,4 +1,4 @@
-import type { Department, Resource } from '$lib/types';
+import type { Department, Project, Resource } from '$lib/types';
 
 /**
  * adjacency-list ツリーの整合性検証 (ADR 0013、 純粋関数 = テスト容易)。
@@ -95,24 +95,24 @@ export const DEPARTMENT_FILTER_UNASSIGNED = '__unassigned__';
 export const DEPARTMENT_FILTER_ALL = '__all__';
 
 /**
- * 部署フィルタ (子孫含む) にマッチする Resource id 集合 (#242)。 timeline / assignments で共用。
- * - `''` (フィルタなし) → `null` (呼び出し側はフィルタをスキップ)
- * - `DEPARTMENT_FILTER_UNASSIGNED` → 部署未所属の Resource
- * - 部署 id → その部署 **+ 全子孫** に所属する Resource (in-memory 子孫展開、 DB 追加クエリなし)
+ * 部署フィルタ (子孫含む) にマッチする id 集合 (#242 / ADR 0016)。 メンバーと案件で共用する。
+ * - `''` / `DEPARTMENT_FILTER_ALL` (フィルタなし) → `null` (呼び出し側はフィルタをスキップ)
+ * - `DEPARTMENT_FILTER_UNASSIGNED` → 部署未所属のもの
+ * - 部署 id → その部署 **+ 全子孫** に所属するもの (in-memory 子孫展開、 DB 追加クエリなし)
  *
  * `descendantIds` は毎回 Map を組み直すが、 組織ツリーは小さい前提なので `$derived` の都度再計算で十分。
  */
-export function resourceIdsForDepartmentFilter(
+export function idsForDepartmentFilter(
 	departments: Department[],
-	resources: Resource[],
+	items: Pick<Resource | Project, 'id' | 'departmentId'>[],
 	departmentId: string
 ): Set<string> | null {
 	if (!departmentId || departmentId === DEPARTMENT_FILTER_ALL) return null;
 	if (departmentId === DEPARTMENT_FILTER_UNASSIGNED) {
-		return new Set(resources.filter((r) => !r.departmentId).map((r) => r.id));
+		return new Set(items.filter((r) => !r.departmentId).map((r) => r.id));
 	}
 	const subtree = new Set<string>([departmentId, ...descendantIds(departments, departmentId)]);
 	return new Set(
-		resources.filter((r) => r.departmentId != null && subtree.has(r.departmentId)).map((r) => r.id)
+		items.filter((r) => r.departmentId != null && subtree.has(r.departmentId)).map((r) => r.id)
 	);
 }

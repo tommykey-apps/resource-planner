@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { clearMagicLinks, getMagicLinkUrl } from './fixtures/magic-link';
-import { openSection } from './fixtures/nav';
+import { openSection, showAllPeriods } from './fixtures/nav';
 
 /**
  * 表示開始日より前に終わる帯は見えないので、 行の高さ (段の数) に数えない。
@@ -55,6 +55,7 @@ test('表示開始日より前に終わる帯は行の高さに影響しない',
 	await expect(page.locator('tr', { hasText: person })).toBeVisible();
 
 	await openSection(page, 'Projects');
+	await showAllPeriods(page);
 	await page.getByRole('button', { name: /\+ Add project/ }).click();
 	await page.locator('input[name="name"]').fill(project);
 	await page.getByRole('button', { name: /^Create$/ }).click();

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { render, fireEvent, waitFor } from '@testing-library/svelte';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { render, fireEvent, waitFor, within } from '@testing-library/svelte';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ProjectManager from './ProjectManager.svelte';
 import type { Assignment, Project } from '$lib/types';
 
@@ -17,8 +17,17 @@ vi.stubGlobal(
 	}
 );
 
-function setQuery(query: string) {
+function setRawQuery(query: string) {
 	pageState.url = new URL(`http://localhost/projects${query}`);
+}
+
+/**
+ * 既存の観点 (並び替え・名前の絞り込み・フォーム) は期間の絞り込みと独立に見たいので、
+ * period を指定しないテストは「すべての期間」で描画する (既定の今月は ADR 0016 の describe で見る)。
+ */
+function setQuery(query: string) {
+	if (query.includes('period=')) return setRawQuery(query);
+	setRawQuery(query ? `${query}&period=all` : '?period=all');
 }
 
 beforeEach(() => {
@@ -318,6 +327,7 @@ describe('ProjectManager の表', () => {
 		expect(headers[0].querySelector('input[type="checkbox"]')).not.toBeNull();
 		expect(headers.slice(1).map((h) => h.textContent?.trim())).toEqual([
 			'案件名',
+			'部署',
 			'使用技術',
 			'アサイン数',
 			'操作'
@@ -362,5 +372,156 @@ describe('ProjectManager の一括操作', () => {
 				(i) => (i as HTMLInputElement).value
 			)
 		).toEqual(['p1']);
+	});
+});
+
+describe('ProjectManager の部署と期間 (ADR 0016)', () => {
+	const DEPARTMENTS = [
+		{ id: 'd1', name: '開発本部', parentId: null },
+		{ id: 'd2', name: 'バックエンド課', parentId: 'd1' },
+		{ id: 'd3', name: '営業本部', parentId: null }
+	];
+	const PROJECTS: Project[] = [
+		{ id: 'p1', name: '今月の案件', color: '#ff0000', departmentId: 'd2' },
+		{ id: 'p2', name: '先月の案件', color: '#00ff00', departmentId: 'd2' },
+		{ id: 'p3', name: '割り当てなし', color: '#0000ff', departmentId: 'd2' },
+		{ id: 'p4', name: '営業の案件', color: '#000000', departmentId: 'd3' },
+		{ id: 'p5', name: '部署なし', color: '#ffffff' }
+	];
+	const asn = (id: string, projectId: string, start: string, endEx: string): Assignment => ({
+		id,
+		resourceId: 'r1',
+		projectId,
+		startDate: start,
+		endDateExclusive: endEx,
+		version: 1
+	});
+	const ASSIGNMENTS = [
+		asn('a1', 'p1', '2026-11-05', '2026-11-20'),
+		asn('a2', 'p2', '2026-10-01', '2026-11-01'),
+		asn('a4', 'p4', '2026-11-01', '2026-12-01'),
+		asn('a5', 'p5', '2026-11-01', '2026-12-01')
+	];
+
+	function rowNames(container: HTMLElement): string[] {
+		return Array.from(container.querySelectorAll('tbody th[scope="row"]')).map(
+			(th) => th.textContent?.trim() ?? ''
+		);
+	}
+	const renderTable = (defaultDepartmentFilter = '__all__') =>
+		render(ProjectManager, {
+			props: {
+				projects: PROJECTS,
+				assignments: ASSIGNMENTS,
+				departments: DEPARTMENTS,
+				defaultDepartmentFilter
+			}
+		});
+
+	beforeEach(() => {
+		vi.useFakeTimers({ toFake: ['Date'] });
+		vi.setSystemTime(new Date(2026, 10, 10)); // 2026-11-10
+	});
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	it('URL に period がなければ今月に割り当てがある案件だけを出す', () => {
+		setRawQuery('');
+		const { container, getByRole } = renderTable();
+		// 並び順は案件名の既定の並び替えに任せ、 ここでは何が出るかだけを見る
+		expect(rowNames(container).sort()).toEqual(['今月の案件', '営業の案件', '部署なし'].sort());
+		expect((getByRole('combobox', { name: '期間' }) as HTMLSelectElement).value).toBe('month');
+	});
+
+	it('?period=all なら割り当てがない案件も出す', () => {
+		setRawQuery('?period=all');
+		const { container } = renderTable();
+		expect(rowNames(container)).toContain('割り当てなし');
+		expect(rowNames(container)).toContain('先月の案件');
+	});
+
+	it('期間を選ぶと period を URL に書く', async () => {
+		setRawQuery('');
+		const { getByRole } = renderTable();
+		await fireEvent.change(getByRole('combobox', { name: '期間' }), {
+			target: { value: 'year' }
+		});
+		expect(goto).toHaveBeenCalledWith('/projects?period=year', expect.anything());
+	});
+
+	it('URL に dept がなければ渡された初期値 (ログインユーザーの部署) で、 子孫の部署も含めて絞る', () => {
+		setRawQuery('?period=all');
+		const { container } = renderTable('d1');
+		expect(rowNames(container).sort()).toEqual(['今月の案件', '先月の案件', '割り当てなし'].sort());
+	});
+
+	it('?dept=__unassigned__ で部署なしの案件だけ', () => {
+		setRawQuery('?period=all&dept=__unassigned__');
+		const { container } = renderTable('d1');
+		expect(rowNames(container)).toEqual(['部署なし']);
+	});
+
+	it('部署の列に部署名を出し、 部署がなければ未所属', () => {
+		setRawQuery('?period=all');
+		const { getByRole } = renderTable();
+		expect(getByRole('row', { name: /営業の案件/ }).textContent).toContain('営業本部');
+		expect(getByRole('row', { name: /部署なし/ }).textContent).toContain('未所属');
+	});
+
+	it('「絞り込みを解除」で部署と期間の両方を「すべて」にする', async () => {
+		setRawQuery('');
+		const { getByRole } = renderTable('d1');
+		await fireEvent.click(getByRole('button', { name: '絞り込みを解除' }));
+		expect(goto).toHaveBeenCalledWith('/projects?dept=__all__&period=all', expect.anything());
+	});
+
+	it('部署も期間も「すべて」なら「絞り込みを解除」を出さない', () => {
+		setRawQuery('?dept=__all__&period=all');
+		const { queryByRole } = renderTable('d1');
+		expect(queryByRole('button', { name: '絞り込みを解除' })).toBeNull();
+	});
+
+	it('新規作成の部署の初期値は、 絞り込み中の部署', async () => {
+		setRawQuery('?dept=d3&period=all');
+		const { getByRole } = renderTable();
+		await fireEvent.click(getByRole('button', { name: /案件を追加/ }));
+		const select = await waitFor(() => {
+			const el = document.querySelector(
+				'form[action="/?/createProject"] select[name="departmentId"]'
+			) as HTMLSelectElement | null;
+			if (!el) throw new Error('departmentId select not rendered');
+			return el;
+		});
+		expect(select.value).toBe('d3');
+	});
+
+	it('絞り込みが「すべて」なら新規作成の部署は未所属', async () => {
+		setRawQuery('?dept=__all__&period=all');
+		const { getByRole } = renderTable();
+		await fireEvent.click(getByRole('button', { name: /案件を追加/ }));
+		const select = await waitFor(() => {
+			const el = document.querySelector(
+				'form[action="/?/createProject"] select[name="departmentId"]'
+			) as HTMLSelectElement | null;
+			if (!el) throw new Error('departmentId select not rendered');
+			return el;
+		});
+		expect(select.value).toBe('');
+	});
+
+	it('編集画面は案件の部署を選んだ状態で開く', async () => {
+		setRawQuery('?dept=__all__&period=all');
+		const { getByRole } = renderTable();
+		const row = getByRole('row', { name: /営業の案件/ });
+		await fireEvent.click(within(row).getByRole('button', { name: '編集' }));
+		const select = await waitFor(() => {
+			const el = document.querySelector(
+				'form[action="/?/updateProject"] select[name="departmentId"]'
+			) as HTMLSelectElement | null;
+			if (!el) throw new Error('departmentId select not rendered');
+			return el;
+		});
+		expect(select.value).toBe('d3');
 	});
 });

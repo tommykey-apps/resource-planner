@@ -23,7 +23,8 @@ _Avoid_: Team (Department は Team ではない), Group, Unit, 組織
 _Avoid_: Member, User, Person, Employee (Resource は認証ユーザー = User とは別概念)
 
 **Project**:
-割り当て先の案件 (クライアント/仕事)。 Team に属する。
+割り当て先の案件 (クライアント/仕事)。 Team に属する。 受注した (または受注を見込む) **Department** を
+高々 1 つ持つ。 部署がない **未所属** も有効な状態 (ADR 0016)。 期間は持たず、 期間は **Assignment** が持つ。
 
 **Assignment**:
 ある Resource を、 ある期間 `[startDate, endDateExclusive)`、 ある Project に割り当てた事実。

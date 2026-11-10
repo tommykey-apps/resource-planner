@@ -1,4 +1,5 @@
 <script lang="ts">
+	import DepartmentOptions from '$lib/components/DepartmentOptions.svelte';
 	import { enhance } from '$app/forms';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { toast } from 'svelte-sonner';
@@ -12,7 +13,7 @@
 	import { getLocale } from '$lib/paraglide/runtime';
 	import {
 		flattenDepartmentTree,
-		resourceIdsForDepartmentFilter,
+		idsForDepartmentFilter,
 		DEPARTMENT_FILTER_UNASSIGNED,
 		DEPARTMENT_FILTER_ALL
 	} from '$lib/repository/department-tree';
@@ -94,7 +95,7 @@
 
 	const filtered = $derived.by(() => {
 		const q = query.q.toLowerCase();
-		const deptIds = resourceIdsForDepartmentFilter(departments, resources, deptFilter);
+		const deptIds = idsForDepartmentFilter(departments, resources, deptFilter);
 		return resources.filter(
 			(r) =>
 				(!q || r.name.toLowerCase().includes(q) || r.email.includes(q)) &&
@@ -311,9 +312,7 @@
 				>
 					<option value={DEPARTMENT_FILTER_ALL}>{m.departments_allOption()}</option>
 					<option value={DEPARTMENT_FILTER_UNASSIGNED}>{m.departments_unassigned()}</option>
-					{#each flatTree as { dept, depth } (dept.id)}
-						<option value={dept.id}>{'\u00A0\u00A0'.repeat(depth)}{dept.name}</option>
-					{/each}
+					<DepartmentOptions tree={flatTree} />
 				</select>
 			</div>
 			<span class="pb-2 text-sm text-muted-foreground" aria-live="polite"
@@ -352,9 +351,7 @@
 						style="border-radius: calc(var(--radius) * 0.6)"
 					>
 						<option value="">{m.departments_unassigned()}</option>
-						{#each flatTree as { dept, depth } (dept.id)}
-							<option value={dept.id}>{'\u00A0\u00A0'.repeat(depth)}{dept.name}</option>
-						{/each}
+						<DepartmentOptions tree={flatTree} />
 					</select>
 					<Button size="xs" variant="outline" type="submit">{m.common_change()}</Button>
 				</form>
@@ -517,9 +514,7 @@
 				style="border-radius: calc(var(--radius) * 0.6)"
 			>
 				<option value="">{m.departments_unassigned()}</option>
-				{#each flatTree as { dept, depth } (dept.id)}
-					<option value={dept.id}>{'\u00A0\u00A0'.repeat(depth)}{dept.name}</option>
-				{/each}
+				<DepartmentOptions tree={flatTree} />
 			</select>
 		</label>
 		{#if formError}

@@ -67,6 +67,11 @@ export interface Project {
 	tags?: string[];
 	/** 関連リンク (http(s) のみ / 10 件以内、 ADR 0010)。 */
 	links?: ProjectLink[];
+	/**
+	 * 受注した部署、 または受注を見込む部署の id (ADR 0016)。 Resource.departmentId と同じ規約:
+	 * 高々 1 つ、 ツリーの任意ノード可、 **未所属は attribute なし**。
+	 */
+	departmentId?: string;
 }
 
 export interface ProjectLink {

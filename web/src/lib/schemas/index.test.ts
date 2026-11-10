@@ -122,6 +122,32 @@ describe('projectUpdateSchema', () => {
 	});
 });
 
+describe('project の部署 (ADR 0016)', () => {
+	it('部署 id をそのまま通す', () => {
+		const out = projectCreateSchema.parse({ name: 'P1', color: '#abcdef', departmentId: 'd1' });
+		expect(out.departmentId).toBe('d1');
+	});
+
+	it('空文字と未指定は未所属 (undefined)', () => {
+		expect(
+			projectCreateSchema.parse({ name: 'P1', color: '#abcdef', departmentId: '' }).departmentId
+		).toBeUndefined();
+		expect(
+			projectCreateSchema.parse({ name: 'P1', color: '#abcdef' }).departmentId
+		).toBeUndefined();
+	});
+
+	it('更新でも部署を通す', () => {
+		const out = projectUpdateSchema.parse({
+			id: 'p1',
+			name: 'P1',
+			color: '#abcdef',
+			departmentId: 'd1'
+		});
+		expect(out.departmentId).toBe('d1');
+	});
+});
+
 describe('projectCreateSchema — detail fields (#187)', () => {
 	const base = { name: 'P1', color: '#abcdef' };
 

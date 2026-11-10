@@ -1,9 +1,10 @@
 import { PutCommand, UpdateCommand, TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
 import { ddb, TABLE } from '$lib/db/client';
 import { newId } from '$lib/id';
-import { pk, projectSk } from './keys';
+import { pk, projectSk, SK_PREFIX } from './keys';
 import { queryRelatedAssignmentSk } from './assignment';
 import { deleteEach, type BulkDeleteResult } from './bulk';
+import { querySkByDepartment } from './by-department';
 import type { Project } from '$lib/types';
 import type { ProjectCreateInput, ProjectUpdateInput } from '$lib/schemas';
 
@@ -19,7 +20,9 @@ export async function createProject(teamId: string, input: ProjectCreateInput): 
 		color: input.color,
 		...(input.description ? { description: input.description } : {}),
 		...(input.tags.length > 0 ? { tags: input.tags } : {}),
-		...(input.links.length > 0 ? { links: input.links } : {})
+		...(input.links.length > 0 ? { links: input.links } : {}),
+		// ADR 0016: 未所属は attribute を保存しない (Resource と同じ規約)。
+		...(input.departmentId ? { departmentId: input.departmentId } : {})
 	};
 	await ddb.send(
 		new PutCommand({
@@ -69,6 +72,14 @@ export async function updateProject(teamId: string, input: ProjectUpdateInput): 
 		removes.push('links');
 	}
 
+	// ADR 0016: 部署は 「指定あり → SET / 未所属 → REMOVE」 (updateResource と同じ)。
+	if (input.departmentId) {
+		sets.push('departmentId = :departmentId');
+		values[':departmentId'] = input.departmentId;
+	} else {
+		removes.push('departmentId');
+	}
+
 	const expr =
 		`SET ${sets.join(', ')}` + (removes.length > 0 ? ` REMOVE ${removes.join(', ')}` : '');
 
@@ -109,6 +120,14 @@ export async function deleteProject(teamId: string, id: string): Promise<void> {
 			]
 		})
 	);
+}
+
+/** `departmentId` が一致する Project の SK 一覧を返す (ADR 0016 部署削除で未所属にする対象)。 */
+export function queryProjectSkByDepartment(
+	teamId: string,
+	departmentId: string
+): Promise<string[]> {
+	return querySkByDepartment(teamId, SK_PREFIX.project, departmentId);
 }
 
 /** 選んだ案件をまとめて削除する (1 件ごとに原子的な cascade、 詳細は ./bulk.ts)。 */

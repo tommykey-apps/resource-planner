@@ -260,12 +260,12 @@ describe('queryResourceSkByDepartment (#241 部署削除の繰り上げ対象)',
 
 		expect(sks).toEqual(['RES#u1', 'RES#u2']);
 		const input = ddbMock.commandCalls(QueryCommand)[0].args[0].input;
-		expect(input.KeyConditionExpression).toBe('pk = :pk AND begins_with(sk, :res)');
+		expect(input.KeyConditionExpression).toBe('pk = :pk AND begins_with(sk, :prefix)');
 		expect(input.FilterExpression).toBe('departmentId = :v');
 		expect(input.ProjectionExpression).toBe('sk');
 		expect(input.ExpressionAttributeValues).toMatchObject({
 			':pk': `TEAM#${TEAM}`,
-			':res': 'RES#',
+			':prefix': 'RES#',
 			':v': 'd1'
 		});
 	});
