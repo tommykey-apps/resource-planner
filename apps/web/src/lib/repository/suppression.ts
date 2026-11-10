@@ -11,8 +11,8 @@
  */
 import { GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { ddb, TABLE } from '$lib/db/client';
-import { suppressionMetaSk, suppressionPk } from './keys';
-import { buildSuppressionItem, type SuppressionInput } from './suppression-item';
+import { suppressionMetaSk, suppressionPk } from '@resource-planner/db/keys';
+import { buildSuppressionItem, type SuppressionInput } from '@resource-planner/db/suppression-item';
 
 export type SuppressionReason = 'bounce' | 'complaint';
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# PreToolUse hook for Edit / Write on apps/web/src code (#92).
+# PreToolUse hook for Edit / Write on apps/*/src and packages/*/src code (#92).
 #
-# AI / 人間が `apps/web/src/**.{ts,svelte}` を編集する前に、対応する `*.test.ts` を
+# AI / 人間が `apps/*/src/**.{ts,svelte}` `packages/*/src/**.ts` を編集する前に、対応する `*.test.ts` を
 # staging area に置いたかを確認する。staging されていなければ
 # `permissionDecision: "ask"` で確認 prompt を出す (deny ではなく ask、
 # iterative work を阻害しないため)。
@@ -9,7 +9,7 @@
 # Trigger 対象外:
 # - test ファイル本体 (`*.test.ts` / `*.spec.ts`)
 # - 拡張子が ts / svelte 以外
-# - apps/web/src 配下以外
+# - apps/*/src・packages/*/src 配下以外
 #
 # 参考: https://code.claude.com/docs/en/hooks.md
 set -euo pipefail
@@ -34,9 +34,9 @@ case "$file_path" in
   *.test.ts|*.test.svelte|*.spec.ts|*.spec.svelte) exit 0 ;;
 esac
 
-# apps/web/src 配下以外は対象外
+# 各パッケージの src 配下以外は対象外
 case "$file_path" in
-  *apps/web/src/*) ;;
+  *apps/*/src/*|*packages/*/src/*) ;;
   *) exit 0 ;;
 esac
 

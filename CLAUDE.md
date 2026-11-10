@@ -7,14 +7,17 @@
 
 ```
 resource-planner/
-├── apps/
-│   └── web/                  # SvelteKit (adapter-node)
-│       ├── src/
-│       │   ├── routes/
-│       │   └── lib/
-│       ├── scripts/          # Web Function の配布物作成とスモークテスト
-│       ├── package.json
-│       └── svelte.config.js
+├── apps/                     # 配置する単位
+│   ├── web/                  # SvelteKit (adapter-node)
+│   │   ├── src/
+│   │   │   ├── routes/
+│   │   │   └── lib/
+│   │   ├── scripts/          # Web Function の配布物作成とスモークテスト
+│   │   ├── package.json
+│   │   └── svelte.config.js
+│   └── ses-bounce/           # SES のバウンス・苦情を受けて送信停止リストに入れる Lambda
+├── packages/                 # 共有する部品
+│   └── db/                   # DynamoDB のキーと項目の形、データ移行スクリプト (migrations/)
 ├── tests/
 │   └── e2e/                  # Playwright (specs/ と fixtures/)
 ├── infra/                    # Terraform
@@ -140,7 +143,7 @@ Single Table Design (詳細: `docs/db/entities.md`、`docs/db/access-patterns.md
 Claude Code session 内で本 repo を編集する際は **必ず先にテストを書く**。
 
 - `/tdd <task>` skill で workflow ガイド (`.claude/skills/tdd/SKILL.md`)
-- `apps/web/src/**.{ts,svelte}` の Edit / Write 前に、対応 `*.test.ts` が `git diff --cached` に出るか **PreToolUse hook** が確認 (`.claude/hooks/warn-untested.sh`)
+- `apps/*/src/**.{ts,svelte}` と `packages/*/src/**.ts` の Edit / Write 前に、対応 `*.test.ts` が `git diff --cached` に出るか **PreToolUse hook** が確認 (`.claude/hooks/warn-untested.sh`)
 - staged されていなければ `permissionDecision: "ask"` で確認 prompt (deny ではなく ask、iterative work を阻害しない)
 - AI / 人間共通の discipline。RED → GREEN → REFACTOR で進める
 

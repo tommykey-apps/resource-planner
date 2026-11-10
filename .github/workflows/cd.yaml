@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "apps/web/**"
+      - "apps/ses-bounce/**"
+      - "packages/db/**"
       - "infra/**"
       - "package.json"
       - "pnpm-lock.yaml"
@@ -34,11 +36,16 @@ jobs:
         id: filter
         with:
           filters: |
+            # SES バウンス処理 Lambda は terraform apply が zip にして配置する
             infra:
               - 'infra/**'
+              - 'apps/ses-bounce/**'
+              - 'packages/db/**'
+              - 'pnpm-lock.yaml'
             # ルートの workspace 設定 (overrides など) も web の配布物の中身を変える
             web:
               - 'apps/web/**'
+              - 'packages/db/**'
               - 'package.json'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
@@ -72,8 +79,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Build SES bounce handler Lambda
-        run: pnpm build:lambda
-        working-directory: apps/web
+        run: pnpm --filter @resource-planner/ses-bounce build
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:

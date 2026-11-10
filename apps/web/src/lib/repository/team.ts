@@ -16,7 +16,13 @@ import {
 } from '@aws-sdk/lib-dynamodb';
 import { ddb, TABLE } from '$lib/db/client';
 import type { Team, TeamMembership } from '$lib/types';
-import { pk, teamMembershipSk, teamMetaSk, userTeamsGsi1pk, userTeamsGsi1sk } from './keys';
+import {
+	pk,
+	teamMembershipSk,
+	teamMetaSk,
+	userTeamsGsi1pk,
+	userTeamsGsi1sk
+} from '@resource-planner/db/keys';
 
 export const DEFAULT_TEAM_ID = 'team_default';
 

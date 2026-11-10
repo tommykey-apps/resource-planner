@@ -9,6 +9,9 @@ apps/web/src/lib/paraglide
 apps/web/project.inlang/*
 !apps/web/project.inlang/settings.json
 apps/web/dist
+
+# SES バウンス処理 Lambda (apps/ses-bounce)
+apps/ses-bounce/dist
 infra/ses-bounce-handler.zip
 
 # Vitest

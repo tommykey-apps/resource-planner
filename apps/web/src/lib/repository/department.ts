@@ -6,7 +6,7 @@ import {
 } from '@aws-sdk/lib-dynamodb';
 import { ddb, TABLE } from '$lib/db/client';
 import { newId } from '$lib/id';
-import { pk, departmentSk, SK_PREFIX } from './keys';
+import { pk, departmentSk, SK_PREFIX } from '@resource-planner/db/keys';
 import { wouldCreateCycle, siblingNameConflict } from './department-tree';
 import { queryResourceSkByDepartment, TRANSACT_MAX_ITEMS } from './resource';
 import { queryProjectSkByDepartment } from './project';

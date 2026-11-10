@@ -18,11 +18,11 @@
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"test:coverage": "vitest run --coverage",
-		"build:lambda": "node scripts/build-ses-bounce-lambda.mjs",
 		"package:web-function": "node scripts/package-web-function.mjs",
 		"smoke:web-function": "node scripts/smoke-web-function.mjs"
 	},
 	"devDependencies": {
+		"@resource-planner/db": "workspace:*",
 		"@eslint/js": "^10.0.1",
 		"@fontsource-variable/jetbrains-mono": "^5.2.8",
 		"@inlang/paraglide-js": "^2.18.2",

@@ -12,7 +12,7 @@ import {
 	selectSuppressionsFromNotification,
 	type SesNotification,
 	type SnsEvent
-} from './ses-bounce-handler';
+} from './handler';
 
 const putSuppressionMock = vi.fn();
 
