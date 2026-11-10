@@ -25,7 +25,7 @@ SSR で markdown render する設計 (本 ADR の Decision、 後述) と合わ�
 - DynamoDB UpdateExpression は SET と REMOVE を同一 expression 内で **異なる attribute** に並べる
   場合のみ並走可能。 同名 attribute path が SET/REMOVE で重複すると `ValidationException` で reject される
   ([AWS docs](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.UpdateExpressions.html))
-- `removeUndefinedValues: true` (`web/src/lib/db/client.ts`) は marshall で `undefined` 属性を消すが、
+- `removeUndefinedValues: true` (`apps/web/src/lib/shared/db/client.server.ts`) は marshall で `undefined` 属性を消すが、
   **空配列 `[]` は `L: []` で保存される**ため、 「未設定 = 削除」 を担保するには空判定で REMOVE を出す必要がある
 - `marked` v18 sync API + `isomorphic-dompurify` (内部 `dompurify@^3.4.2` / CVE-2024-45801 / -47875 /
   CVE-2025-26791 修正済) は SSR / CSR / vitest jsdom 全環境で動作
@@ -153,13 +153,13 @@ rel="noopener noreferrer">` で開く。
 
 ## Implementation notes
 
-- `web/src/lib/types.ts`: `Project` に description / tags / links を optional 追加、 `ProjectLink` 型を新規 export
-- `web/src/lib/schemas/index.ts`: `descriptionSchema` / `tagsCsvSchema` / `linkObjectSchema` /
+- `packages/db/src/entities.ts`: `Project` に description / tags / links を optional 追加、 `ProjectLink` 型を新規 export
+- `apps/web/src/lib/features/project/schema.ts`: `descriptionSchema` / `tagsCsvSchema` / `linkObjectSchema` /
   `linksJsonSchema` を追加、 `projectCreateSchema` / `projectUpdateSchema` を transform pipeline で再構築
-- `web/src/lib/repository/project.ts`: `createProject` は optional spread、
+- `apps/web/src/lib/features/project/repository.server.ts`: `createProject` は optional spread、
   `updateProject` は SET / REMOVE を attribute 単位で mutual exclusion
 - `docs/db/entities.md`: Project section に新フィールド行を追加
-- 既存 `web/src/routes/+page.server.ts` の `createProject` / `updateProject` action は本 PR では
+- 既存 `apps/web/src/lib/features/project/actions.server.ts` の `createProject` / `updateProject` action は本 PR では
   **触らない** (form 拡張は PR-N3 で実装)。 既存 form 経由で送られた missing field は schema 内で
   undefined / [] に正規化され、 repository が REMOVE を発行するが、 旧 item に該当 attribute が
   存在しないため no-op で済む (DDB REMOVE idempotent on non-existing)
@@ -199,7 +199,7 @@ const project: Project = {
   → read で spread が key 自体を出さない (round-trip 一貫)
 
 この規約は Resource / Assignment の将来 optional 追加にも適用する。 また同 PR (#196 fix) で
-`web/src/lib/repository/index.test.ts` に「optional あり / 全 absent / empty list / partial」 の
+`apps/web/src/lib/features/team/query-all.server.test.ts` に「optional あり / 全 absent / empty list / partial」 の
 4 ケースを追加し、 `integration.test.ts` で DDB Local round-trip も検証。 同 pattern を新 entity 追加時にも踏むこと。
 
 注: write 側 (`createProject` の `input.description ? ... : ...`) は schema 層で空文字を `undefined`

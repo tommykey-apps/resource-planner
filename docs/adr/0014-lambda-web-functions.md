@@ -31,7 +31,7 @@ API Gateway・ECR・Dockerfile・Lambda Web Adapter はやめる。**
 CloudFront ──(OAC, SigV4)──▶ Lambda Web Function ── index.js ── build/index.js (adapter-node)
 ```
 
-- 配布物は `web/scripts/package-web-function.mjs` が作る `web/dist/web-function/` (zip にして S3 経由で配置)。
+- 配布物は `apps/web/scripts/package-web-function.mjs` が作る `apps/web/dist/web-function/` (zip にして S3 経由で配置)。
 - 入口の `index.js` (`src/lambda/web-function-entry.ts`) が `AWS_LAMBDA_HTTP_ENDPOINT` を `HOST` / `PORT` に分けてから
   adapter-node の出力を読み込む。
 - 関数本体・revision・endpoint・resource policy は、aws provider v6.72.0 で `aws_lambdaweb_*` が出るまで
@@ -42,7 +42,7 @@ CloudFront ──(OAC, SigV4)──▶ Lambda Web Function ── index.js ─�
 
 | 制約 | 対処 |
 |---|---|
-| Lambda の Node は CommonJS から ES モジュールを require できない (`--no-experimental-require-module`)。jsdom 27 以降が起動時に失敗する | isomorphic-dompurify が使う jsdom だけ 26.1.0 に固定 (`web/pnpm-workspace.yaml`)。CI で Lambda と同じ起動オプションで配布物を立ち上げて確かめる |
+| Lambda の Node は CommonJS から ES モジュールを require できない (`--no-experimental-require-module`)。jsdom 27 以降が起動時に失敗する | isomorphic-dompurify が使う jsdom だけ 26.1.0 に固定 (`pnpm-workspace.yaml`)。CI で Lambda と同じ起動オプションで配布物を立ち上げて確かめる |
 | CloudFront の OAC は `signing_behavior = "always-amz-auth"` だけを受け付け、aws provider 5.x は値を弾く | aws provider を v6 に上げた (本番への差分なし) |
 | Web Function は `AWS_LAMBDA_FUNCTION_NAME` と `LAMBDA_TASK_ROOT` を設定しない | `detectLambda` に Web Function 用の判定を足した |
 | CLI はシンボリックリンクとドットで始まるディレクトリを zip に入れない | `node-linker=hoisted` で実体のある `node_modules` を作る |

@@ -46,7 +46,7 @@ UC-04 (アサインの期間を変更する) で、ResourceTimeline 上で帯を
 
 ### Body schema
 
-`assignmentApiUpdateSchema` (`web/src/lib/schemas/index.ts`):
+`assignmentApiUpdateSchema` (`apps/web/src/lib/features/assignment/schema.ts`):
 ```ts
 {
   prevStartDate: DateString,    // [ADR 0012 で廃止] 旧 SK 再計算用。現在は expectedVersion に置換
@@ -117,10 +117,10 @@ UI 通知は `svelte-sonner` の `toast.error()`。`<Toaster />` を `+layout.sv
 ## Implementation notes
 
 実装 PR の主な変更:
-- `web/src/routes/api/assignments/[id]/+server.ts` (新規): PATCH ハンドラ
-- `web/src/lib/schemas/index.ts`: `assignmentApiUpdateSchema` 追加 (transform なし、API body 用)
-- `web/src/routes/+page.svelte`: `handleUpdate` を async + optimistic + revert + toast に
-- `web/src/routes/+layout.svelte`: `<Toaster />` 配置
+- `apps/web/src/routes/api/assignments/[id]/+server.ts` (新規): PATCH ハンドラ
+- `apps/web/src/lib/features/assignment/schema.ts`: `assignmentApiUpdateSchema` 追加 (transform なし、API body 用)
+- `apps/web/src/routes/+page.svelte`: `handleUpdate` を async + optimistic + revert + toast に
+- `apps/web/src/routes/+layout.svelte`: `<Toaster />` 配置
 - `docs/use-cases.md` UC-04 追加 (Mermaid sequence: 成功フロー / 失敗フロー)
 
 ## References

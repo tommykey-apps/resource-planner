@@ -82,8 +82,8 @@
 
 - 移行の手順 (本番):
   1. `aws dynamodb create-backup --table-name <table> --backup-name pre-project-department-<date>`
-  2. `node scripts/migrate-project-departments.mjs --dry-run` で入れる部署と、 決まらない案件を確認する
-  3. `node scripts/migrate-project-departments.mjs` で書き込む。 部署が入っている案件は上書きしない
+  2. `packages/db` に移り、 `node migrations/migrate-project-departments.mjs --dry-run` で入れる部署と、 決まらない案件を確認する
+  3. `node migrations/migrate-project-departments.mjs` で書き込む。 部署が入っている案件は上書きしない
   4. 決まらなかった案件は案件一覧の編集画面で部署を入れる
 
 ## References

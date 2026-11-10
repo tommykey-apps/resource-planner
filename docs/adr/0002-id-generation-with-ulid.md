@@ -19,7 +19,7 @@ resource-planner の domain entity (Resource / Project / Assignment) は DynamoD
 
 ## Decision
 
-**全 entity の id 生成に ULID (`ulid` npm package) を使う。** `web/src/lib/id.ts` で `newId()` を export し、repository 層から呼び出す。
+**全 entity の id 生成に ULID (`ulid` npm package) を使う。** `apps/web/src/lib/shared/db/id.ts` で `newId()` を export し、repository 層から呼び出す。
 
 ## Consequences
 

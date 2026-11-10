@@ -23,7 +23,7 @@ resource-planner は SvelteKit (`+page.server.ts` の load + form actions) で S
 
 **OpenAPI は採用しない。** API 仕様の正本は以下とする:
 
-1. **TypeScript 型** (`web/src/lib/types.ts` 想定) — request/response の型定義
+1. **TypeScript 型** (`packages/db/src/entities.ts`) — request/response の型定義
 2. **Zod / Valibot schema** — 実行時検証も兼ねる仕様 (form action の入力バリデーション)
 3. **`docs/use-cases.md`** — Mermaid sequence diagram で動的振る舞いを記述
 4. **`docs/adr/`** — 判断の経緯を残す

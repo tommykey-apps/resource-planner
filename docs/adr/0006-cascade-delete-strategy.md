@@ -26,7 +26,7 @@ DynamoDB は外部キー制約を持たないため、app 層で整合性を担�
 
 ### 実装詳細
 
-**`web/src/lib/repository/resource.ts` の `deleteResource(teamId, id)`** (Project 側も同様):
+**`apps/web/src/lib/features/resource/repository.server.ts` の `deleteResource(teamId, id)`** (Project 側も同様):
 
 1. `Query(pk = TEAM#X AND begins_with(sk, "ASN#"))` + `FilterExpression: resourceId == id` で関連 Assignment の SK 一覧を取得 (pagination 対応)
 2. `TransactWriteItems` で:
@@ -83,10 +83,10 @@ ResourceManager / ProjectManager の各行に「(N 件のアサイン)」と関�
 
 ## Implementation notes
 
-- `web/src/lib/repository/resource.ts`: `deleteResource` を cascade に変更 + `queryRelatedAssignmentSkByResource` private helper 追加
-- `web/src/lib/repository/project.ts`: `deleteProject` 同様
-- `web/src/lib/components/ResourceManager.svelte` / `ProjectManager.svelte`: `assignments` prop 受け取り、`assignmentCountByResource` / `assignmentCountByProject` の `$derived` Map で各 entity の count 計算、UI に件数表示 + confirm メッセージ更新
-- `web/src/routes/+page.svelte`: ResourceManager / ProjectManager に `assignments={dbAssignments}` を渡す
+- `apps/web/src/lib/features/resource/repository.server.ts`: `deleteResource` を cascade に変更 + `queryRelatedAssignmentSkByResource` private helper 追加
+- `apps/web/src/lib/features/project/repository.server.ts`: `deleteProject` 同様
+- `apps/web/src/lib/features/resource/ResourceManager.svelte` / `apps/web/src/lib/features/project/ProjectManager.svelte`: `assignments` prop 受け取り、`assignmentCountByResource` / `assignmentCountByProject` の `$derived` Map で各 entity の count 計算、UI に件数表示 + confirm メッセージ更新
+- `apps/web/src/routes/resources/+page.svelte` / `projects/+page.svelte`: ResourceManager / ProjectManager に `assignments={dbAssignments}` を渡す
 
 `+page.server.ts` の form action は変更不要 — repository の `deleteResource` / `deleteProject` がそのまま cascade 動作になるため、呼び出しシグネチャ互換。
 
