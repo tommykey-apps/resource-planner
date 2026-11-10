@@ -1,4 +1,4 @@
-import type { Theme } from '$lib/theme';
+import type { Theme } from '$lib/shared/theme/theme';
 
 declare global {
 	namespace App {
@@ -6,7 +6,7 @@ declare global {
 		 * #178: error() の body に machine-readable な i18n key を載せて、
 		 * +error.svelte が user locale で翻訳できる構造にする (SvelteKit 公式パターン)。
 		 * - message: locale 未知時の fallback (英語 hardcode で OK)
-		 * - code: error code (例: 'authRequired')。 client が `$lib/i18n/message-maps` で翻訳
+		 * - code: error code (例: 'authRequired')。 client が `$lib/shared/i18n/message-maps` で翻訳
 		 *
 		 * 参考: https://svelte.dev/docs/kit/errors
 		 *

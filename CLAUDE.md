@@ -12,12 +12,14 @@ resource-planner/
 │   │   ├── src/
 │   │   │   ├── routes/
 │   │   │   └── lib/
+│   │   │       ├── features/ # 業務ごと (assignment project resource department team auth)
+│   │   │       └── shared/   # 業務をまたぐ部品。features を参照しない (ESLint で禁止)
 │   │   ├── scripts/          # Web Function の配布物作成とスモークテスト
 │   │   ├── package.json
 │   │   └── svelte.config.js
 │   └── ses-bounce/           # SES のバウンス・苦情を受けて送信停止リストに入れる Lambda
 ├── packages/                 # 共有する部品
-│   └── db/                   # DynamoDB のキーと項目の形、データ移行スクリプト (migrations/)
+│   └── db/                   # DynamoDB のキーと保存する entity の型、データ移行スクリプト (migrations/)
 ├── tests/
 │   └── e2e/                  # Playwright (specs/ と fixtures/)
 ├── infra/                    # Terraform

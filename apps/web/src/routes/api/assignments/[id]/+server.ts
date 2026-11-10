@@ -1,8 +1,12 @@
 import { json } from '@sveltejs/kit';
-import { assignmentApiUpdateSchema } from '$lib/schemas';
-import { AssignmentVersionConflictError, getAssignment, updateAssignment } from '$lib/repository';
-import { requireSession } from '$lib/session';
-import { formatZodErrors, type ServerErrors } from '$lib/forms/server-error';
+import { assignmentApiUpdateSchema } from '$lib/features/assignment/schema';
+import {
+	AssignmentVersionConflictError,
+	getAssignment,
+	updateAssignment
+} from '$lib/features/assignment/repository.server';
+import { requireSession } from '$lib/features/auth/session.server';
+import { formatZodErrors, type ServerErrors } from '$lib/shared/forms/server-error';
 import type { RequestHandler } from './$types';
 
 /**

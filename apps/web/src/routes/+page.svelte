@@ -1,5 +1,5 @@
 <script lang="ts">
-	import DepartmentOptions from '$lib/components/DepartmentOptions.svelte';
+	import DepartmentOptions from '$lib/features/department/DepartmentOptions.svelte';
 	import {
 		ResourceTimeline,
 		TimelineToolbar,
@@ -13,23 +13,26 @@
 		toTimelineAssignment,
 		fromTimelineAssignment,
 		timelineDateLocale
-	} from '$lib/timeline-adapter';
-	import { getLocale } from '$lib/paraglide/runtime';
-	import { applyTimelineParams, parseTimelineParams } from '$lib/timeline-url-state';
+	} from '$lib/features/assignment/timeline/adapter';
+	import { getLocale } from '$lib/shared/i18n/paraglide/runtime';
+	import {
+		applyTimelineParams,
+		parseTimelineParams
+	} from '$lib/features/assignment/timeline/url-state';
 	import {
 		flattenDepartmentTree,
 		idsForDepartmentFilter,
 		DEPARTMENT_FILTER_UNASSIGNED,
 		DEPARTMENT_FILTER_ALL
-	} from '$lib/repository/department-tree';
-	import AssignmentCreator from '$lib/components/AssignmentCreator.svelte';
-	import AssignmentEditor from '$lib/components/AssignmentEditor.svelte';
-	import EmptyStateGuide from '$lib/components/EmptyStateGuide.svelte';
-	import { m } from '$lib/paraglide/messages.js';
-	import { translateServerError } from '$lib/forms/server-error';
-	import { patchAssignment } from '$lib/services/assignment-api';
-	import { syncStateToUrl } from '$lib/state/url-state.svelte';
-	import type { Assignment as DbAssignment } from '$lib/types';
+	} from '$lib/features/department/tree';
+	import AssignmentCreator from '$lib/features/assignment/AssignmentCreator.svelte';
+	import AssignmentEditor from '$lib/features/assignment/AssignmentEditor.svelte';
+	import EmptyStateGuide from '$lib/features/assignment/timeline/EmptyStateGuide.svelte';
+	import { m } from '$lib/shared/i18n/paraglide/messages.js';
+	import { translateServerError } from '$lib/shared/forms/server-error';
+	import { patchAssignment } from '$lib/features/assignment/api-client';
+	import { syncStateToUrl } from '$lib/shared/url-state/url-state.svelte';
+	import type { Assignment as DbAssignment } from '@resource-planner/db/entities';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();

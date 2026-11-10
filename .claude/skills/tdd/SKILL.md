@@ -30,7 +30,7 @@ allowed-tools: Bash(pnpm *) Bash(git *) Read Edit Write Grep Glob
 ## 進め方 (ユーザーから依頼された task: `$ARGUMENTS`)
 
 1. **失敗するテストを先に書く** (RED)
-   - 該当する `*.test.ts` を新規作成 / 既存に追加。`apps/web/src/lib/**/*.test.ts` は unit、`apps/web/src/lib/repository/integration.test.ts` は DDB Local。
+   - 該当する `*.test.ts` を新規作成 / 既存に追加。`apps/web/src/lib/**/*.test.ts` は unit、`apps/web/src/lib/features/team/integration.test.ts` は DDB Local。
    - `pnpm test` を実行して **新しいテストが fail することを確認**。fail メッセージが期待した assertion に一致しているか確認。
    - 「テストが書けない」「テストが pass してしまう」 場合は、依頼内容が曖昧 / 既存挙動と一致 を疑い、ユーザーに確認。
 

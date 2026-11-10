@@ -9,7 +9,7 @@
  */
 export const paraglideOptions = {
 	project: './project.inlang',
-	outdir: './src/lib/paraglide',
+	outdir: './src/lib/shared/i18n/paraglide',
 	emitTsDeclarations: true,
 	strategy: ['cookie', 'preferredLanguage', 'baseLocale'],
 	cookieName: 'resource-planner-locale',

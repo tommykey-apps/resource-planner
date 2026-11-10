@@ -1,10 +1,10 @@
 import { redirect } from '@sveltejs/kit';
-import { queryAllByTeam } from '$lib/repository';
-import { DEFAULT_TEAM_ID } from '$lib/repository/team';
-import { renderMarkdown } from '$lib/markdown';
-import { defaultDepartmentFilter } from '$lib/default-department-filter';
-import { DEPARTMENT_FILTER_ALL } from '$lib/repository/department-tree';
-import type { ProjectWithRenderedDescription } from '$lib/types';
+import { queryAllByTeam } from '$lib/features/team/query-all.server';
+import { DEFAULT_TEAM_ID } from '$lib/features/team/repository.server';
+import { renderMarkdown } from '$lib/features/project/markdown';
+import { defaultDepartmentFilter } from '$lib/features/department/default-filter';
+import { DEPARTMENT_FILTER_ALL } from '$lib/features/department/tree';
+import type { ProjectWithRenderedDescription } from '$lib/features/project/types';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async (event) => {

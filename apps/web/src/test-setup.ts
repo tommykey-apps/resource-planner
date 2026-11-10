@@ -6,7 +6,7 @@
  */
 import '@testing-library/jest-dom/vitest';
 import { beforeEach } from 'vitest';
-import { overwriteGetLocale } from '$lib/paraglide/runtime';
+import { overwriteGetLocale } from '$lib/shared/i18n/paraglide/runtime';
 
 // テストは日本語の文言で書く。 Paraglide JS の言語判定 (cookie / navigator.languages) に
 // 依存させないよう、 公式 API の overwriteGetLocale で固定する。 英語を見るテストは個別に上書きする。

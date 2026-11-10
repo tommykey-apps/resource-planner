@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
-	import ResourceManager from '$lib/components/ResourceManager.svelte';
-	import { m } from '$lib/paraglide/messages.js';
-	import type { Resource } from '$lib/types';
+	import ResourceManager from '$lib/features/resource/ResourceManager.svelte';
+	import { m } from '$lib/shared/i18n/paraglide/messages.js';
+	import type { Resource } from '@resource-planner/db/entities';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();

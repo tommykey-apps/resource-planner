@@ -42,6 +42,24 @@ export default defineConfig(
 		}
 	},
 	{
+		// 依存の向きは features → shared だけ。shared は業務 (features) を知らない
+		// (https://eslint.org/docs/latest/rules/no-restricted-imports)
+		files: ['src/lib/shared/**'],
+		rules: {
+			'no-restricted-imports': [
+				'error',
+				{
+					patterns: [
+						{
+							group: ['$lib/features', '$lib/features/**', '**/features/**'],
+							message: 'shared から features を参照しない。共通にしたいものは shared に移す'
+						}
+					]
+				}
+			]
+		}
+	},
+	{
 		// Override or add rule settings here, such as:
 		// 'svelte/button-has-type': 'error'
 		rules: {}

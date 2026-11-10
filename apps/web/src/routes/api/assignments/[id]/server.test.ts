@@ -28,11 +28,11 @@ const { AssignmentVersionConflictError } = vi.hoisted(() => {
 	return { AssignmentVersionConflictError };
 });
 
-vi.mock('$lib/session', () => ({
+vi.mock('$lib/features/auth/session.server', () => ({
 	requireSession: (event: unknown) => requireSessionMock(event)
 }));
 
-vi.mock('$lib/repository', () => ({
+vi.mock('$lib/features/assignment/repository.server', () => ({
 	updateAssignment: (...args: unknown[]) => updateAssignmentMock(...args),
 	getAssignment: (...args: unknown[]) => getAssignmentMock(...args),
 	AssignmentVersionConflictError

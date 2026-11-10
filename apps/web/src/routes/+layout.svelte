@@ -2,9 +2,9 @@
 	import './layout.css';
 	import { ModeWatcher } from 'mode-watcher';
 	import { Toaster } from 'svelte-sonner';
-	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
-	import AppHeader from '$lib/components/AppHeader.svelte';
-	import { syncThemeCookie } from '$lib/theme-cookie.svelte';
+	import ConfirmDialog from '$lib/shared/dialog/ConfirmDialog.svelte';
+	import AppHeader from '$lib/shared/layout/AppHeader.svelte';
+	import { syncThemeCookie } from '$lib/shared/theme/theme-cookie.svelte';
 	import type { LayoutData } from './$types';
 
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();

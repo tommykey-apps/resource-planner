@@ -77,7 +77,7 @@ Claude Code セッションで `apps/web/src/` を編集すると、 ターン�
 
 ### 統合テストの実行
 
-`apps/web/src/lib/repository/integration.test.ts` は `AWS_ENDPOINT_URL` が設定されている時のみ実行
+`apps/web/src/lib/features/team/integration.test.ts` は `AWS_ENDPOINT_URL` が設定されている時のみ実行
 ([`describe.runIf`](https://vitest.dev/api/#describe-runif))。ローカルで integration まで含めて実行するには:
 
 ```bash
@@ -135,7 +135,7 @@ OpenAPI は使わず、TypeScript 型 + Zod schema を API 仕様の正本とし
 | **なぜ** その判断をしたか | [`docs/adr/`](docs/adr/) — Architecture Decision Records (Michael Nygard 形式) | [/adr/](https://tommykey-apps.github.io/resource-planner/adr/) |
 | **どう動く** か (画面 → action → DB の流れ) | [`docs/use-cases.md`](docs/use-cases.md) — Mermaid sequence diagrams | [/use-cases.html](https://tommykey-apps.github.io/resource-planner/use-cases.html) |
 | **データモデル** (PK / SK / 属性 / クエリパターン) | [`docs/db/`](docs/db/) — tbls 自動生成 + 手書き entities/access-patterns | [/db/](https://tommykey-apps.github.io/resource-planner/db/) |
-| **API 仕様** (関数の入出力) | TypeScript 型 (`apps/web/src/lib/types.ts`, Zod schema) | (コード直読) |
+| **API 仕様** (関数の入出力) | TypeScript 型 (`packages/db/src/entities.ts`, Zod schema) | (コード直読) |
 
 ### Architecture Decision Records
 

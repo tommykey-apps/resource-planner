@@ -5,7 +5,7 @@ node_modules
 apps/web/.svelte-kit
 apps/web/build
 # Paraglide JS の生成物 (中の .gitignore は ESLint / Prettier が読まないため直下でも除外する)
-apps/web/src/lib/paraglide
+apps/web/src/lib/shared/i18n/paraglide
 apps/web/project.inlang/*
 !apps/web/project.inlang/settings.json
 apps/web/dist
