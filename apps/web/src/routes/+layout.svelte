@@ -13,7 +13,7 @@
 	syncThemeCookie();
 </script>
 
-<!-- favicon / apple-touch-icon / manifest は app.html で全ページに静的 inject (#146)。 -->
+<!-- favicon / manifest は app.html で全ページに静的 inject (#146)。 -->
 
 <!--
   mode-watcher (#97): light / dark / system theme を <html class> + cookie で同期。
