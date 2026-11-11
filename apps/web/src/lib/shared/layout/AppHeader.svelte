@@ -6,6 +6,7 @@
 	import AvatarDropdown from '$lib/shared/layout/AvatarDropdown.svelte';
 	import LocaleSwitcher from '$lib/shared/i18n/LocaleSwitcher.svelte';
 	import { m } from '$lib/shared/i18n/paraglide/messages.js';
+	import icon from '$lib/shared/branding/icon.svg';
 
 	/**
 	 * アプリ共通ヘッダ (#136、 #146、 header 標準化)。
@@ -50,7 +51,7 @@
 		class="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-2 gap-y-2 px-4 py-2 md:gap-x-6"
 	>
 		<a href={resolve('/')} class="flex shrink-0 items-center gap-2 no-underline">
-			<img src="/favicon.svg" alt="" width="1352" height="999" class="h-8 w-auto shrink-0" />
+			<img src={icon} alt="" width="1352" height="999" class="h-8 w-auto shrink-0" />
 			<span class="text-base font-semibold tracking-tight sm:text-lg">{m.app_title()}</span>
 		</a>
 
