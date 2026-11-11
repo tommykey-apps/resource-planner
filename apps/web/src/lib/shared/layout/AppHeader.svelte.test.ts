@@ -45,11 +45,17 @@ describe('AppHeader — branding logo (#146)', () => {
 		expect(img?.getAttribute('alt')).toBe('');
 	});
 
+	it('logo img はタブのアイコンと同じ SVG を表示する', () => {
+		const { container } = render(AppHeader, stubProps());
+		expect(container.querySelector('img')?.getAttribute('src')).toBe('/favicon.svg');
+	});
+
 	it('logo img は width / height 属性で CLS 防止 (Core Web Vitals)', () => {
 		const { container } = render(AppHeader, stubProps());
 		const img = container.querySelector('img');
-		expect(img?.getAttribute('width')).toBe('32');
-		expect(img?.getAttribute('height')).toBe('32');
+		// 原画 (draw.io で書き出した SVG) の縦横比 1352:1000 に合わせる
+		expect(img?.getAttribute('width')).toBe('1352');
+		expect(img?.getAttribute('height')).toBe('1000');
 	});
 
 	it('logo + アプリ名は <a href="/"> で wrap して home へ navigation', () => {

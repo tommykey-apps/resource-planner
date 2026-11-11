@@ -2,7 +2,6 @@
   "name": "resource-planner",
   "short_name": "planner",
   "icons": [
-    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
     { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
   ],
   "theme_color": "#111111",
