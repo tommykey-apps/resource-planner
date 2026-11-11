@@ -105,19 +105,36 @@ jobs:
       - name: Run tests
         run: pnpm test
 
-  # Playwright E2E (#112)。Phase 3 (Auth.js + Magic Link) 完了済 → 未認証 smoke 段階で有効化。
-  # Magic Link 経由の sign-in fixture / 認証済 spec は #113 で別途追加予定。
-  # 詳細: ADR 0007
+  # Playwright E2E (#112)。 詳細: ADR 0007
+  # スモークテスト (@smoke) と残りを別ジョブにする。 main の必須チェックには smoke だけを入れる。
+  # Playwright 公式の「Via Containers」に従い、 ブラウザと依存パッケージ入りのイメージで動かす。
+  # 実行時に apt で依存パッケージを入れないので、 Ubuntu の配布サーバーの不調で失敗しない。
+  # Refs: https://playwright.dev/docs/ci#via-containers
   test-e2e:
+    name: test-e2e (${{ matrix.suite }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - suite: smoke
+            filter: --grep @smoke
+          - suite: rest
+            filter: --grep-invert @smoke
+    container:
+      # 版は tests/e2e の @playwright/test と揃える (違うとブラウザの実行ファイルが見つからない)
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      # --user 1001: 公式の例。 --init と --ipc=host: 公式が Chromium 用に推奨
+      options: --user 1001 --init --ipc=host
     services:
+      # ジョブがコンテナで動くので、 ポートの公開は不要。 サービス名 dynamodb で参照する。
       dynamodb:
-        image: amazon/dynamodb-local:latest
-        ports: ['8000:8000']
-        # NOTE: test job と同じく、image にシェルが無く services.options で health-cmd を渡せない。
-        # 後続ステップで wait ループする。
+        image: amazon/dynamodb-local:3.3.2
+        # NOTE: image にシェルが無く services.options で health-cmd を渡せない。 後続ステップで待つ。
     env:
-      AWS_ENDPOINT_URL: http://localhost:8000
+      AWS_ENDPOINT_URL: http://dynamodb:8000
+      # playwright.config.ts が起動するアプリに渡す接続先
+      E2E_DYNAMODB_ENDPOINT: http://dynamodb:8000
       AWS_REGION: ap-northeast-1
       AWS_DEFAULT_REGION: ap-northeast-1
       AWS_ACCESS_KEY_ID: local
@@ -149,33 +166,35 @@ jobs:
       - name: Wait for DynamoDB Local
         run: |
           for i in {1..30}; do
-            curl -s http://localhost:8000 > /dev/null && exit 0
+            curl -s "$AWS_ENDPOINT_URL" > /dev/null && exit 0
             sleep 1
           done
           echo "DynamoDB Local did not start within 30s"
           exit 1
 
       # #186: create-table 定義は bin/create-ddb-table.sh に集約。
+      # Playwright のイメージには aws CLI が無いので、 公式の aws CLI イメージで実行する。
       - name: Create table
-        run: ./bin/create-ddb-table.sh
-
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
-        working-directory: tests/e2e
+        uses: docker://amazon/aws-cli:2.39.0
+        env:
+          ENDPOINT_URL: http://dynamodb:8000
+        with:
+          entrypoint: /bin/bash
+          args: bin/create-ddb-table.sh
 
       - name: Build
         run: pnpm build
         working-directory: apps/web
 
       - name: Run E2E tests
-        run: pnpm test:e2e
+        run: pnpm test:e2e ${{ matrix.filter }}
         working-directory: tests/e2e
 
       - name: Upload Playwright report on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.suite }}
           path: tests/e2e/playwright-report/
           retention-days: 7
 

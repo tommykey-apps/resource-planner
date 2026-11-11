@@ -55,8 +55,9 @@ export default defineConfig({
 		env: {
 			// host env (PATH / HOME 等) を継承 → AWS 系は後で明示上書きする
 			...process.env,
-			// ローカル DDB に固定 (host shell に本番 cred があっても無視される + アプリ側 guard も通る)
-			AWS_ENDPOINT_URL: 'http://localhost:8000',
+			// ローカル DDB に固定 (host shell に本番 cred があっても無視される + アプリ側 guard も通る)。
+			// CI はジョブをコンテナで動かすため、 DynamoDB Local をサービス名で参照する (E2E_DYNAMODB_ENDPOINT)。
+			AWS_ENDPOINT_URL: process.env.E2E_DYNAMODB_ENDPOINT ?? 'http://localhost:8000',
 			AWS_ACCESS_KEY_ID: 'local',
 			AWS_SECRET_ACCESS_KEY: 'local',
 			AWS_REGION: 'ap-northeast-1',

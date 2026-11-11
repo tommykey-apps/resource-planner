@@ -105,6 +105,27 @@ describe('assertSafeDbEnv', () => {
 		).not.toThrow();
 	});
 
+	it('allows a dotless Docker network hostname such as a CI service container name', () => {
+		// GitHub Actions でジョブをコンテナで動かすと、 サービスコンテナはサービス名で参照する。
+		// ドットのない名前は公開 DNS の名前 (*.amazonaws.com など) になりえない。
+		expect(() =>
+			assertSafeDbEnv({ isLambda: false, endpoint: 'http://dynamodb:8000' })
+		).not.toThrow();
+	});
+
+	it('rejects dotted hostnames even when the first label looks like a service name', () => {
+		for (const endpoint of [
+			'http://dynamodb.:8000',
+			'http://dynamodb.internal:8000',
+			'http://[fe80::1]:8000',
+			'https://dynamodb.ap-northeast-1.amazonaws.com'
+		]) {
+			expect(() => assertSafeDbEnv({ isLambda: false, endpoint })).toThrow(
+				/Refusing to construct DynamoDB client/
+			);
+		}
+	});
+
 	it('throws when endpoint is unset and not in Lambda', () => {
 		expect(() => assertSafeDbEnv({ isLambda: false, endpoint: null })).toThrow(
 			/Refusing to construct DynamoDB client/

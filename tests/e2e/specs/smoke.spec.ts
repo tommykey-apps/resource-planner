@@ -6,14 +6,14 @@ import { expect, test } from '@playwright/test';
  *
  * Magic Link 経由の sign-in fixture / 認証済 spec は #113 で別途追加。
  */
-test('unauthenticated access to / redirects to /sign-in', async ({ page }) => {
+test('unauthenticated access to / redirects to /sign-in', { tag: '@smoke' }, async ({ page }) => {
 	const response = await page.goto('/');
 	expect(response).not.toBeNull();
 	expect(response!.status()).toBeLessThan(400);
 	await expect(page).toHaveURL(/\/sign-in($|\?)/);
 });
 
-test('/sign-in renders the email sign-in form', async ({ page }) => {
+test('/sign-in renders the email sign-in form', { tag: '@smoke' }, async ({ page }) => {
 	await page.goto('/sign-in');
 	await expect(page.locator('input[name="email"]')).toBeVisible();
 	await expect(page.locator('button[type="submit"]')).toBeVisible();
