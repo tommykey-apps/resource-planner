@@ -15,45 +15,53 @@ import { expect, test } from '@playwright/test';
  * Playwright response header は **lowercase normalize** される ([Playwright docs](https://playwright.dev/docs/api/class-response#response-headers))。
  */
 
-test('CSP header includes OWASP baseline directives on SSR page (sign-in)', async ({ page }) => {
-	const response = await page.goto('/sign-in');
-	expect(response).not.toBeNull();
-	const csp = response!.headers()['content-security-policy'];
-	expect(csp).toBeTruthy();
+test(
+	'CSP header includes OWASP baseline directives on SSR page (sign-in)',
+	{ tag: '@smoke' },
+	async ({ page }) => {
+		const response = await page.goto('/sign-in');
+		expect(response).not.toBeNull();
+		const csp = response!.headers()['content-security-policy'];
+		expect(csp).toBeTruthy();
 
-	expect(csp).toContain("default-src 'self'");
-	expect(csp).toContain("object-src 'none'");
-	expect(csp).toContain("base-uri 'self'");
-	expect(csp).toContain("form-action 'self'");
-	expect(csp).toContain("frame-ancestors 'none'");
-	// SvelteKit kit.csp.mode='auto' が SSR で自動付与する nonce
-	expect(csp).toMatch(/script-src[^;]*'nonce-/);
-});
+		expect(csp).toContain("default-src 'self'");
+		expect(csp).toContain("object-src 'none'");
+		expect(csp).toContain("base-uri 'self'");
+		expect(csp).toContain("form-action 'self'");
+		expect(csp).toContain("frame-ancestors 'none'");
+		// SvelteKit kit.csp.mode='auto' が SSR で自動付与する nonce
+		expect(csp).toMatch(/script-src[^;]*'nonce-/);
+	}
+);
 
-test('CSP excludes unsafe-eval', async ({ page }) => {
+test('CSP excludes unsafe-eval', { tag: '@smoke' }, async ({ page }) => {
 	const response = await page.goto('/sign-in');
 	const csp = response!.headers()['content-security-policy'] ?? '';
 	expect(csp).not.toContain("'unsafe-eval'");
 });
 
-test('CSP includes style-src unsafe-inline (Svelte transition / Tailwind 都合、 将来 nonce 化)', async ({
-	page
-}) => {
-	const response = await page.goto('/sign-in');
-	const csp = response!.headers()['content-security-policy'] ?? '';
-	expect(csp).toMatch(/style-src[^;]*'unsafe-inline'/);
-});
+test(
+	'CSP includes style-src unsafe-inline (Svelte transition / Tailwind 都合、 将来 nonce 化)',
+	{ tag: '@smoke' },
+	async ({ page }) => {
+		const response = await page.goto('/sign-in');
+		const csp = response!.headers()['content-security-policy'] ?? '';
+		expect(csp).toMatch(/style-src[^;]*'unsafe-inline'/);
+	}
+);
 
-test('Other security headers (X-Content-Type-Options / Referrer-Policy / Permissions-Policy)', async ({
-	page
-}) => {
-	const response = await page.goto('/sign-in');
-	const headers = response!.headers();
-	// hooks.server.ts の securityHeadersHandle で set
-	expect(headers['x-content-type-options']).toBe('nosniff');
-	expect(headers['referrer-policy']).toBe('strict-origin-when-cross-origin');
-	expect(headers['permissions-policy']).toContain('camera=()');
-});
+test(
+	'Other security headers (X-Content-Type-Options / Referrer-Policy / Permissions-Policy)',
+	{ tag: '@smoke' },
+	async ({ page }) => {
+		const response = await page.goto('/sign-in');
+		const headers = response!.headers();
+		// hooks.server.ts の securityHeadersHandle で set
+		expect(headers['x-content-type-options']).toBe('nosniff');
+		expect(headers['referrer-policy']).toBe('strict-origin-when-cross-origin');
+		expect(headers['permissions-policy']).toContain('camera=()');
+	}
+);
 
 /**
  * mode-watcher の初期化スクリプト (読み込み直後にダークモードを当てる inline script) が
@@ -62,18 +70,22 @@ test('Other security headers (X-Content-Type-Options / Referrer-Policy / Permiss
  * hydration で後から当たる分と区別するため、 /_app/** を止めて inline script だけを動かす。
  * https://mode-watcher.svecosystem.com/docs/utilities/create-initial-mode-expression
  */
-test('mode-watcher の初期化スクリプトが CSP を通って実行される', async ({ page }) => {
-	const cspErrors: string[] = [];
-	page.on('console', (m) => {
-		if (m.type() === 'error' && m.text().includes('Content Security Policy')) {
-			cspErrors.push(m.text());
-		}
-	});
-	await page.addInitScript(() => localStorage.setItem('mode-watcher-mode', 'dark'));
-	await page.route('**/_app/**', (route) => route.abort());
+test(
+	'mode-watcher の初期化スクリプトが CSP を通って実行される',
+	{ tag: '@smoke' },
+	async ({ page }) => {
+		const cspErrors: string[] = [];
+		page.on('console', (m) => {
+			if (m.type() === 'error' && m.text().includes('Content Security Policy')) {
+				cspErrors.push(m.text());
+			}
+		});
+		await page.addInitScript(() => localStorage.setItem('mode-watcher-mode', 'dark'));
+		await page.route('**/_app/**', (route) => route.abort());
 
-	await page.goto('/sign-in');
+		await page.goto('/sign-in');
 
-	await expect(page.locator('html')).toHaveClass(/\bdark\b/);
-	expect(cspErrors).toEqual([]);
-});
+		await expect(page.locator('html')).toHaveClass(/\bdark\b/);
+		expect(cspErrors).toEqual([]);
+	}
+);

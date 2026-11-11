@@ -53,9 +53,9 @@ describe('AppHeader — branding logo (#146)', () => {
 	it('logo img は width / height 属性で CLS 防止 (Core Web Vitals)', () => {
 		const { container } = render(AppHeader, stubProps());
 		const img = container.querySelector('img');
-		// 原画 (draw.io で書き出した SVG) の縦横比 1352:1000 に合わせる
+		// 原画 (draw.io で書き出した SVG) の縦横比 1352:999 に合わせる
 		expect(img?.getAttribute('width')).toBe('1352');
-		expect(img?.getAttribute('height')).toBe('1000');
+		expect(img?.getAttribute('height')).toBe('999');
 	});
 
 	it('logo + アプリ名は <a href="/"> で wrap して home へ navigation', () => {

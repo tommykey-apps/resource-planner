@@ -2,7 +2,7 @@
  * DynamoDB client 構築前の env 安全判定 (#125 / #135 / #143)。
  *
  * Lambda 環境 (= AWS Lambda runtime が複数の env を自動セットする) または local endpoint
- * (localhost / 127.x.x.x / IPv6 [::1]) のいずれかでないと throw する。
+ * (localhost / 127.x.x.x / IPv6 [::1] / ドットのない Docker の名前) のいずれかでないと throw する。
  *
  * 純粋関数として抽出 = 単体テスト容易、呼び出し側で signal 取得を行う。
  */
@@ -28,6 +28,11 @@ function isLocalEndpoint(endpoint: string): boolean {
 	// IPv4 127.0.0.0/8 全域。Node の URL parser は octal/dec mix (`127.000.000.001`) を
 	// `127.0.0.1` に normalize してくれるので `^127\.` で十分。
 	if (/^127\./.test(host)) return true;
+	// ドットのない名前 (英数字とハイフンだけ) は Docker ネットワーク内の名前で、 公開 DNS の
+	// 名前 (*.amazonaws.com など) になりえない。 GitHub Actions でジョブをコンテナで動かすと、
+	// サービスコンテナ (DynamoDB Local) をサービス名で参照するため許可する。
+	// Refs: https://docs.github.com/en/actions/tutorials/use-containerized-services/use-docker-service-containers
+	if (/^[a-z0-9-]+$/.test(host)) return true;
 	// 本番ホストの明示拒否 (defense in depth): amazonaws.com を含むと即 false
 	// (上記の localhost 系判定を通った後の追加ガード、念のため)
 	return false;
@@ -64,7 +69,7 @@ export function assertSafeDbEnv(opts: {
 	throw new Error(
 		`Refusing to construct DynamoDB client: not in Lambda ` +
 			`(AWS_LAMBDA_FUNCTION_NAME + AWS_EXECUTION_ENV + LAMBDA_TASK_ROOT 揃ってない) ` +
-			`and AWS_ENDPOINT_URL is not localhost / 127.x / [::1] ` +
+			`and AWS_ENDPOINT_URL is not localhost / 127.x / [::1] / a dotless Docker hostname ` +
 			`(got: "${endpoint || '<unset>'}"). ` +
 			`Set AWS_ENDPOINT_URL=http://localhost:8000 in apps/web/.env.local for local dev.`
 	);

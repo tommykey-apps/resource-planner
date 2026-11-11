@@ -15,35 +15,43 @@ test.beforeEach(async () => {
 	await clearMagicLinks();
 });
 
-test('Magic Link sign-in completes the flow and lands on home (regression for #109)', async ({
-	page
-}) => {
-	await page.goto('/sign-in');
-	await page.fill('input[name="email"]', 'allowed@example.com');
-	await page.click('button[type="submit"]');
-	await expect(page).toHaveURL(/\/sign-in\/check-email/);
+test(
+	'Magic Link sign-in completes the flow and lands on home (regression for #109)',
+	{ tag: '@smoke' },
+	async ({ page }) => {
+		await page.goto('/sign-in');
+		await page.fill('input[name="email"]', 'allowed@example.com');
+		await page.click('button[type="submit"]');
+		await expect(page).toHaveURL(/\/sign-in\/check-email/);
 
-	const url = await getMagicLinkUrl('allowed@example.com');
-	await page.goto(url);
-	// home page。#99 で viewport / zoom が `?d=...&z=...` に同期されるため path のみで match。
-	await expect(page).toHaveURL(/^http:\/\/localhost:4173\/(\?|$)/);
-});
+		const url = await getMagicLinkUrl('allowed@example.com');
+		await page.goto(url);
+		// home page。#99 で viewport / zoom が `?d=...&z=...` に同期されるため path のみで match。
+		await expect(page).toHaveURL(/^http:\/\/localhost:4173\/(\?|$)/);
+	}
+);
 
-test('Direct navigation to /sign-in/check-email redirects to /sign-in (#101 guard)', async ({
-	page
-}) => {
-	// 初回直接アクセス: sec-fetch-site: none → /sign-in に redirect
-	await page.goto('/sign-in/check-email');
-	await expect(page).toHaveURL(/\/sign-in($|\?)/);
-});
+test(
+	'Direct navigation to /sign-in/check-email redirects to /sign-in (#101 guard)',
+	{ tag: '@smoke' },
+	async ({ page }) => {
+		// 初回直接アクセス: sec-fetch-site: none → /sign-in に redirect
+		await page.goto('/sign-in/check-email');
+		await expect(page).toHaveURL(/\/sign-in($|\?)/);
+	}
+);
 
-test('Disallowed domain is rejected at submit before any email is sent', async ({ page }) => {
-	await page.goto('/sign-in');
-	await page.fill('input[name="email"]', 'evil@other.example');
-	await page.click('button[type="submit"]');
-	// Auth.js は signIn callback で domain チェック → 拒否時は token 発行 / 送信を行わずに error 画面へ
-	await expect(page).toHaveURL(/\/sign-in\/error\?error=AccessDenied/);
+test(
+	'Disallowed domain is rejected at submit before any email is sent',
+	{ tag: '@smoke' },
+	async ({ page }) => {
+		await page.goto('/sign-in');
+		await page.fill('input[name="email"]', 'evil@other.example');
+		await page.click('button[type="submit"]');
+		// Auth.js は signIn callback で domain チェック → 拒否時は token 発行 / 送信を行わずに error 画面へ
+		await expect(page).toHaveURL(/\/sign-in\/error\?error=AccessDenied/);
 
-	// 拒否されているので magic link は1件も captured されていないはず (漏洩無し)
-	await expect(getMagicLinkUrl('evil@other.example', 500)).rejects.toThrow(/not captured/);
-});
+		// 拒否されているので magic link は1件も captured されていないはず (漏洩無し)
+		await expect(getMagicLinkUrl('evil@other.example', 500)).rejects.toThrow(/not captured/);
+	}
+);
