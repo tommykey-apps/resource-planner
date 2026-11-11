@@ -17,6 +17,14 @@ if (process.env.VITEST) {
 
 export default defineConfig({
 	plugins: [tailwindcss(), sveltekit(), paraglideVitePlugin(paraglideOptions)],
+	build: {
+		// Vite は 4KB 未満の画像を data URI として HTML に埋め込む。 アイコンは別ファイルの
+		// URL で配る (Apple 用アイコンが data URI で使えるかは Apple の文書に記載がない)。
+		// それ以外は既定の判定に任せる (undefined を返す)。
+		// Refs: https://vite.dev/config/build-options#build-assetsinlinelimit
+		assetsInlineLimit: (filePath) =>
+			filePath.includes('/src/lib/shared/branding/') ? false : undefined
+	},
 	test: {
 		// 2 種類の test を分離 (#94):
 		// - unit: node 環境、Auth.js / SvelteKit server module を直接 import

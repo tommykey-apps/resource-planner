@@ -3,6 +3,7 @@
 	import { ModeWatcher } from 'mode-watcher';
 	import { Toaster } from 'svelte-sonner';
 	import ConfirmDialog from '$lib/shared/dialog/ConfirmDialog.svelte';
+	import AppIcons from '$lib/shared/branding/AppIcons.svelte';
 	import AppHeader from '$lib/shared/layout/AppHeader.svelte';
 	import { syncThemeCookie } from '$lib/shared/theme/theme-cookie.svelte';
 	import type { LayoutData } from './$types';
@@ -13,7 +14,8 @@
 	syncThemeCookie();
 </script>
 
-<!-- favicon / manifest は app.html で全ページに静的 inject (#146)。 -->
+<!-- タブのアイコンと Apple 用アイコン。 図を変えると URL も変わるよう import で配る。 -->
+<AppIcons />
 
 <!--
   mode-watcher (#97): light / dark / system theme を <html class> + cookie で同期。

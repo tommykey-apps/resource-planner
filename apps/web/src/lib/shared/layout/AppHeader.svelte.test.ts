@@ -2,6 +2,7 @@
 import { fireEvent, render } from '@testing-library/svelte';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AppHeader from '$lib/shared/layout/AppHeader.svelte';
+import icon from '$lib/shared/branding/icon.svg';
 
 /**
  * #136 / #146 / header 標準化: 共通 Header の振る舞い契約。
@@ -47,7 +48,7 @@ describe('AppHeader — branding logo (#146)', () => {
 
 	it('logo img はタブのアイコンと同じ SVG を表示する', () => {
 		const { container } = render(AppHeader, stubProps());
-		expect(container.querySelector('img')?.getAttribute('src')).toBe('/favicon.svg');
+		expect(container.querySelector('img')?.getAttribute('src')).toBe(icon);
 	});
 
 	it('logo img は width / height 属性で CLS 防止 (Core Web Vitals)', () => {
