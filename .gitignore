@@ -1,6 +1,9 @@
 # Dependencies
 node_modules
 
+# pnpm の倉庫 (pnpm がプロジェクトと別のディスクだと判断すると、ディスクの最上位に作る)
+.pnpm-store
+
 # SvelteKit (apps/web)
 apps/web/.svelte-kit
 apps/web/build
